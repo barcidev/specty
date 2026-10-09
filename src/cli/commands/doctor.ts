@@ -8,6 +8,7 @@ import { logger } from "../../core/logger.js";
 import { loadManifest } from "../../core/manifest.js";
 import { getSpecEngine } from "../../engines/factory.js";
 import { checkApprovalStatus } from "../../governance/approvals.js";
+import { checkGitHooksStatus, installHookWithManager } from "../../governance/git-hooks.js";
 import { executeSync } from "./sync.js";
 
 export interface DoctorCommandOptions {
@@ -218,6 +219,35 @@ export async function executeDoctor(options: DoctorCommandOptions = {}): Promise
     }
   }
 
+  // 8. Check Git Governance Hooks
+  if (config?.governance.hooks !== false) {
+    if (isGit) {
+      const hooksStatus = await checkGitHooksStatus(repoRoot);
+      if (hooksStatus.active && hooksStatus.manager) {
+        checks.push({
+          id: "git-hooks",
+          title: "Git Governance Hooks",
+          status: "pass",
+          message: `Governance hooks are active via ${hooksStatus.manager.name} (${hooksStatus.manager.configPath}).`,
+        });
+      } else {
+        checks.push({
+          id: "git-hooks",
+          title: "Git Governance Hooks",
+          status: "warn",
+          message: "Git governance hooks are missing or not active. Run 'specty hooks install'.",
+        });
+      }
+    } else {
+      checks.push({
+        id: "git-hooks",
+        title: "Git Governance Hooks",
+        status: "warn",
+        message: "Git governance hooks cannot be verified outside a Git repository.",
+      });
+    }
+  }
+
   // Print results
   for (const c of checks) {
     const symbol = c.status === "pass" ? "✓" : c.status === "warn" ? "⚠" : "✖";
@@ -231,6 +261,9 @@ export async function executeDoctor(options: DoctorCommandOptions = {}): Promise
   if (options.fix && (!healthy || warnings.length > 0)) {
     logger.info("\nAttempting automatic repairs with 'specty sync'...");
     await executeSync({ cwd: repoRoot });
+    if (isGit && config?.governance.hooks !== false) {
+      await installHookWithManager(repoRoot);
+    }
     logger.success("Repairs completed. Re-run 'specty doctor' to verify.");
   }
 

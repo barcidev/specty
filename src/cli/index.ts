@@ -158,10 +158,17 @@ const hooksCmd = program.command("hooks").description("manage Git pre-commit gov
 hooksCmd
   .command("install")
   .description("install pre-commit hook enforcing specification approval")
-  .action(async () => {
+  .option("-m, --manager <type>", "hook manager (husky, lefthook, simple-git-hooks, native)")
+  .option("-y, --yes", "skip interactive prompts and accept recommended manager")
+  .option("-f, --force", "force installation")
+  .action(async (options) => {
     try {
       const { executeHooksInstall } = await import("./commands/hooks.js");
-      const success = await executeHooksInstall();
+      const success = await executeHooksInstall({
+        manager: options.manager,
+        yes: options.yes,
+        force: options.force,
+      });
       if (!success) {
         process.exit(1);
       }
@@ -174,10 +181,13 @@ hooksCmd
 hooksCmd
   .command("uninstall")
   .description("uninstall pre-commit hook")
-  .action(async () => {
+  .option("-m, --manager <type>", "hook manager (husky, lefthook, simple-git-hooks, native)")
+  .action(async (options) => {
     try {
       const { executeHooksUninstall } = await import("./commands/hooks.js");
-      await executeHooksUninstall();
+      await executeHooksUninstall({
+        manager: options.manager,
+      });
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exit(1);
