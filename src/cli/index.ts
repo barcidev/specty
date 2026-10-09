@@ -246,4 +246,18 @@ program
     }
   });
 
+program
+  .command("metrics")
+  .description("display governance, approval, verification, and agent handoff metrics")
+  .option("--json", "output metrics as formatted JSON")
+  .action(async (options) => {
+    try {
+      const { executeMetrics } = await import("./commands/metrics.js");
+      await executeMetrics(options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 program.parse(process.argv);

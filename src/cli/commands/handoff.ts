@@ -1,6 +1,7 @@
 import path from "node:path";
 import { logger } from "../../core/logger.js";
 import { createHandoff, formatHandoffMarkdown, listHandoffs } from "../../handoff/manager.js";
+import { recordMetricEvent } from "../../metrics/index.js";
 
 export interface HandoffCliOptions {
   cwd?: string;
@@ -46,6 +47,14 @@ export async function executeHandoffCreate(
     filesModified,
     decisions,
     notes: options.notes,
+  });
+
+  await recordMetricEvent(repoRoot, {
+    type: "handoff_recorded",
+    changeId,
+    handoffId: record.id,
+    fromRole,
+    toRole,
   });
 
   logger.success(

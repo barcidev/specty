@@ -5,6 +5,7 @@ import { executeCommand } from "../core/exec.js";
 import { getSpecEngine } from "../engines/factory.js";
 import { checkApprovalStatus } from "../governance/approvals.js";
 import { createHandoff, getLatestHandoff } from "../handoff/manager.js";
+import { recordMetricEvent } from "../metrics/index.js";
 import type { CodeGraph } from "./graph.js";
 
 export interface McpToolDefinition {
@@ -296,6 +297,16 @@ export async function handleMcpToolCall(
           durationMs: runRes.durationMs,
           output: runRes.stdout || runRes.stderr,
         };
+
+        await recordMetricEvent(repoRoot, {
+          type: "verification_run",
+          scope: scope.path,
+          commandType: key,
+          command: cmd,
+          exitCode: runRes.exitCode,
+          durationMs: runRes.durationMs,
+          success: runRes.success,
+        });
       }
 
       return results;

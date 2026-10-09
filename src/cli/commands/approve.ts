@@ -4,6 +4,7 @@ import { loadConfig } from "../../core/config.js";
 import { logger } from "../../core/logger.js";
 import { getSpecEngine } from "../../engines/factory.js";
 import { approveChange, checkApprovalStatus } from "../../governance/approvals.js";
+import { recordMetricEvent } from "../../metrics/index.js";
 
 export interface ApproveCommandOptions {
   cwd?: string;
@@ -95,6 +96,13 @@ export async function executeApprove(
   const record = await approveChange(repoRoot, targetChangeId, {
     approvedBy: options.user,
     dryRun: options.dryRun,
+  });
+
+  await recordMetricEvent(repoRoot, {
+    type: "approval_granted",
+    changeId: targetChangeId,
+    hash: record.contentHash,
+    approver: record.approvedBy,
   });
 
   logger.success(

@@ -4,6 +4,7 @@ import ignore from "ignore";
 import { loadConfig } from "../core/config.js";
 import { executeCommand } from "../core/exec.js";
 import { getSpecEngine } from "../engines/factory.js";
+import { recordMetricEvent } from "../metrics/index.js";
 import { checkApprovalStatus } from "./approvals.js";
 
 export interface GateResult {
@@ -94,6 +95,13 @@ export async function checkApprovalGate(
       "utf8",
     );
 
+    await recordMetricEvent(repoRoot, {
+      type: "bypass_used",
+      reason: auditEntry.reason,
+      user: auditEntry.user,
+      stagedFilesCount: modifiedSourceFiles.length,
+    });
+
     return {
       passed: true,
       bypassed: true,
@@ -108,6 +116,16 @@ export async function checkApprovalGate(
 
   for (const change of activeChanges) {
     const status = await checkApprovalStatus(repoRoot, change.id);
+
+    if (status.code === "reapproval_required") {
+      await recordMetricEvent(repoRoot, {
+        type: "approval_invalidated",
+        changeId: change.id,
+        expectedHash: status.approvedHash ?? "",
+        actualHash: status.currentHash ?? "",
+      });
+    }
+
     if (
       status.approved &&
       (change.status === "approved" ||

@@ -18,3 +18,5 @@ export * as handoff from "./handoff/index.js";
 export * from "./handoff/index.js";
 export * as mcp from "./mcp/index.js";
 export * from "./mcp/index.js";
+export * as metrics from "./metrics/index.js";
+export * from "./metrics/index.js";
