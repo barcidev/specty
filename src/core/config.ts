@@ -20,6 +20,7 @@ export const SUPPORTED_TOOLS = [
   "junie",
   "amazon-q",
   "aider",
+  "opencode",
 ] as const;
 
 export type SupportedTool = (typeof SUPPORTED_TOOLS)[number];

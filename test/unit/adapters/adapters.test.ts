@@ -13,9 +13,9 @@ import { createDefaultConfig, SUPPORTED_TOOLS, saveConfig } from "../../../src/c
 import { loadManifest } from "../../../src/core/manifest.js";
 
 describe("tool adapters registry", () => {
-  it("registers all 13 supported tools", () => {
+  it("registers all 14 supported tools", () => {
     const all = getAllAdapters();
-    expect(all).toHaveLength(13);
+    expect(all).toHaveLength(14);
 
     for (const toolId of SUPPORTED_TOOLS) {
       const adapter = getAdapter(toolId);
@@ -26,7 +26,6 @@ describe("tool adapters registry", () => {
   });
 
   it("throws for unknown tool adapter", () => {
-    // @ts-expect-error testing invalid adapter id
     expect(() => getAdapter("unknown-tool")).toThrow(/Unsupported tool/);
   });
 });
@@ -139,6 +138,100 @@ describe("individual tool adapter generation", () => {
     expect(relPaths).toContain("CONVENTIONS.md");
     expect(relPaths).toContain(".aider.conf.yml");
   });
+
+  it("generates expected files for OpenCode with MCP and AGENTS.md instructions", async () => {
+    const adapter = getAdapter("opencode");
+    expect(adapter.id).toBe("opencode");
+    expect(adapter.name).toBe("OpenCode");
+
+    const files = await adapter.generateFiles(dummyCtx);
+    expect(files).toHaveLength(1);
+    expect(files[0]?.relativePath).toBe("opencode.json");
+
+    const parsed = JSON.parse(files[0]?.content ?? "{}");
+    expect(parsed.$schema).toBe("https://opencode.ai/config.json");
+    expect(parsed.instructions).toContain("AGENTS.md");
+    expect(parsed.mcp.specty).toEqual({
+      type: "local",
+      command: ["specty", "mcp"],
+      enabled: true,
+    });
+    expect(adapter.getMcpInstructions?.("es")).toContain("opencode.json");
+    expect(adapter.getMcpInstructions?.("en")).toContain("opencode.json");
+  });
+
+  it("resolves open-code alias correctly", () => {
+    const adapter = getAdapter("open-code");
+    expect(adapter.id).toBe("opencode");
+  });
+
+  it("performs safe merge on existing opencode.json preserving custom configs", async () => {
+    const testDir = await fs.mkdtemp(path.join(os.tmpdir(), "specty-opencode-merge-"));
+    try {
+      const existingConfig = {
+        model: "ollama/llama3",
+        theme: "dark",
+        instructions: ["CUSTOM_RULES.md"],
+        mcp: {
+          existingServer: {
+            type: "remote",
+            url: "http://localhost:8080",
+          },
+        },
+      };
+      await fs.writeFile(
+        path.join(testDir, "opencode.json"),
+        JSON.stringify(existingConfig, null, 2),
+      );
+
+      const adapter = getAdapter("opencode");
+      const files = await adapter.generateFiles({
+        ...dummyCtx,
+        repoRoot: testDir,
+        enableMcp: true,
+      });
+
+      expect(files).toHaveLength(1);
+      const merged = JSON.parse(files[0]?.content ?? "{}");
+      expect(merged.model).toBe("ollama/llama3");
+      expect(merged.theme).toBe("dark");
+      expect(merged.instructions).toContain("CUSTOM_RULES.md");
+      expect(merged.instructions).toContain("AGENTS.md");
+      expect(merged.mcp.existingServer).toBeDefined();
+      expect(merged.mcp.specty).toEqual({
+        type: "local",
+        command: ["specty", "mcp"],
+        enabled: true,
+      });
+    } finally {
+      await fs.rm(testDir, { recursive: true, force: true });
+    }
+  });
+
+  it("detects and respects .opencode/opencode.json if existing", async () => {
+    const testDir = await fs.mkdtemp(path.join(os.tmpdir(), "specty-opencode-dir-"));
+    try {
+      await fs.mkdir(path.join(testDir, ".opencode"), { recursive: true });
+      await fs.writeFile(
+        path.join(testDir, ".opencode", "opencode.json"),
+        JSON.stringify({ custom: true }),
+      );
+
+      const adapter = getAdapter("opencode");
+      const files = await adapter.generateFiles({
+        ...dummyCtx,
+        repoRoot: testDir,
+        enableMcp: true,
+      });
+
+      expect(files[0]?.relativePath).toBe(".opencode/opencode.json");
+      expect(adapter.getExpectedFilePaths({ ...dummyCtx, repoRoot: testDir })).toEqual([
+        ".opencode/opencode.json",
+      ]);
+    } finally {
+      await fs.rm(testDir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("adapters CLI commands: add, remove, list", () => {
@@ -208,5 +301,30 @@ describe("adapters CLI commands: add, remove, list", () => {
   it("rejects unknown tool name", async () => {
     const res = await executeAdaptersAdd("non-existent-tool", { cwd: tmpDir });
     expect(res).toBe(false);
+  });
+
+  it("adds and removes opencode adapter via CLI commands", async () => {
+    const addSuccess = await executeAdaptersAdd("opencode", { cwd: tmpDir });
+    expect(addSuccess).toBe(true);
+
+    const configPath = path.join(tmpDir, "opencode.json");
+    expect(
+      await fs
+        .access(configPath)
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(true);
+
+    const removeSuccess = await executeAdaptersRemove("opencode", {
+      cwd: tmpDir,
+    });
+    expect(removeSuccess).toBe(true);
+
+    expect(
+      await fs
+        .access(configPath)
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(false);
   });
 });

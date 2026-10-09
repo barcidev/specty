@@ -11,6 +11,7 @@ import { copilotAdapter } from "./copilot.js";
 import { cursorAdapter } from "./cursor.js";
 import { geminiAdapter } from "./gemini.js";
 import { junieAdapter } from "./junie.js";
+import { opencodeAdapter } from "./opencode.js";
 import { rooAdapter } from "./roo.js";
 import type { AdapterContext, ToolAdapter } from "./types.js";
 import { windsurfAdapter } from "./windsurf.js";
@@ -29,12 +30,14 @@ const ADAPTERS: Record<SupportedTool, ToolAdapter> = {
   junie: junieAdapter,
   "amazon-q": amazonqAdapter,
   aider: aiderAdapter,
+  opencode: opencodeAdapter,
 };
 
 const TOOL_ALIASES: Record<string, SupportedTool> = {
   copilot: "github-copilot",
   roo: "roocode",
   amazonq: "amazon-q",
+  "open-code": "opencode",
 };
 
 export function normalizeToolId(id: string): SupportedTool | undefined {

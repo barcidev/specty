@@ -175,6 +175,7 @@ Una matriz de enrutamiento (`.specty/routing.md`) indica qué rol y qué reglas 
 | Junie (JetBrains) | `.junie/guidelines.md` |
 | Amazon Q Developer | `.amazonq/rules/` |
 | Aider | `CONVENTIONS.md` y referencia en `.aider.conf.yml` |
+| OpenCode | `opencode.json` (con servidor MCP specty) y `AGENTS.md` |
 
 Las convenciones de cada herramienta, incluida la ubicación de su configuración MCP, cambian; el implementador debe verificarlas todas antes de generar. Una herramienta nueva se agrega con un adaptador (`specty adapters add`).
 

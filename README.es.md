@@ -27,7 +27,7 @@ Los asistentes de programación actuales (Claude Code, Cursor, Copilot, Antigrav
 
 ## ⚡ Características Principales
 
-- **13 Asistentes de IA Compatibles:** Fuente única de verdad en `.specty/rules/` sincronizada automáticamente hacia todas las herramientas.
+- **14 Asistentes de IA Compatibles:** Fuente única de verdad en `.specty/rules/` sincronizada automáticamente hacia todas las herramientas.
 - **Motor Dual de Especificaciones:** Compatibilidad total con `@fission-ai/openspec` (1.14.1) y un motor nativo `builtin` sin dependencias externas.
 - **Hashing Determinístico SHA-256:** Normaliza inteligentemente las listas de tareas (`- [x]` a `- [ ]`), garantizando que marcar tareas como completadas durante la implementación nunca invalide la aprobación humana previa.
 - **Servidor MCP Local (Model Context Protocol):** Servidor JSON-RPC 2.0 sobre stdio con 7 herramientas nativas y grafo SQLite de símbolos y dependencias en memoria/disco con `node:sqlite`.
@@ -86,7 +86,7 @@ specty init -y --tool antigravity,claude,cursor --lang es
 | `specty handoff show`  | Muestra los detalles de un handoff específico. |
 | `specty mcp`           | Inicia el servidor MCP local sobre stdio. |
 | `specty metrics`       | Muestra métricas de cumplimiento, tasa de aprobación y traspasos entre agentes. |
-| `specty adapters list` | Lista los 13 asistentes de IA compatibles y su estado de habilitación. |
+| `specty adapters list` | Lista los 14 asistentes de IA compatibles y su estado de habilitación. |
 | `specty adapters add <herramienta>` | Habilita y genera archivos de adaptación para un asistente. |
 | `specty adapters remove <herramienta>` | Deshabilita y limpia archivos para un asistente. |
 | `specty hooks install` | Instala el hook `.git/hooks/pre-commit` para prevenir commits sin aprobación. |
@@ -94,7 +94,7 @@ specty init -y --tool antigravity,claude,cursor --lang es
 
 ---
 
-## 🤖 13 Adaptadores de Asistentes de IA
+## 🤖 14 Adaptadores de Asistentes de IA
 
 `specty` centraliza y distribuye reglas hacia los principales entornos de desarrollo:
 
@@ -111,6 +111,7 @@ specty init -y --tool antigravity,claude,cursor --lang es
 - **Junie:** `.junie/guidelines.md`
 - **Amazon Q Developer:** `.amazonq/rules.md`
 - **Aider:** `.aider.conf.yml`, `.aider.model.metadata.json`
+- **OpenCode:** `opencode.json`, `AGENTS.md`
 
 ---
 

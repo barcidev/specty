@@ -27,7 +27,7 @@ Modern AI coding agents (Claude Code, Cursor, Copilot, Antigravity, Windsurf, Ro
 
 ## ⚡ Key Highlights
 
-- **13 Supported AI Assistants:** Single source of truth in `.specty/rules/` synchronized to all tools.
+- **14 Supported AI Assistants:** Single source of truth in `.specty/rules/` synchronized to all tools.
 - **Dual Spec Engine:** Full backward compatibility with `@fission-ai/openspec` (1.14.1) and a standalone zero-dependency `builtin` engine.
 - **Deterministic Content Hashing:** SHA-256 specification hash that smartly normalizes checklist tasks (`- [x]` to `- [ ]`), so checking off completed work never invalidates prior human approvals.
 - **Local Model Context Protocol (MCP) Server:** Native stdio JSON-RPC 2.0 server with 7 governance tools and an in-process SQLite dependency and symbol graph (powered by `node:sqlite`).
@@ -88,7 +88,7 @@ specty init -y --tool antigravity,claude,cursor --lang en
 | `specty handoff show` | Displays markdown content of a handoff. |
 | `specty mcp` | Starts the stdio Model Context Protocol (MCP) server. |
 | `specty metrics` | Displays governance compliance, pass rates, and handoff statistics. |
-| `specty adapters list` | Lists all 13 supported AI assistants and their enabled state. |
+| `specty adapters list` | Lists all 14 supported AI assistants and their enabled state. |
 | `specty adapters add <tool>` | Enables and generates configuration files for an assistant tool. |
 | `specty adapters remove <tool>`| Disables and cleans up adapter files for an assistant tool. |
 | `specty hooks install` | Installs `.git/hooks/pre-commit` to prevent unauthorized source code commits. |
@@ -96,7 +96,7 @@ specty init -y --tool antigravity,claude,cursor --lang en
 
 ---
 
-## 🤖 13 AI Assistant Adapters
+## 🤖 14 AI Assistant Adapters
 
 `specty` manages configurations for all major AI coding tools from a single centralized rulebase:
 
@@ -115,6 +115,7 @@ specty init -y --tool antigravity,claude,cursor --lang en
 | **Junie** | `.junie/guidelines.md` |
 | **Amazon Q Developer**| `.amazonq/rules.md` |
 | **Aider** | `.aider.conf.yml`, `.aider.model.metadata.json` |
+| **OpenCode** | `opencode.json`, `AGENTS.md` |
 
 ---
 
