@@ -9,6 +9,7 @@ export * from "./continue.js";
 export * from "./copilot.js";
 export * from "./cursor.js";
 export * from "./gemini.js";
+export * from "./jsonc.js";
 export * from "./junie.js";
 export * from "./opencode.js";
 export * from "./registry.js";
