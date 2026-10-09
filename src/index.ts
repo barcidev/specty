@@ -16,3 +16,5 @@ export * as governance from "./governance/index.js";
 export * from "./governance/index.js";
 export * as handoff from "./handoff/index.js";
 export * from "./handoff/index.js";
+export * as mcp from "./mcp/index.js";
+export * from "./mcp/index.js";

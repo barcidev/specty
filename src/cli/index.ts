@@ -233,4 +233,17 @@ handoffCmd
     }
   });
 
+program
+  .command("mcp")
+  .description("start the local Model Context Protocol (MCP) server over stdio")
+  .action(async () => {
+    try {
+      const { executeMcp } = await import("./commands/mcp.js");
+      await executeMcp();
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 program.parse(process.argv);
