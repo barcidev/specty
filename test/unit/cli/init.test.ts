@@ -62,7 +62,7 @@ describe("cli/commands/init", () => {
   });
 
   it("filters specific tools when --tool is provided", async () => {
-    const res = await executeInit({
+    await executeInit({
       yes: true,
       tool: "claude,cursor",
       cwd: tempDir,
@@ -73,7 +73,7 @@ describe("cli/commands/init", () => {
   });
 
   it("disables hooks, ci, and mcp when flags are passed", async () => {
-    const res = await executeInit({
+    await executeInit({
       yes: true,
       hooks: false,
       ci: false,
@@ -88,7 +88,7 @@ describe("cli/commands/init", () => {
   });
 
   it("supports --spec-engine builtin", async () => {
-    const res = await executeInit({
+    await executeInit({
       yes: true,
       specEngine: "builtin",
       cwd: tempDir,

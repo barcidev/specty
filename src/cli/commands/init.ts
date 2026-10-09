@@ -11,6 +11,7 @@ import { getDictionary, normalizeLanguage, type SupportedLanguage } from "../../
 import { logger } from "../../core/logger.js";
 import { defaultDetectorRegistry } from "../../detect/detector-registry.js";
 import type { RepositoryDetectionResult, SupportedLanguageId } from "../../detect/types.js";
+import { generateProjectInfrastructure } from "../../generate/index.js";
 import { runInteractiveInit } from "./init-prompts.js";
 import type { InitCommandOptions, InitFlowResult } from "./init-types.js";
 
@@ -100,6 +101,15 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
       await saveConfig(repoRoot, config);
     }
 
+    await generateProjectInfrastructure({
+      repoRoot,
+      config,
+      language,
+      dryRun: Boolean(options.dryRun),
+      primaryLanguage: inferredLanguage,
+      frameworks: primaryScope?.stack.frameworks,
+    });
+
     const dict = getDictionary(language);
     logger.success(dict.init.success);
 
@@ -127,6 +137,13 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
 
   if (!result.dryRun) {
     await saveConfig(repoRoot, result.config);
+    await generateProjectInfrastructure({
+      repoRoot,
+      config: result.config,
+      language: result.language,
+      dryRun: false,
+      primaryLanguage: result.inferredStack,
+    });
   }
 
   return result;

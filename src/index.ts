@@ -7,3 +7,6 @@ export * from "./core/index.js";
 
 export * as detect from "./detect/index.js";
 export * from "./detect/index.js";
+
+export * as generate from "./generate/index.js";
+export * from "./generate/index.js";
