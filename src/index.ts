@@ -12,3 +12,5 @@ export * as engines from "./engines/index.js";
 export * from "./engines/index.js";
 export * as generate from "./generate/index.js";
 export * from "./generate/index.js";
+export * as governance from "./governance/index.js";
+export * from "./governance/index.js";

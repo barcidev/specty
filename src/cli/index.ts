@@ -74,4 +74,20 @@ adaptersCmd
     }
   });
 
+program
+  .command("approve [change]")
+  .description("review and approve an active specification change with content hashing")
+  .option("-y, --yes", "approve without interactive confirmation prompt")
+  .option("--dry-run", "preview approval without writing metadata")
+  .option("--user <name>", "approver name (defaults to current user)")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeApprove } = await import("./commands/approve.js");
+      await executeApprove(change, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 program.parse(process.argv);
