@@ -37,7 +37,14 @@
     "mcp"
   ],
   "author": "Jorge Palacio",
-  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/barcidev/specty.git"
+  },
+  "bugs": {
+    "url": "https://github.com/barcidev/specty/issues"
+  },
+  "homepage": "https://github.com/barcidev/specty#readme",
   "dependencies": {
     "@clack/prompts": "^1.8.1",
     "@fission-ai/openspec": "1.14.1",
@@ -46,6 +53,7 @@
     "execa": "^9.5.2",
     "fast-glob": "^3.3.3",
     "ignore": "^7.0.5",
+    "picocolors": "^1.1.1",
     "yaml": "^2.8.3",
     "zod": "^4.4.3"
   },

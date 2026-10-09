@@ -1,8 +1,14 @@
 import fs from "node:fs/promises";
+import { createRequire } from "node:module";
 import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
+import type { DatabaseSync as DatabaseSyncType } from "node:sqlite";
 import fg from "fast-glob";
 import { computeShortHash } from "../core/markers.js";
+
+const nodeRequire = createRequire(import.meta.url);
+const { DatabaseSync } = nodeRequire("node:sqlite") as {
+  DatabaseSync: typeof DatabaseSyncType;
+};
 
 export interface SymbolRecord {
   id: string;
@@ -18,7 +24,7 @@ export interface DependencyRecord {
 }
 
 export class CodeGraph {
-  private db: DatabaseSync;
+  private db: DatabaseSyncType;
 
   constructor(dbPath: string = ":memory:") {
     this.db = new DatabaseSync(dbPath);
