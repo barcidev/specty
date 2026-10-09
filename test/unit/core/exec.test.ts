@@ -11,7 +11,7 @@ describe("core/exec", () => {
   });
 
   it("captures failure exit codes and errors cleanly", async () => {
-    const res = await executeCommand("node -e 'process.exit(1)'", { silent: true });
+    const res = await executeCommand('node -e "process.exit(1)"', { silent: true });
     expect(res.success).toBe(false);
     expect(res.exitCode).toBe(1);
   });

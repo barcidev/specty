@@ -50,7 +50,7 @@ export async function getStagedFiles(cwd: string): Promise<string[]> {
     const result = await execa("git", ["diff", "--cached", "--name-only"], { cwd });
     const lines = result.stdout
       .split("\n")
-      .map((l) => l.trim())
+      .map((l) => l.trim().replace(/\\/g, "/"))
       .filter((l) => l.length > 0);
     return lines;
   } catch {
@@ -63,7 +63,7 @@ export async function getModifiedFiles(cwd: string, baseRef = "HEAD"): Promise<s
     const result = await execa("git", ["diff", "--name-only", baseRef], { cwd });
     const lines = result.stdout
       .split("\n")
-      .map((l) => l.trim())
+      .map((l) => l.trim().replace(/\\/g, "/"))
       .filter((l) => l.length > 0);
     return lines;
   } catch {

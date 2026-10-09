@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { execa } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createDefaultConfig, saveConfig } from "../../../src/core/config.js";
-import { executeCommand } from "../../../src/core/exec.js";
 import { initGitRepo } from "../../../src/core/git.js";
 import { BuiltinSpecEngine } from "../../../src/engines/builtin.js";
 import { approveChange } from "../../../src/governance/approvals.js";
@@ -38,15 +38,10 @@ describe("governance check-approval gate", () => {
     // Initial commit so HEAD exists
     await fs.mkdir(path.join(tmpDir, "src"), { recursive: true });
     await fs.writeFile(path.join(tmpDir, "src/index.ts"), "export const x = 1;\n");
-    await executeCommand("git config user.name 'Specty Tester'", { cwd: tmpDir, silent: true });
-    await executeCommand("git config user.email 'tester@specty.local'", {
-      cwd: tmpDir,
-      silent: true,
-    });
-    await executeCommand("git add . && git commit -m 'initial commit'", {
-      cwd: tmpDir,
-      silent: true,
-    });
+    await execa("git", ["config", "user.name", "Specty Tester"], { cwd: tmpDir });
+    await execa("git", ["config", "user.email", "tester@specty.local"], { cwd: tmpDir });
+    await execa("git", ["add", "."], { cwd: tmpDir });
+    await execa("git", ["commit", "-m", "initial commit"], { cwd: tmpDir });
 
     engine = new BuiltinSpecEngine();
     await engine.init(tmpDir);
@@ -59,7 +54,7 @@ describe("governance check-approval gate", () => {
 
   it("passes when modifying non-governed / exempt files (e.g. README.md)", async () => {
     await fs.writeFile(path.join(tmpDir, "README.md"), "# Docs\n");
-    await executeCommand("git add README.md", { cwd: tmpDir, silent: true });
+    await execa("git", ["add", "README.md"], { cwd: tmpDir });
 
     const result = await checkApprovalGate(tmpDir, { stagedOnly: true });
     expect(result.passed).toBe(true);
@@ -68,7 +63,7 @@ describe("governance check-approval gate", () => {
 
   it("fails when modifying source files without an approved change", async () => {
     await fs.writeFile(path.join(tmpDir, "src/index.ts"), "export const x = 2;\n");
-    await executeCommand("git add src/index.ts", { cwd: tmpDir, silent: true });
+    await execa("git", ["add", "src/index.ts"], { cwd: tmpDir });
 
     const result = await checkApprovalGate(tmpDir, { stagedOnly: true });
     expect(result.passed).toBe(false);
@@ -83,7 +78,7 @@ describe("governance check-approval gate", () => {
 
     // 2. Modify source code
     await fs.writeFile(path.join(tmpDir, "src/index.ts"), "export const x = 99;\n");
-    await executeCommand("git add src/index.ts", { cwd: tmpDir, silent: true });
+    await execa("git", ["add", "src/index.ts"], { cwd: tmpDir });
 
     const result = await checkApprovalGate(tmpDir, { stagedOnly: true });
     expect(result.passed).toBe(true);
@@ -94,7 +89,7 @@ describe("governance check-approval gate", () => {
     process.env.SPECTY_BYPASS = "1";
 
     await fs.writeFile(path.join(tmpDir, "src/index.ts"), "export const hotfix = true;\n");
-    await executeCommand("git add src/index.ts", { cwd: tmpDir, silent: true });
+    await execa("git", ["add", "src/index.ts"], { cwd: tmpDir });
 
     const result = await checkApprovalGate(tmpDir, {
       stagedOnly: true,

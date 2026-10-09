@@ -38,7 +38,7 @@ export async function checkApprovalGate(
   const diffRes = await executeCommand(gitCmd, { cwd: repoRoot, silent: true });
   let modifiedFiles = diffRes.stdout
     .split("\n")
-    .map((f) => f.trim())
+    .map((f) => f.trim().replace(/\\/g, "/"))
     .filter(Boolean);
 
   // Fallback to git status --porcelain if working tree check is needed
@@ -49,7 +49,7 @@ export async function checkApprovalGate(
     });
     modifiedFiles = statusRes.stdout
       .split("\n")
-      .map((line) => line.slice(3).trim())
+      .map((line) => line.slice(3).trim().replace(/\\/g, "/"))
       .filter(Boolean);
   }
 

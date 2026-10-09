@@ -24,7 +24,11 @@ export async function installGitHooks(repoRoot: string): Promise<boolean> {
 
   const hookFile = path.join(hooksDir, PRE_COMMIT_HOOK_NAME);
   await fs.writeFile(hookFile, HOOK_SCRIPT, { mode: 0o755 });
-  await fs.chmod(hookFile, 0o755);
+  try {
+    await fs.chmod(hookFile, 0o755);
+  } catch {
+    // fs.chmod may fail on Windows NTFS filesystems, ignore
+  }
 
   return true;
 }
