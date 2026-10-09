@@ -1,0 +1,60 @@
+{
+  "name": "@barcidev/specty",
+  "version": "0.1.0",
+  "description": "Specification-driven AI assistant governance and scaffolding CLI",
+  "type": "module",
+  "bin": {
+    "specty": "./dist/cli/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "templates",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src test",
+    "format": "biome format --write src test",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm run test"
+  },
+  "keywords": [
+    "ai",
+    "governance",
+    "specs",
+    "openspec",
+    "cli",
+    "agents",
+    "mcp"
+  ],
+  "author": "Jorge Palacio",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "@clack/prompts": "^1.8.1",
+    "@fission-ai/openspec": "1.14.1",
+    "commander": "^14.0.0",
+    "diff": "^9.0.0",
+    "execa": "^9.5.2",
+    "fast-glob": "^3.3.3",
+    "ignore": "^7.0.5",
+    "yaml": "^2.8.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@types/diff": "^7.0.0",
+    "@types/node": "^22.13.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.0",
+    "vitest": "^3.0.0"
+  }
+}

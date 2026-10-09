@@ -1,0 +1,38 @@
+# Node
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build and test
+coverage/
+*.tsbuildinfo
+.vitest/
+
+# Specty local state & graph
+.specty/graph/
+.specty/metrics/
+.specty/backups/
+.specty/state/
+
+# OpenSpec local changes in development
+openspec/changes/*
+!openspec/changes/.gitkeep
+openspec/changes/archive/*
+!openspec/changes/archive/.gitkeep
+
+# IDEs & OS
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln.docstates
