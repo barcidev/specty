@@ -73,4 +73,15 @@ export async function getModifiedFiles(cwd: string, baseRef = "HEAD"): Promise<s
 
 export async function initGitRepo(cwd: string, branch = "main"): Promise<void> {
   await execa("git", ["init", "-b", branch], { cwd });
+  try {
+    const user = await getGitUser(cwd);
+    if (!user.name) {
+      await execa("git", ["config", "user.name", "specty"], { cwd });
+    }
+    if (!user.email) {
+      await execa("git", ["config", "user.email", "specty@local"], { cwd });
+    }
+  } catch {
+    // ignore
+  }
 }

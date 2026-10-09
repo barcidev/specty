@@ -38,6 +38,11 @@ describe("governance check-approval gate", () => {
     // Initial commit so HEAD exists
     await fs.mkdir(path.join(tmpDir, "src"), { recursive: true });
     await fs.writeFile(path.join(tmpDir, "src/index.ts"), "export const x = 1;\n");
+    await executeCommand("git config user.name 'Specty Tester'", { cwd: tmpDir, silent: true });
+    await executeCommand("git config user.email 'tester@specty.local'", {
+      cwd: tmpDir,
+      silent: true,
+    });
     await executeCommand("git add . && git commit -m 'initial commit'", {
       cwd: tmpDir,
       silent: true,
