@@ -1,0 +1,76 @@
+import { execa } from "execa";
+
+export interface GitUserInfo {
+  name: string | null;
+  email: string | null;
+}
+
+export async function isInsideGitRepo(cwd: string): Promise<boolean> {
+  try {
+    const result = await execa("git", ["rev-parse", "--is-inside-work-tree"], { cwd });
+    return result.stdout.trim() === "true";
+  } catch {
+    return false;
+  }
+}
+
+export async function getCurrentBranch(cwd: string): Promise<string | null> {
+  try {
+    const result = await execa("git", ["branch", "--show-current"], { cwd });
+    const branch = result.stdout.trim();
+    return branch.length > 0 ? branch : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getGitUser(cwd: string): Promise<GitUserInfo> {
+  let name: string | null = null;
+  let email: string | null = null;
+
+  try {
+    const nameResult = await execa("git", ["config", "user.name"], { cwd });
+    name = nameResult.stdout.trim() || null;
+  } catch {
+    // ignore
+  }
+
+  try {
+    const emailResult = await execa("git", ["config", "user.email"], { cwd });
+    email = emailResult.stdout.trim() || null;
+  } catch {
+    // ignore
+  }
+
+  return { name, email };
+}
+
+export async function getStagedFiles(cwd: string): Promise<string[]> {
+  try {
+    const result = await execa("git", ["diff", "--cached", "--name-only"], { cwd });
+    const lines = result.stdout
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+    return lines;
+  } catch {
+    return [];
+  }
+}
+
+export async function getModifiedFiles(cwd: string, baseRef = "HEAD"): Promise<string[]> {
+  try {
+    const result = await execa("git", ["diff", "--name-only", baseRef], { cwd });
+    const lines = result.stdout
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+    return lines;
+  } catch {
+    return [];
+  }
+}
+
+export async function initGitRepo(cwd: string, branch = "main"): Promise<void> {
+  await execa("git", ["init", "-b", branch], { cwd });
+}
