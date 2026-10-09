@@ -1,4 +1,5 @@
 import path from "node:path";
+import { generateAllSelectedTools } from "../adapters/index.js";
 import { SafeFileWriter } from "../core/fs-writer.js";
 import { loadManifest, saveManifest, updateManifestEntry } from "../core/manifest.js";
 import { computeShortHash } from "../core/markers.js";
@@ -127,6 +128,16 @@ export async function generateProjectInfrastructure(
       description: `Spec template: ${tmpl}`,
     });
   }
+
+  // 9. Selected AI tools adapters
+  const toolFiles = await generateAllSelectedTools({
+    repoRoot: ctx.repoRoot,
+    config: ctx.config,
+    language: lang,
+    enableMcp: Boolean(ctx.config.mcp.enabled),
+    dryRun: ctx.dryRun,
+  });
+  files.push(...toolFiles);
 
   let writtenCount = 0;
   let skippedCount = 0;

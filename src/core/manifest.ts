@@ -57,3 +57,12 @@ export function updateManifestEntry(manifest: SpectyManifest, entry: ManifestFil
     path: normalizedPath,
   };
 }
+
+export function removeManifestEntry(manifest: SpectyManifest, filePath: string): boolean {
+  const normalizedPath = normalizePath(filePath);
+  if (normalizedPath in manifest.files) {
+    delete manifest.files[normalizedPath];
+    return true;
+  }
+  return false;
+}

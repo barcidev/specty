@@ -1,0 +1,212 @@
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { getAdapter, getAllAdapters } from "../../../src/adapters/registry.js";
+import type { AdapterContext } from "../../../src/adapters/types.js";
+import {
+  executeAdaptersAdd,
+  executeAdaptersList,
+  executeAdaptersRemove,
+} from "../../../src/cli/commands/adapters.js";
+import { createDefaultConfig, SUPPORTED_TOOLS, saveConfig } from "../../../src/core/config.js";
+import { loadManifest } from "../../../src/core/manifest.js";
+
+describe("tool adapters registry", () => {
+  it("registers all 13 supported tools", () => {
+    const all = getAllAdapters();
+    expect(all).toHaveLength(13);
+
+    for (const toolId of SUPPORTED_TOOLS) {
+      const adapter = getAdapter(toolId);
+      expect(adapter).toBeDefined();
+      expect(adapter.id).toBe(toolId);
+      expect(adapter.name.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("throws for unknown tool adapter", () => {
+    // @ts-expect-error testing invalid adapter id
+    expect(() => getAdapter("unknown-tool")).toThrow(/Unsupported tool/);
+  });
+});
+
+describe("individual tool adapter generation", () => {
+  const dummyCtx: AdapterContext = {
+    repoRoot: "/test",
+    config: createDefaultConfig(),
+    language: "es",
+    enableMcp: true,
+  };
+
+  it("generates expected files for Antigravity", async () => {
+    const adapter = getAdapter("antigravity");
+    const files = await adapter.generateFiles(dummyCtx);
+    expect(files).toHaveLength(1);
+    expect(files[0]?.relativePath).toBe(".agent/rules/specty.md");
+    expect(files[0]?.content).toContain("AGENTS.md");
+    expect(adapter.getMcpInstructions?.("es")).toContain("Antigravity");
+  });
+
+  it("generates expected files for Claude Code with subagents and MCP", async () => {
+    const adapter = getAdapter("claude");
+    const files = await adapter.generateFiles(dummyCtx);
+    const relPaths = files.map((f) => f.relativePath);
+
+    expect(relPaths).toContain("CLAUDE.md");
+    expect(relPaths).toContain(".claude/settings.json");
+    expect(relPaths).toContain(".claude/agents/orchestrator.md");
+    expect(relPaths).toContain(".claude/agents/frontend.md");
+    expect(relPaths).toContain(".claude/agents/backend.md");
+    expect(relPaths).toContain(".mcp.json");
+  });
+
+  it("generates expected files for Cursor with MDC and MCP", async () => {
+    const adapter = getAdapter("cursor");
+    const files = await adapter.generateFiles(dummyCtx);
+    const relPaths = files.map((f) => f.relativePath);
+
+    expect(relPaths).toContain(".cursor/rules/specty.mdc");
+    expect(relPaths).toContain(".cursor/mcp.json");
+    const mdc = files.find((f) => f.relativePath === ".cursor/rules/specty.mdc");
+    expect(mdc?.content).toContain("---");
+    expect(mdc?.content).toContain("alwaysApply: true");
+  });
+
+  it("generates expected files for Copilot with VS Code MCP", async () => {
+    const adapter = getAdapter("copilot");
+    const files = await adapter.generateFiles(dummyCtx);
+    const relPaths = files.map((f) => f.relativePath);
+
+    expect(relPaths).toContain(".github/copilot-instructions.md");
+    expect(relPaths).toContain(".vscode/mcp.json");
+  });
+
+  it("generates expected files for Windsurf", async () => {
+    const adapter = getAdapter("windsurf");
+    const files = await adapter.generateFiles(dummyCtx);
+    expect(files[0]?.relativePath).toBe(".windsurf/rules/specty.md");
+    expect(adapter.getMcpInstructions?.("es")).toContain("Windsurf");
+  });
+
+  it("generates expected files for Codex CLI (reads AGENTS.md natively)", async () => {
+    const adapter = getAdapter("codex");
+    const files = await adapter.generateFiles(dummyCtx);
+    expect(files).toHaveLength(0);
+  });
+
+  it("generates expected files for Gemini CLI", async () => {
+    const adapter = getAdapter("gemini");
+    const files = await adapter.generateFiles(dummyCtx);
+    expect(files[0]?.relativePath).toBe("GEMINI.md");
+    expect(files[0]?.content).toContain("AGENTS.md");
+  });
+
+  it("generates expected files for Cline", async () => {
+    const adapter = getAdapter("cline");
+    const files = await adapter.generateFiles(dummyCtx);
+    expect(files[0]?.relativePath).toBe(".clinerules/specty.md");
+  });
+
+  it("generates expected files for Roo Code", async () => {
+    const adapter = getAdapter("roo");
+    const files = await adapter.generateFiles(dummyCtx);
+    expect(files[0]?.relativePath).toBe(".roo/rules/specty.md");
+  });
+
+  it("generates expected files for Continue", async () => {
+    const adapter = getAdapter("continue");
+    const files = await adapter.generateFiles(dummyCtx);
+    expect(files[0]?.relativePath).toBe(".continue/rules/specty.md");
+  });
+
+  it("generates expected files for Junie", async () => {
+    const adapter = getAdapter("junie");
+    const files = await adapter.generateFiles(dummyCtx);
+    expect(files[0]?.relativePath).toBe(".junie/guidelines.md");
+  });
+
+  it("generates expected files for Amazon Q Developer", async () => {
+    const adapter = getAdapter("amazonq");
+    const files = await adapter.generateFiles(dummyCtx);
+    expect(files[0]?.relativePath).toBe(".amazonq/rules/specty.md");
+  });
+
+  it("generates expected files for Aider", async () => {
+    const adapter = getAdapter("aider");
+    const files = await adapter.generateFiles(dummyCtx);
+    const relPaths = files.map((f) => f.relativePath);
+    expect(relPaths).toContain("CONVENTIONS.md");
+    expect(relPaths).toContain(".aider.conf.yml");
+  });
+});
+
+describe("adapters CLI commands: add, remove, list", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "specty-adapters-cmd-"));
+    const config = createDefaultConfig({
+      tools: ["gemini"],
+    });
+    await saveConfig(tmpDir, config);
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("lists adapters without throwing", async () => {
+    await expect(executeAdaptersList({ cwd: tmpDir })).resolves.not.toThrow();
+  });
+
+  it("adds a tool adapter and scaffolds its files", async () => {
+    const success = await executeAdaptersAdd("cursor", { cwd: tmpDir });
+    expect(success).toBe(true);
+
+    const mdcPath = path.join(tmpDir, ".cursor/rules/specty.mdc");
+    const exists = await fs
+      .access(mdcPath)
+      .then(() => true)
+      .catch(() => false);
+    expect(exists).toBe(true);
+
+    const manifest = await loadManifest(tmpDir);
+    expect(manifest.files[".cursor/rules/specty.mdc"]).toBeDefined();
+  });
+
+  it("removes a tool adapter and cleans up its files", async () => {
+    // First add cursor
+    await executeAdaptersAdd("cursor", { cwd: tmpDir });
+    const mdcPath = path.join(tmpDir, ".cursor/rules/specty.mdc");
+    expect(
+      await fs
+        .access(mdcPath)
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(true);
+
+    // Now remove cursor
+    const success = await executeAdaptersRemove("cursor", { cwd: tmpDir });
+    expect(success).toBe(true);
+
+    const existsAfter = await fs
+      .access(mdcPath)
+      .then(() => true)
+      .catch(() => false);
+    expect(existsAfter).toBe(false);
+
+    const manifest = await loadManifest(tmpDir);
+    expect(manifest.files[".cursor/rules/specty.mdc"]).toBeUndefined();
+  });
+
+  it("handles adding already enabled tool gracefully", async () => {
+    const res = await executeAdaptersAdd("gemini", { cwd: tmpDir });
+    expect(res).toBe(true);
+  });
+
+  it("rejects unknown tool name", async () => {
+    const res = await executeAdaptersAdd("non-existent-tool", { cwd: tmpDir });
+    expect(res).toBe(false);
+  });
+});

@@ -31,4 +31,47 @@ program
     }
   });
 
+const adaptersCmd = program.command("adapters").description("manage AI assistant tool adapters");
+
+adaptersCmd
+  .command("list")
+  .description("list all supported AI tools and their enablement status")
+  .action(async () => {
+    try {
+      const { executeAdaptersList } = await import("./commands/adapters.js");
+      await executeAdaptersList();
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+adaptersCmd
+  .command("add <tool>")
+  .description("enable and scaffold files for an AI assistant tool")
+  .option("--dry-run", "preview changes without writing files")
+  .action(async (tool: string, options) => {
+    try {
+      const { executeAdaptersAdd } = await import("./commands/adapters.js");
+      await executeAdaptersAdd(tool, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+adaptersCmd
+  .command("remove <tool>")
+  .description("disable and remove files for an AI assistant tool")
+  .option("--dry-run", "preview changes without writing files")
+  .action(async (tool: string, options) => {
+    try {
+      const { executeAdaptersRemove } = await import("./commands/adapters.js");
+      await executeAdaptersRemove(tool, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 program.parse(process.argv);
