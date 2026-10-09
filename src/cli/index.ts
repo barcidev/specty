@@ -90,4 +90,49 @@ program
     }
   });
 
+program
+  .command("status")
+  .description("show project status, active scopes, configured tools, and changes")
+  .option("--json", "output status as JSON")
+  .action(async (options) => {
+    try {
+      const { executeStatus } = await import("./commands/status.js");
+      await executeStatus(options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("sync")
+  .description("synchronize AI tool configs and rules with current project configuration")
+  .option("--dry-run", "preview changes without writing files")
+  .action(async (options) => {
+    try {
+      const { executeSync } = await import("./commands/sync.js");
+      await executeSync(options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("doctor")
+  .description("verify repository setup, detect drift, and inspect tool health")
+  .option("--fix", "attempt automatic repairs for missing tool files and manifest")
+  .action(async (options) => {
+    try {
+      const { executeDoctor } = await import("./commands/doctor.js");
+      const report = await executeDoctor(options);
+      if (!report.healthy) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 program.parse(process.argv);
