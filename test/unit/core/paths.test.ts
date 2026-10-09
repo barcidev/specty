@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { assertSafeRepoPath, isSensitivePath, normalizePath } from "../../../src/core/paths.js";
 
@@ -7,13 +8,13 @@ describe("core/paths", () => {
   });
 
   it("permits safe paths inside repo root", () => {
-    const root = "/fake/repo";
+    const root = path.resolve("/fake/repo");
     const target = assertSafeRepoPath(root, "src/index.ts");
-    expect(normalizePath(target)).toBe("/fake/repo/src/index.ts");
+    expect(normalizePath(target)).toBe(normalizePath(path.join(root, "src/index.ts")));
   });
 
   it("throws on path traversal outside repo root", () => {
-    const root = "/fake/repo";
+    const root = path.resolve("/fake/repo");
     expect(() => assertSafeRepoPath(root, "../secret.txt")).toThrow("Security error");
     expect(() => assertSafeRepoPath(root, "../../etc/passwd")).toThrow("Security error");
   });
