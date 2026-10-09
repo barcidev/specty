@@ -4,3 +4,6 @@ export const BINARY_NAME = "specty";
 
 export * as core from "./core/index.js";
 export * from "./core/index.js";
+
+export * as detect from "./detect/index.js";
+export * from "./detect/index.js";

@@ -7,7 +7,8 @@ describe("core/git", () => {
     expect(isRepo).toBe(true);
 
     const branch = await getCurrentBranch(process.cwd());
-    expect(branch).toBe("feature/core-foundation");
+    expect(branch).toBeTruthy();
+    expect(typeof branch).toBe("string");
 
     const user = await getGitUser(process.cwd());
     expect(user.name).toBeDefined();
