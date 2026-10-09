@@ -135,4 +135,53 @@ program
     }
   });
 
+program
+  .command("check-approval")
+  .description("verify that modified source files have an active approved specification change")
+  .option("--staged", "check only staged Git changes (for pre-commit hooks)")
+  .option("--bypass <reason>", "explicit emergency bypass reason (logged for audit)")
+  .action(async (options) => {
+    try {
+      const { executeCheckApproval } = await import("./commands/check-approval.js");
+      const passed = await executeCheckApproval(options);
+      if (!passed) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+const hooksCmd = program.command("hooks").description("manage Git pre-commit governance hooks");
+
+hooksCmd
+  .command("install")
+  .description("install pre-commit hook enforcing specification approval")
+  .action(async () => {
+    try {
+      const { executeHooksInstall } = await import("./commands/hooks.js");
+      const success = await executeHooksInstall();
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+hooksCmd
+  .command("uninstall")
+  .description("uninstall pre-commit hook")
+  .action(async () => {
+    try {
+      const { executeHooksUninstall } = await import("./commands/hooks.js");
+      await executeHooksUninstall();
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 program.parse(process.argv);
