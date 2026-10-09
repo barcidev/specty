@@ -14,3 +14,5 @@ export * as generate from "./generate/index.js";
 export * from "./generate/index.js";
 export * as governance from "./governance/index.js";
 export * from "./governance/index.js";
+export * as handoff from "./handoff/index.js";
+export * from "./handoff/index.js";

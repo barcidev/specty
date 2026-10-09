@@ -184,4 +184,53 @@ hooksCmd
     }
   });
 
+const handoffCmd = program
+  .command("handoff")
+  .description("manage agent session handoffs across sequential transitions");
+
+handoffCmd
+  .command("create <change>")
+  .description("record a new sub-agent session handoff document")
+  .option("--from <role>", "source sub-agent role (e.g. orchestrator, backend)")
+  .option("--to <role>", "destination sub-agent role (e.g. backend, testing)")
+  .option("--tasks <list>", "comma-separated list of completed tasks")
+  .option("--files <list>", "comma-separated list of modified files")
+  .option("--decisions <list>", "comma-separated list of architectural decisions")
+  .option("--notes <text>", "contextual notes or blocker diagnostics")
+  .action(async (change: string, options) => {
+    try {
+      const { executeHandoffCreate } = await import("./commands/handoff.js");
+      await executeHandoffCreate(change, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+handoffCmd
+  .command("list <change>")
+  .description("list all recorded handoffs for a specification change")
+  .action(async (change: string) => {
+    try {
+      const { executeHandoffList } = await import("./commands/handoff.js");
+      await executeHandoffList(change);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+handoffCmd
+  .command("show <change> [id]")
+  .description("display details of a specific handoff or the latest one")
+  .action(async (change: string, id: string | undefined) => {
+    try {
+      const { executeHandoffShow } = await import("./commands/handoff.js");
+      await executeHandoffShow(change, id);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 program.parse(process.argv);
