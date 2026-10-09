@@ -67,6 +67,20 @@ export const GovernanceSchema = z.object({
     }),
 });
 
+export const McpGraphProviderSchema = z
+  .enum(["codebase-memory", "builtin"])
+  .default("codebase-memory");
+
+export type McpGraphProvider = z.infer<typeof McpGraphProviderSchema>;
+
+export const CodebaseMemoryConfigSchema = z.object({
+  command: z.string().default("codebase-memory-mcp"),
+  args: z.array(z.string()).default([]),
+  auto_index: z.boolean().default(true),
+});
+
+export type CodebaseMemoryConfig = z.infer<typeof CodebaseMemoryConfigSchema>;
+
 export const McpGraphSchema = z.object({
   max_file_kb: z.number().default(512),
   exclude: z.array(z.string()).default([]),
@@ -74,6 +88,8 @@ export const McpGraphSchema = z.object({
 
 export const McpConfigSchema = z.object({
   enabled: z.boolean().default(true),
+  graph_provider: McpGraphProviderSchema.default("codebase-memory"),
+  codebase_memory: CodebaseMemoryConfigSchema.default(() => CodebaseMemoryConfigSchema.parse({})),
   graph: McpGraphSchema.default({
     max_file_kb: 512,
     exclude: [],
@@ -98,7 +114,15 @@ export const SpectyConfigSchema = z.object({
 
 export type SpectyConfig = z.infer<typeof SpectyConfigSchema>;
 
-export function createDefaultConfig(options?: Partial<SpectyConfig>): SpectyConfig {
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends (infer U)[]
+    ? DeepPartial<U>[]
+    : T[P] extends object
+      ? DeepPartial<T[P]>
+      : T[P];
+};
+
+export function createDefaultConfig(options?: DeepPartial<SpectyConfig>): SpectyConfig {
   return SpectyConfigSchema.parse({
     version: 1,
     language: options?.language ?? "es",

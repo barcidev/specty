@@ -1,5 +1,5 @@
 import type { GeneratedFile } from "../generate/types.js";
-import { createThinDirective } from "./common.js";
+import { buildMcpServersConfig, createThinDirective } from "./common.js";
 import type { AdapterContext, ToolAdapter } from "./types.js";
 
 const CLAUDE_ROLES = ["orchestrator", "frontend", "backend", "data", "testing", "security-review"];
@@ -44,12 +44,7 @@ export const claudeAdapter: ToolAdapter = {
         relativePath: ".mcp.json",
         content: JSON.stringify(
           {
-            mcpServers: {
-              specty: {
-                command: "specty",
-                args: ["mcp"],
-              },
-            },
+            mcpServers: buildMcpServersConfig(ctx),
           },
           null,
           2,

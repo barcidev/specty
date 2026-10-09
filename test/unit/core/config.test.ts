@@ -67,4 +67,22 @@ describe("core/config", () => {
     expect(loaded.spec_engine).toBe("openspec");
     expect(loaded.project.kind).toBe("existing");
   });
+
+  it("defaults mcp.graph_provider to codebase-memory with fallback support", () => {
+    const config = createDefaultConfig();
+    expect(config.mcp.enabled).toBe(true);
+    expect(config.mcp.graph_provider).toBe("codebase-memory");
+    expect(config.mcp.codebase_memory.command).toBe("codebase-memory-mcp");
+    expect(config.mcp.codebase_memory.auto_index).toBe(true);
+
+    const builtinConfig = createDefaultConfig({
+      mcp: {
+        enabled: true,
+        graph_provider: "builtin",
+        codebase_memory: { command: "codebase-memory-mcp", args: [], auto_index: false },
+        graph: { max_file_kb: 512, exclude: [] },
+      },
+    });
+    expect(builtinConfig.mcp.graph_provider).toBe("builtin");
+  });
 });

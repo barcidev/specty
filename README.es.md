@@ -30,7 +30,7 @@ Los asistentes de programación actuales (Claude Code, Cursor, Copilot, Antigrav
 - **14 Asistentes de IA Compatibles:** Fuente única de verdad en `.specty/rules/` sincronizada automáticamente hacia todas las herramientas.
 - **Motor Dual de Especificaciones:** Compatibilidad total con `@fission-ai/openspec` (1.14.1) y un motor nativo `builtin` sin dependencias externas.
 - **Hashing Determinístico SHA-256:** Normaliza inteligentemente las listas de tareas (`- [x]` a `- [ ]`), garantizando que marcar tareas como completadas durante la implementación nunca invalide la aprobación humana previa.
-- **Servidor MCP Local (Model Context Protocol):** Servidor JSON-RPC 2.0 sobre stdio con 7 herramientas nativas y grafo SQLite de símbolos y dependencias en memoria/disco con `node:sqlite`.
+- **Servidor MCP Local (Model Context Protocol):** Servidor JSON-RPC 2.0 sobre stdio con 7 herramientas nativas y **Motor Dual de Grafo** (`codebase-memory-mcp` predeterminado + SQLite `builtin` ligero en memoria/disco).
 - **Protocolo de Handoffs entre Subagentes:** Documentos estandarizados de traspaso de sesión (`001-architect-to-backend.md`) que conservan decisiones clave entre roles.
 - **Privacidad y Telemetría Cero:** Las métricas y eventos de auditoría se almacenan exclusivamente en local en `.specty/metrics/events.jsonl` y `.specty/audit/bypasses.jsonl`.
 

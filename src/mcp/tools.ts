@@ -255,18 +255,28 @@ export async function handleMcpToolCall(
     }
 
     case "specty_get_code_graph": {
-      if (!graph) {
+      const provider = config.mcp.graph_provider ?? "codebase-memory";
+      const res: Record<string, unknown> = {
+        provider,
+      };
+
+      if (provider === "codebase-memory") {
+        res.notice =
+          "codebase-memory-mcp is configured as the primary graph provider. You may also use its native tools (search_graph, trace_path, get_architecture, detect_changes).";
+      }
+
+      if (graph) {
+        if (typeof args.query === "string") {
+          res.symbols = graph.findSymbols(args.query);
+        }
+        if (typeof args.filePath === "string") {
+          res.dependencies = graph.getDependencies(args.filePath);
+        }
+        res.stats = graph.getStats();
+      } else if (provider === "builtin") {
         return { error: "Code graph is not enabled or loaded." };
       }
 
-      const res: Record<string, unknown> = {};
-      if (typeof args.query === "string") {
-        res.symbols = graph.findSymbols(args.query);
-      }
-      if (typeof args.filePath === "string") {
-        res.dependencies = graph.getDependencies(args.filePath);
-      }
-      res.stats = graph.getStats();
       return res;
     }
 

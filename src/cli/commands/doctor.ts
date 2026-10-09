@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getAdapter } from "../../adapters/registry.js";
 import { loadConfig, type SpectyConfig } from "../../core/config.js";
+import { executeCommand } from "../../core/exec.js";
 import { isInsideGitRepo } from "../../core/git.js";
 import { logger } from "../../core/logger.js";
 import { loadManifest } from "../../core/manifest.js";
@@ -181,6 +182,39 @@ export async function executeDoctor(options: DoctorCommandOptions = {}): Promise
       }
     } catch {
       // ignore
+    }
+  }
+
+  // 7. Check MCP Graph Provider
+  if (config?.mcp.enabled) {
+    if (config.mcp.graph_provider === "codebase-memory") {
+      const cbmCmd = config.mcp.codebase_memory?.command || "codebase-memory-mcp";
+      const isAvailable = await executeCommand(`which ${cbmCmd}`, { silent: true })
+        .then((r) => r.success)
+        .catch(() => false);
+
+      if (isAvailable) {
+        checks.push({
+          id: "mcp-graph",
+          title: "MCP Graph Provider",
+          status: "pass",
+          message: `codebase-memory-mcp is installed and ready (${cbmCmd}).`,
+        });
+      } else {
+        checks.push({
+          id: "mcp-graph",
+          title: "MCP Graph Provider",
+          status: "warn",
+          message: `'${cbmCmd}' binary not found in PATH. Specty will fallback to builtin SQLite, or install codebase-memory-mcp.`,
+        });
+      }
+    } else {
+      checks.push({
+        id: "mcp-graph",
+        title: "MCP Graph Provider",
+        status: "pass",
+        message: "Using lightweight builtin SQLite graph engine.",
+      });
     }
   }
 

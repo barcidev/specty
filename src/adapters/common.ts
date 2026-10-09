@@ -1,4 +1,5 @@
 import type { SupportedLanguage } from "../core/i18n.js";
+import type { AdapterContext } from "./types.js";
 
 /**
  * Builds a thin, non-divergent instruction file referencing AGENTS.md.
@@ -33,4 +34,25 @@ The single source of truth for directives, workflows, roles, and boundaries is *
 3. Progressively load modular rules from \`[.specty/rules/](./.specty/rules/)\`.
 4. Always execute designated verification commands defined in \`[.specty/config.yaml](./.specty/config.yaml)\` before concluding tasks.
 `;
+}
+
+export function buildMcpServersConfig(
+  ctx: AdapterContext,
+): Record<string, { command: string; args: string[] }> {
+  const servers: Record<string, { command: string; args: string[] }> = {
+    specty: {
+      command: "specty",
+      args: ["mcp"],
+    },
+  };
+
+  if (ctx.config.mcp.graph_provider === "codebase-memory") {
+    const cbmConfig = ctx.config.mcp.codebase_memory;
+    servers["codebase-memory"] = {
+      command: cbmConfig.command,
+      args: cbmConfig.args,
+    };
+  }
+
+  return servers;
 }

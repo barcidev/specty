@@ -1,5 +1,5 @@
 import type { GeneratedFile } from "../generate/types.js";
-import { createThinDirective } from "./common.js";
+import { buildMcpServersConfig, createThinDirective } from "./common.js";
 import type { AdapterContext, ToolAdapter } from "./types.js";
 
 export const copilotAdapter: ToolAdapter = {
@@ -20,12 +20,7 @@ export const copilotAdapter: ToolAdapter = {
         relativePath: ".vscode/mcp.json",
         content: JSON.stringify(
           {
-            servers: {
-              specty: {
-                command: "specty",
-                args: ["mcp"],
-              },
-            },
+            servers: buildMcpServersConfig(ctx),
           },
           null,
           2,

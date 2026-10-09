@@ -1,5 +1,5 @@
 import type { GeneratedFile } from "../generate/types.js";
-import { createThinDirective } from "./common.js";
+import { buildMcpServersConfig, createThinDirective } from "./common.js";
 import type { AdapterContext, ToolAdapter } from "./types.js";
 
 export const cursorAdapter: ToolAdapter = {
@@ -29,12 +29,7 @@ ${directive}`;
         relativePath: ".cursor/mcp.json",
         content: JSON.stringify(
           {
-            mcpServers: {
-              specty: {
-                command: "specty",
-                args: ["mcp"],
-              },
-            },
+            mcpServers: buildMcpServersConfig(ctx),
           },
           null,
           2,

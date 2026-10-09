@@ -213,11 +213,11 @@ Al iniciar cualquier sesión el agente lee `specty.yaml` y `tasks.md` y continú
 
 specty incluye un servidor MCP local (`specty mcp`, transporte stdio) que puede usar cualquier agente de cualquier herramienta. Da contexto estructural del código sin explorar el repositorio a ciegas, expone el estado del flujo de specs y registra métricas. No llama a modelos, no usa red y es de solo lectura salvo el registro de eventos de métricas.
 
-### 17.1 Grafo de código
+### 17.1 Motor Dual de Grafo de Código
 
-- **Indexador:** analiza con Tree-sitter los lenguajes de la sección 15 y guarda nodos (archivos, módulos, clases, funciones, métodos, rutas o endpoints y pruebas) y relaciones (importa, llama, extiende o implementa, prueba a y pertenece a) en una base SQLite local (`.specty/graph/graph.db`, fuera de git).
-- **Alcance:** respeta `.gitignore`, excluye código autogenerado y carpetas de dependencias (`*.g.dart`, `*.freezed.dart`, `bin/`, `obj/`, `dist/`, `build/`, `target/`, `vendor/`, `node_modules/`) y archivos secretos como `.env`, y omite los archivos que superan un tamaño configurable.
-- **Incremental:** guarda el hash de cada archivo y el commit indexado; tras un `git checkout` o un cambio de rama reindexa solo la diferencia. En monorepos crea un grafo por paquete bajo una raíz común; en multi-repo, uno por cada repositorio listado en la configuración.
+- **Proveedor `codebase-memory` (Predeterminado):** Integra y andamia automáticamente `codebase-memory-mcp` en los clientes MCP de las herramientas configuradas. Ofrece análisis de grafo avanzado con AST, llamadas, dependencias, `trace_path`, `get_architecture`, `detect_changes` y `manage_adr`.
+- **Proveedor `builtin` (Ligero / Fallback):** Motor SQLite local (`node:sqlite`) in-process sin dependencias externas (`.specty/graph/graph.db` o en memoria), ideal para entornos mínimos, CI o ejecución aislada.
+- **Graceful Fallback:** Si `codebase-memory` está configurado pero el binario no está instalado en el sistema, Specty degrada automáticamente a `builtin` sin fallos en tiempo de ejecución.
 
 ### 17.2 Herramientas MCP
 

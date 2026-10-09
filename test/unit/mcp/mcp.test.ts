@@ -166,6 +166,8 @@ describe("MCP tools definitions and dispatch", () => {
       tmpDir,
       graph,
     );
+    expect(res.provider).toBe("codebase-memory");
+    expect(res.notice).toContain("codebase-memory-mcp");
     expect(res.symbols).toHaveLength(1);
     expect(res.symbols[0]?.name).toBe("start");
     expect(res.dependencies).toContain("./lib.js");

@@ -58,6 +58,14 @@ describe("individual tool adapter generation", () => {
     expect(relPaths).toContain(".claude/agents/frontend.md");
     expect(relPaths).toContain(".claude/agents/backend.md");
     expect(relPaths).toContain(".mcp.json");
+
+    const mcpJson = files.find((f) => f.relativePath === ".mcp.json");
+    const parsedMcp = JSON.parse(mcpJson?.content ?? "{}");
+    expect(parsedMcp.mcpServers.specty).toBeDefined();
+    expect(parsedMcp.mcpServers["codebase-memory"]).toEqual({
+      command: "codebase-memory-mcp",
+      args: [],
+    });
   });
 
   it("generates expected files for Cursor with MDC and MCP", async () => {
@@ -70,6 +78,11 @@ describe("individual tool adapter generation", () => {
     const mdc = files.find((f) => f.relativePath === ".cursor/rules/specty.mdc");
     expect(mdc?.content).toContain("---");
     expect(mdc?.content).toContain("alwaysApply: true");
+
+    const mcpJson = files.find((f) => f.relativePath === ".cursor/mcp.json");
+    const parsedMcp = JSON.parse(mcpJson?.content ?? "{}");
+    expect(parsedMcp.mcpServers.specty).toBeDefined();
+    expect(parsedMcp.mcpServers["codebase-memory"]).toBeDefined();
   });
 
   it("generates expected files for Copilot with VS Code MCP", async () => {
@@ -79,6 +92,11 @@ describe("individual tool adapter generation", () => {
 
     expect(relPaths).toContain(".github/copilot-instructions.md");
     expect(relPaths).toContain(".vscode/mcp.json");
+
+    const mcpJson = files.find((f) => f.relativePath === ".vscode/mcp.json");
+    const parsedMcp = JSON.parse(mcpJson?.content ?? "{}");
+    expect(parsedMcp.servers.specty).toBeDefined();
+    expect(parsedMcp.servers["codebase-memory"]).toBeDefined();
   });
 
   it("generates expected files for Windsurf", async () => {
@@ -156,6 +174,11 @@ describe("individual tool adapter generation", () => {
       command: ["specty", "mcp"],
       enabled: true,
     });
+    expect(parsed.mcp["codebase-memory"]).toEqual({
+      type: "local",
+      command: ["codebase-memory-mcp"],
+      enabled: true,
+    });
     expect(adapter.getMcpInstructions?.("es")).toContain("opencode.json");
     expect(adapter.getMcpInstructions?.("en")).toContain("opencode.json");
   });
@@ -203,9 +226,38 @@ describe("individual tool adapter generation", () => {
         command: ["specty", "mcp"],
         enabled: true,
       });
+      expect(merged.mcp["codebase-memory"]).toBeDefined();
     } finally {
       await fs.rm(testDir, { recursive: true, force: true });
     }
+  });
+
+  it("omits codebase-memory from MCP scaffolding when graph_provider is builtin", async () => {
+    const builtinCtx: AdapterContext = {
+      ...dummyCtx,
+      config: createDefaultConfig({
+        mcp: {
+          enabled: true,
+          graph_provider: "builtin",
+          codebase_memory: { command: "codebase-memory-mcp", args: [], auto_index: false },
+          graph: { max_file_kb: 512, exclude: [] },
+        },
+      }),
+    };
+
+    const opencodeAdapter = getAdapter("opencode");
+    const opencodeFiles = await opencodeAdapter.generateFiles(builtinCtx);
+    const opencodeJson = JSON.parse(opencodeFiles[0]?.content ?? "{}");
+    expect(opencodeJson.mcp.specty).toBeDefined();
+    expect(opencodeJson.mcp["codebase-memory"]).toBeUndefined();
+
+    const cursorAdapter = getAdapter("cursor");
+    const cursorFiles = await cursorAdapter.generateFiles(builtinCtx);
+    const cursorMcp = JSON.parse(
+      cursorFiles.find((f) => f.relativePath === ".cursor/mcp.json")?.content ?? "{}",
+    );
+    expect(cursorMcp.mcpServers.specty).toBeDefined();
+    expect(cursorMcp.mcpServers["codebase-memory"]).toBeUndefined();
   });
 
   it("detects and respects .opencode/opencode.json if existing", async () => {

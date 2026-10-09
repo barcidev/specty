@@ -30,7 +30,7 @@ Modern AI coding agents (Claude Code, Cursor, Copilot, Antigravity, Windsurf, Ro
 - **14 Supported AI Assistants:** Single source of truth in `.specty/rules/` synchronized to all tools.
 - **Dual Spec Engine:** Full backward compatibility with `@fission-ai/openspec` (1.14.1) and a standalone zero-dependency `builtin` engine.
 - **Deterministic Content Hashing:** SHA-256 specification hash that smartly normalizes checklist tasks (`- [x]` to `- [ ]`), so checking off completed work never invalidates prior human approvals.
-- **Local Model Context Protocol (MCP) Server:** Native stdio JSON-RPC 2.0 server with 7 governance tools and an in-process SQLite dependency and symbol graph (powered by `node:sqlite`).
+- **Local Model Context Protocol (MCP) Server:** Native stdio JSON-RPC 2.0 server with 7 governance tools and a **Dual Graph Provider** (`codebase-memory-mcp` by default, plus in-process SQLite `builtin` fallback).
 - **Sequential Subagent Handoff Protocol:** Standardized handoff documents (`001-architect-to-developer.md`) maintaining decision logs across agent role switches.
 - **Zero-Telemetry by Default:** All AI metrics and audit events are saved locally in `.specty/metrics/events.jsonl` and `.specty/audit/bypasses.jsonl`. No external tracking.
 
@@ -128,8 +128,12 @@ specty init -y --tool antigravity,claude,cursor --lang en
 3. `specty_get_agent_role`: Fetches agent persona prompt (`orchestrator`, `architect`, `backend`, `frontend`, `qa`, `security`, `doc`).
 4. `specty_get_latest_handoff`: Retrieves the most recent subagent handoff state.
 5. `specty_record_handoff`: Records a new handoff between agents.
-6. `specty_get_code_graph`: Queries the SQLite symbol index, file dependencies, and project topology.
+6. `specty_get_code_graph`: Queries the active graph provider (`codebase-memory-mcp` by default or `builtin` SQLite engine).
 7. `specty_verify`: Executes test, lint, and typecheck commands configured in `.specty/config.yaml`.
+
+### Dual Graph Provider
+- **`codebase-memory` (Default):** Seamlessly scaffolds `codebase-memory-mcp` into adapter MCP configurations for rich call graphs, deep symbol search, and architecture discovery.
+- **`builtin`:** Lightweight zero-dependency in-process SQLite engine (`node:sqlite`) for isolated, offline, or resource-constrained environments.
 
 ---
 
