@@ -1,6 +1,10 @@
 import * as p from "@clack/prompts";
 import {
+  COMMIT_CONVENTIONS,
+  type CommitConvention,
   createDefaultConfig,
+  GIT_WORKFLOWS,
+  type GitWorkflow,
   type SpectyConfig,
   SUPPORTED_TOOLS,
   type SupportedTool,
@@ -10,7 +14,28 @@ import { defaultDetectorRegistry } from "../../detect/detector-registry.js";
 import { resolveDefaultSourcePaths } from "../../detect/source-paths-resolver.js";
 import type { RepositoryDetectionResult } from "../../detect/types.js";
 import { getRecommendedArchitectures } from "./architectures.js";
+import { getCommitConventionOptions, getGitWorkflowOptions } from "./git-options.js";
 import type { InitCommandOptions, InitFlowResult } from "./init-types.js";
+
+const TOOL_CONFIG_EXAMPLES: Record<SupportedTool, string> = {
+  antigravity: ".gemini/config/rules, GEMINI.md",
+  claude: "CLAUDE.md",
+  cursor: ".cursor/rules/specty.mdc",
+  "github-copilot": ".github/copilot-instructions.md",
+  windsurf: ".windsurfrules",
+  codex: ".codex/instructions.md",
+  gemini: ".gemini/config/rules",
+  cline: ".clinerules",
+  roocode: ".roomodes, .roorules",
+  continue: ".continue/config.json",
+  junie: ".junie/instructions.md",
+  "amazon-q": ".amazonq/instructions.md",
+  aider: ".aider.conf.yml",
+  opencode: ".opencode/instructions.md",
+  zed: ".zed/settings.json",
+  cody: ".cody/rules.json",
+  chatgpt: ".specty/exports/chatgpt-instructions.md",
+};
 
 export async function runInteractiveInit(
   repoRoot: string,
@@ -26,8 +51,16 @@ export async function runInteractiveInit(
     const langRes = await p.select({
       message: "Select language / Selecciona el idioma:",
       options: [
-        { value: "es", label: "Español", hint: "recomendado" },
-        { value: "en", label: "English" },
+        {
+          value: "es",
+          label: "Español",
+          hint: "recomendado (Ej: 'specty status', documentación en español)",
+        },
+        {
+          value: "en",
+          label: "English",
+          hint: "recommended (Ex: 'specty status', documentation in English)",
+        },
       ],
       initialValue: "es",
     });
@@ -66,10 +99,18 @@ export async function runInteractiveInit(
       {
         value: "existing",
         label: dict.init.projectKindExisting,
+        hint:
+          selectedLang === "es"
+            ? "Ej: detecta stack existente (src/, package.json) y genera specs incrementales"
+            : "Ex: inspects existing stack (src/, package.json) and starts incremental specs",
       },
       {
         value: "new",
         label: dict.init.projectKindNew,
+        hint:
+          selectedLang === "es"
+            ? "Ej: estructura limpia desde cero con arquitectura recomendada"
+            : "Ex: clean scaffold from scratch with recommended architecture pattern",
       },
     ],
     initialValue: "existing",
@@ -108,6 +149,7 @@ export async function runInteractiveInit(
   const toolOptions = SUPPORTED_TOOLS.map((toolId) => ({
     value: toolId,
     label: toolId,
+    hint: `Ej: ${TOOL_CONFIG_EXAMPLES[toolId] ?? toolId}`,
   }));
 
   const toolsRes = await p.multiselect({
@@ -132,16 +174,16 @@ export async function runInteractiveInit(
         label: "OpenSpec 1.14.1",
         hint:
           selectedLang === "es"
-            ? "motor estándar / recomendación oficial"
-            : "standard engine / recommended",
+            ? "motor oficial recomendado (Ej: openspec/changes/<change>/proposal.md)"
+            : "official recommended engine (Ex: openspec/changes/<change>/proposal.md)",
       },
       {
         value: "builtin",
         label: "Builtin engine",
         hint:
           selectedLang === "es"
-            ? "motor alternativo ligero sin dependencias externas"
-            : "lightweight builtin engine",
+            ? "motor alternativo ligero (Ej: .specty/changes/<change>/proposal.md)"
+            : "lightweight builtin engine (Ex: .specty/changes/<change>/proposal.md)",
       },
     ],
     initialValue: "openspec",
@@ -153,7 +195,56 @@ export async function runInteractiveInit(
   }
   const specEngine = engineRes as "openspec" | "builtin";
 
-  // Step 6: MCP & Metrics (Section 8.0 #6)
+  // Step 6: Git Branching Workflow
+  let selectedGitWorkflow: GitWorkflow = "feature-branch";
+  if (options.gitWorkflow && (GIT_WORKFLOWS as readonly string[]).includes(options.gitWorkflow)) {
+    selectedGitWorkflow = options.gitWorkflow as GitWorkflow;
+  } else {
+    const workflowOptions = getGitWorkflowOptions(selectedLang);
+    const wfRes = await p.select({
+      message: dict.init.gitWorkflowPrompt,
+      options: workflowOptions.map((opt) => ({
+        value: opt.value,
+        label: opt.label,
+        hint: opt.hint,
+      })),
+      initialValue: "feature-branch",
+    });
+
+    if (p.isCancel(wfRes)) {
+      p.cancel(dict.init.canceled);
+      return null;
+    }
+    selectedGitWorkflow = wfRes as GitWorkflow;
+  }
+
+  // Step 7: Commit Message Convention (base & hybrid permutations)
+  let selectedCommitConvention: CommitConvention = "conventional";
+  if (
+    options.commitConvention &&
+    (COMMIT_CONVENTIONS as readonly string[]).includes(options.commitConvention)
+  ) {
+    selectedCommitConvention = options.commitConvention as CommitConvention;
+  } else {
+    const convOptions = getCommitConventionOptions(selectedLang);
+    const convRes = await p.select({
+      message: dict.init.commitConventionPrompt,
+      options: convOptions.map((opt) => ({
+        value: opt.value,
+        label: opt.label,
+        hint: opt.hint,
+      })),
+      initialValue: "conventional",
+    });
+
+    if (p.isCancel(convRes)) {
+      p.cancel(dict.init.canceled);
+      return null;
+    }
+    selectedCommitConvention = convRes as CommitConvention;
+  }
+
+  // Step 8: MCP & Metrics (Section 8.0 #6)
   const mcpRes = await p.confirm({
     message: dict.init.mcpPrompt,
     initialValue: options.mcp !== false,
@@ -165,7 +256,7 @@ export async function runInteractiveInit(
   }
   const enableMcp = Boolean(mcpRes);
 
-  // Step 7: Hooks & CI (Section 8.0 #7)
+  // Step 9: Hooks & CI (Section 8.0 #7)
   const hooksRes = await p.confirm({
     message: dict.init.hooksPrompt,
     initialValue: options.hooks !== false,
@@ -180,11 +271,31 @@ export async function runInteractiveInit(
   const ciRes = await p.select({
     message: dict.init.ciPrompt,
     options: [
-      { value: "github", label: "GitHub Actions (.github/workflows/specty.yml)" },
-      { value: "gitlab", label: "GitLab CI (.gitlab-ci.yml)" },
-      { value: "azure", label: "Azure Pipelines (azure-pipelines.yml)" },
-      { value: "bitbucket", label: "Bitbucket Pipelines (bitbucket-pipelines.yml)" },
-      { value: "none", label: "None / Ninguno" },
+      {
+        value: "github",
+        label: "GitHub Actions",
+        hint: "Ej: .github/workflows/specty.yml",
+      },
+      {
+        value: "gitlab",
+        label: "GitLab CI",
+        hint: "Ej: .gitlab-ci.yml",
+      },
+      {
+        value: "azure",
+        label: "Azure Pipelines",
+        hint: "Ej: azure-pipelines.yml",
+      },
+      {
+        value: "bitbucket",
+        label: "Bitbucket Pipelines",
+        hint: "Ej: bitbucket-pipelines.yml",
+      },
+      {
+        value: "none",
+        label: "None / Ninguno",
+        hint: selectedLang === "es" ? "Ej: sin pipeline de CI" : "Ex: no CI workflow",
+      },
     ],
     initialValue: options.ci === false ? "none" : "github",
   });
@@ -195,13 +306,15 @@ export async function runInteractiveInit(
   }
   const selectedCi = ciRes as "github" | "gitlab" | "azure" | "bitbucket" | "none";
 
-  // Step 8: Summary and Confirmation (Section 8.0 #8)
+  // Step 10: Summary and Confirmation (Section 8.0 #8)
   const summaryLines = [
     `Language: ${selectedLang.toUpperCase()}`,
     `Stack: ${detectedStackInfo}`,
     `Project: ${projectKind} (${architecture})`,
     `Spec engine: ${specEngine}`,
     `AI Tools: ${selectedTools.join(", ")}`,
+    `Git Workflow: ${selectedGitWorkflow}`,
+    `Commit Convention: ${selectedCommitConvention}`,
     `MCP & Metrics: ${enableMcp ? "Enabled" : "Disabled"}`,
     `Hooks: ${enableHooks ? "Enabled" : "Disabled"}`,
     `CI: ${selectedCi}`,
@@ -250,6 +363,10 @@ export async function runInteractiveInit(
     },
     scopes,
     tools: selectedTools,
+    git: {
+      workflow: selectedGitWorkflow,
+      commit_convention: selectedCommitConvention,
+    },
     governance: {
       hooks: enableHooks,
       ci: selectedCi,
