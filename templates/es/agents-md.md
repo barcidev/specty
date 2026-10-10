@@ -40,5 +40,5 @@ El desarrollo se rige por un flujo de 5 fases estrictas:
 - **Catálogo de Roles:** Consulta `.specty/agents/<rol>.md` para conocer responsabilidades y archivos permitidos.
 - **Matriz de Enrutamiento:** Consulta `.specty/routing.md` para determinar el rol y las reglas a cargar por tarea.
 - **Reglas Modulares:** Consulta `.specty/rules/` para directrices específicas de tecnología y arquitectura.
-- **Herramientas del CLI:** Puedes invocar comandos de specty vía `specty status`, `specty verify <change>` o `specty approve <change>`. Si usas OpenSpec, puedes invocar comandos directos con `specty openspec -- <args>`.
+- **Herramientas del CLI:** Puedes invocar comandos de specty vía `specty status`, `specty verify <change>` o `specty validate [change]`. Si usas OpenSpec, puedes invocar comandos directos con `specty openspec [args...]`.
 <!-- specty:end id=links -->

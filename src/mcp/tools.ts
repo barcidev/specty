@@ -1,12 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { loadConfig } from "../core/config.js";
-import { executeCommand } from "../core/exec.js";
 import { getSpecEngine } from "../engines/factory.js";
 import { checkApprovalStatus } from "../governance/approvals.js";
 import { validateChangeSpecification } from "../governance/spec-validator.js";
+import { executeVerification } from "../governance/verifier.js";
 import { createHandoff, getLatestHandoff } from "../handoff/manager.js";
-import { recordMetricEvent } from "../metrics/index.js";
 import type { CodeGraph } from "./graph.js";
 
 export * from "./types.js";
@@ -333,42 +332,38 @@ export async function handleMcpToolCall(
     }
 
     case "specty_verify": {
-      const scope = config.scopes[0];
-      if (!scope) {
+      if (!config.scopes || config.scopes.length === 0) {
         return { message: "No scopes configured." };
       }
 
+      const report = await executeVerification(repoRoot, {
+        commandType: typeof args.commandType === "string" ? args.commandType : undefined,
+      });
+
       const results: Record<string, unknown> = {};
-      const verifyMap = scope.verify;
 
-      for (const [key, cmd] of Object.entries(verifyMap)) {
-        if (!cmd) continue;
-        if (args.commandType && args.commandType !== "all" && args.commandType !== key) {
-          continue;
-        }
-
-        const runRes = await executeCommand(cmd, {
-          cwd: path.resolve(repoRoot, scope.path),
-          silent: true,
-        });
-
+      for (const res of report.stackResults) {
+        const hasMultiple =
+          report.stackResults.filter((s) => s.commandType === res.commandType).length > 1;
+        const key = hasMultiple ? `${res.scope}:${res.commandType}` : res.commandType;
         results[key] = {
-          command: cmd,
-          passed: runRes.success,
-          exitCode: runRes.exitCode,
-          durationMs: runRes.durationMs,
-          output: runRes.stdout || runRes.stderr,
+          command: res.command,
+          passed: res.passed,
+          exitCode: res.exitCode,
+          durationMs: res.durationMs,
+          output: res.stdout || res.stderr,
         };
+      }
 
-        await recordMetricEvent(repoRoot, {
-          type: "verification_run",
-          scope: scope.path,
-          commandType: key,
-          command: cmd,
-          exitCode: runRes.exitCode,
-          durationMs: runRes.durationMs,
-          success: runRes.success,
-        });
+      for (const res of report.tasksResults) {
+        const key = `task:${res.taskId}`;
+        results[key] = {
+          command: res.command,
+          passed: res.passed,
+          exitCode: res.exitCode,
+          durationMs: res.durationMs,
+          output: res.stdout || res.stderr,
+        };
       }
 
       return results;

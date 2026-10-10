@@ -6,7 +6,7 @@ import { BuiltinSpecEngine } from "./builtin.js";
 import { readChangeState, writeChangeState } from "./change-state.js";
 import type { ChangeMetadata, CreateChangeOptions, SpecEngine, ValidationResult } from "./types.js";
 
-async function getOpenSpecCmd(repoRoot: string): Promise<string> {
+export async function getOpenSpecCmd(repoRoot: string): Promise<string> {
   const localBin = path.join(repoRoot, "node_modules", ".bin", "openspec");
   try {
     await fs.access(localBin);

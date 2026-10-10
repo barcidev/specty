@@ -40,5 +40,5 @@ Development is governed by a strict 5-phase lifecycle:
 - **Role Catalog:** Review `.specty/agents/<role>.md` for agent responsibilities and allowed files.
 - **Routing Matrix:** Review `.specty/routing.md` to determine which role and rules to load for a task.
 - **Modular Rules:** Review `.specty/rules/` for technology and architecture guidelines.
-- **CLI Commands:** Invoke specty CLI tools via `specty status`, `specty verify <change>`, or `specty approve <change>`. For direct OpenSpec commands, use `specty openspec -- <args>`.
+- **CLI Commands:** Invoke specty CLI tools via `specty status`, `specty verify <change>`, or `specty validate [change]`. For direct OpenSpec commands, use `specty openspec [args...]`.
 <!-- specty:end id=links -->

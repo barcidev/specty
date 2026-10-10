@@ -362,4 +362,58 @@ program
     }
   });
 
-program.parse(process.argv);
+program
+  .command("verify [change]")
+  .description("execute stack and task verification commands and record audit evidence")
+  .option("--scope <name>", "target specific workspace scope")
+  .option("--type <cmdKey>", "verification command type (lint, test, build, typecheck, or all)")
+  .option("--task-only", "execute only task verify commands from tasks.md")
+  .option("--stack-only", "execute only stack verification commands")
+  .option("--strict", "strictly fail if any verification check fails")
+  .option("--json", "output verification report as JSON")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeVerify } = await import("./commands/verify.js");
+      const passed = await executeVerify(change, options);
+      if (!passed) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("openspec [args...]")
+  .description("proxy commands directly to the OpenSpec engine CLI")
+  .allowUnknownOption()
+  .action(async (args: string[]) => {
+    try {
+      const { executeOpenSpec } = await import("./commands/openspec.js");
+      const exitCode = await executeOpenSpec(args);
+      if (exitCode !== 0) {
+        process.exit(exitCode);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+export function getRegisteredCommands(): string[] {
+  const commands: string[] = [];
+  for (const cmd of program.commands) {
+    commands.push(cmd.name());
+    for (const alias of cmd.aliases()) {
+      commands.push(alias);
+    }
+  }
+  return commands;
+}
+
+export { program };
+
+if (process.env.VITEST !== "true" && !process.env.NODE_TEST_CONTEXT) {
+  program.parse(process.argv);
+}
