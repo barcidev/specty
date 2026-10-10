@@ -12,6 +12,8 @@
 2. **Strict task file scoping:** NEVER modify files outside the `[files: ...]` pattern defined for the active task in `tasks.md`.
 3. **Mandatory executable verification:** Each completed task and change MUST be verified by executing actual test and linter commands. Never hallucinate command outputs.
 4. **Session resumption:** On starting any interaction, read `specty.yaml` and `tasks.md` of the active change and resume from the first unchecked task (`- [ ]`).
+5. **Orientation via `specty next`:** At the start of each turn, invoke `specty next --card` or inspect the status card to anchor your execution state (`[change: <id> | status: ... | task: ... | next: ...]`).
+6. **Hard Tool Interception (`specty guard`):** All file modifications and bash executions are intercepted by `specty guard`. Any edits outside the active task scope `[files: ...]` or without an approved specification will be blocked immediately.
 <!-- specty:end id=orchestrator -->
 
 <!-- specty:begin id=project -->
@@ -40,5 +42,5 @@ Development is governed by a strict 5-phase lifecycle:
 - **Role Catalog:** Review `.specty/agents/<role>.md` for agent responsibilities and allowed files.
 - **Routing Matrix:** Review `.specty/routing.md` to determine which role and rules to load for a task.
 - **Modular Rules:** Review `.specty/rules/` for technology and architecture guidelines.
-- **CLI Commands:** Invoke specty CLI tools via `specty status`, `specty verify <change>`, or `specty validate [change]`. For direct OpenSpec commands, use `specty openspec [args...]`.
+- **CLI Commands:** Invoke specty CLI tools via `specty status`, `specty next`, `specty guard`, `specty verify <change>`, or `specty validate [change]`. For direct OpenSpec commands, use `specty openspec [args...]`.
 <!-- specty:end id=links -->

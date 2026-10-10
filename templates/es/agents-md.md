@@ -12,6 +12,8 @@
 2. **Alcance delimitado por tarea:** NUNCA modifiques archivos fuera del patrón `[files: ...]` definido para la tarea activa en `tasks.md`.
 3. **Verificación obligatoria ejecutable:** Cada tarea y cambio completado DEBE ser verificado ejecutando comandos reales de prueba y linter. No inventes resultados de verificación.
 4. **Reanudación de sesión:** Al iniciar cualquier interacción, lee `specty.yaml` y `tasks.md` del change activo y reanuda desde la primera tarea sin marcar (`- [ ]`).
+5. **Orientación mediante `specty next`:** Al inicio de cada turno, invoca `specty next --card` o lee la tarjeta de estado para anclar tu contexto de ejecución (`[change: <id> | status: ... | task: ... | next: ...]`).
+6. **Intercepción dura de herramientas (`specty guard`):** Todas las modificaciones de archivos y llamadas a bash son interceptadas por `specty guard`. Cualquier edición fuera del alcance `[files: ...]` de la tarea activa o sin una especificación aprobada será bloqueada de inmediato.
 <!-- specty:end id=orchestrator -->
 
 <!-- specty:begin id=project -->
@@ -40,5 +42,5 @@ El desarrollo se rige por un flujo de 5 fases estrictas:
 - **Catálogo de Roles:** Consulta `.specty/agents/<rol>.md` para conocer responsabilidades y archivos permitidos.
 - **Matriz de Enrutamiento:** Consulta `.specty/routing.md` para determinar el rol y las reglas a cargar por tarea.
 - **Reglas Modulares:** Consulta `.specty/rules/` para directrices específicas de tecnología y arquitectura.
-- **Herramientas del CLI:** Puedes invocar comandos de specty vía `specty status`, `specty verify <change>` o `specty validate [change]`. Si usas OpenSpec, puedes invocar comandos directos con `specty openspec [args...]`.
+- **Herramientas del CLI:** Puedes invocar comandos de specty vía `specty status`, `specty next`, `specty guard`, `specty verify <change>` o `specty validate [change]`. Si usas OpenSpec, puedes invocar comandos directos con `specty openspec [args...]`.
 <!-- specty:end id=links -->

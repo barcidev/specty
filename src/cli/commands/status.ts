@@ -4,10 +4,12 @@ import { logger } from "../../core/logger.js";
 import { getSpecEngine } from "../../engines/factory.js";
 import type { ChangeMetadata } from "../../engines/types.js";
 import { checkApprovalStatus } from "../../governance/approvals.js";
+import { determineNextAction } from "../../governance/next-action.js";
 
 export interface StatusCommandOptions {
   cwd?: string;
   json?: boolean;
+  card?: boolean;
 }
 
 export interface ChangeStatusDetail extends ChangeMetadata {
@@ -21,12 +23,28 @@ export interface ProjectStatusSummary {
   tools: string[];
   changes: ChangeStatusDetail[];
   reapprovalNeededCount: number;
+  statusCard?: string;
 }
 
 export async function executeStatus(
   options: StatusCommandOptions = {},
 ): Promise<ProjectStatusSummary> {
   const repoRoot = path.resolve(options.cwd ?? process.cwd());
+
+  if (options.card) {
+    const nextReport = await determineNextAction(repoRoot);
+    console.log(nextReport.statusCard);
+    return {
+      language: "",
+      specEngine: "",
+      scopesCount: 0,
+      tools: [],
+      changes: [],
+      reapprovalNeededCount: 0,
+      statusCard: nextReport.statusCard,
+    };
+  }
+
   const config = await loadConfig(repoRoot);
   const engine = getSpecEngine(config.spec_engine);
 

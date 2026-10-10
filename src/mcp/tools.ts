@@ -3,6 +3,8 @@ import path from "node:path";
 import { loadConfig } from "../core/config.js";
 import { getSpecEngine } from "../engines/factory.js";
 import { checkApprovalStatus } from "../governance/approvals.js";
+import { evaluateGuard } from "../governance/guard.js";
+import { determineNextAction } from "../governance/next-action.js";
 import { validateChangeSpecification } from "../governance/spec-validator.js";
 import { executeVerification } from "../governance/verifier.js";
 import { createHandoff, getLatestHandoff } from "../handoff/manager.js";
@@ -14,6 +16,46 @@ import type { McpToolDefinition, McpToolResultMap } from "./types.js";
 
 export function getMcpToolDefinitions(): McpToolDefinition[] {
   return [
+    {
+      name: "specty_guard",
+      description:
+        "Evaluate pre-execution tool calls or file modifications against governance policies, active change status, and task scopes.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          tool: {
+            type: "string",
+            description: "Tool name being invoked (e.g. Edit, Write, Bash).",
+          },
+          file: {
+            type: "string",
+            description: "Target file path being created or modified.",
+          },
+          command: {
+            type: "string",
+            description: "Shell or terminal command being executed.",
+          },
+          changeId: {
+            type: "string",
+            description: "Optional change identifier override.",
+          },
+        },
+      },
+    },
+    {
+      name: "specty_next_action",
+      description:
+        "Determine the single prescriptive next action for the agent and fetch the compact status card to maintain alignment.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          changeId: {
+            type: "string",
+            description: "Optional change identifier override.",
+          },
+        },
+      },
+    },
     {
       name: "specty_get_active_change",
       description: "Get active specification change details, proposal, tasks, and approval status.",
@@ -367,6 +409,24 @@ export async function handleMcpToolCall(
       }
 
       return results;
+    }
+
+    case "specty_guard": {
+      const decision = await evaluateGuard(repoRoot, {
+        toolName: typeof args.tool === "string" ? args.tool : undefined,
+        filePath: typeof args.file === "string" ? args.file : undefined,
+        command: typeof args.command === "string" ? args.command : undefined,
+        changeId: typeof args.changeId === "string" ? args.changeId : undefined,
+      });
+      return decision;
+    }
+
+    case "specty_next_action": {
+      const report = await determineNextAction(
+        repoRoot,
+        typeof args.changeId === "string" ? args.changeId : undefined,
+      );
+      return report;
     }
 
     default:
