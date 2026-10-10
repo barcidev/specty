@@ -183,6 +183,7 @@ export async function runInteractiveInit(
       { value: "github", label: "GitHub Actions (.github/workflows/specty.yml)" },
       { value: "gitlab", label: "GitLab CI (.gitlab-ci.yml)" },
       { value: "azure", label: "Azure Pipelines (azure-pipelines.yml)" },
+      { value: "bitbucket", label: "Bitbucket Pipelines (bitbucket-pipelines.yml)" },
       { value: "none", label: "None / Ninguno" },
     ],
     initialValue: options.ci === false ? "none" : "github",
@@ -192,7 +193,7 @@ export async function runInteractiveInit(
     p.cancel(dict.init.canceled);
     return null;
   }
-  const selectedCi = ciRes as "github" | "gitlab" | "azure" | "none";
+  const selectedCi = ciRes as "github" | "gitlab" | "azure" | "bitbucket" | "none";
 
   // Step 8: Summary and Confirmation (Section 8.0 #8)
   const summaryLines = [

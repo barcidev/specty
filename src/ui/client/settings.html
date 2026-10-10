@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Specty - Configuración y Métricas Globales</title>
+  <link rel="stylesheet" href="./settings.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="dark-theme">
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand">
+        <span class="brand-logo">⚡</span>
+        <span class="brand-title">specty</span>
+        <span class="brand-badge badge-cyan">Console</span>
+      </div>
+      <div class="live-indicator" id="live-indicator" title="Sincronización en vivo vía Server-Sent Events">
+        <span class="live-dot"></span>
+        <span class="live-text">Live Sync</span>
+      </div>
+      <div class="branch-pill" id="branch-pill">
+        <span class="branch-icon">⎇</span>
+        <span id="branch-name">cargando...</span>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <span id="header-repo-path" class="repo-badge">...</span>
+      <button type="button" id="btn-save-top" class="btn-primary" title="Guardar cambios de configuración">
+        💾 Guardar Ajustes
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="main-layout">
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <div class="tabs-list">
+        <button type="button" class="tab-btn active" data-tab="tab-metrics">
+          📊 Métricas & Historial Global
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-config">
+          ⚙️ Configuración & Gobernanza
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-ai-rules">
+          🤖 Herramientas IA & Reglas
+        </button>
+      </div>
+      <div class="tabs-actions">
+        <span id="active-engine-badge" class="engine-badge">Engine: ...</span>
+      </div>
+    </nav>
+
+    <!-- Tab 1: Global Metrics & History -->
+    <section id="tab-metrics" class="tab-pane active">
+      <div class="section-toolbar">
+        <div class="period-selector-group">
+          <span class="toolbar-label">Periodo de Análisis:</span>
+          <div class="period-buttons" id="period-buttons">
+            <button type="button" class="btn-period active" data-period="all">Histórico Completo</button>
+            <button type="button" class="btn-period" data-period="90d">90 días</button>
+            <button type="button" class="btn-period" data-period="30d">30 días</button>
+            <button type="button" class="btn-period" data-period="7d">7 días</button>
+          </div>
+        </div>
+
+        <div class="export-actions">
+          <button type="button" id="btn-export-html" class="btn-secondary btn-sm" title="Descargar reporte HTML">
+            📄 Exportar HTML
+          </button>
+          <button type="button" id="btn-export-md" class="btn-secondary btn-sm" title="Descargar reporte Markdown">
+            📝 Exportar Markdown
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Total de Especificaciones</span>
+            <span class="kpi-icon">📋</span>
+          </div>
+          <div class="kpi-value" id="kpi-total-specs">-</div>
+          <div class="kpi-subtext" id="kpi-specs-subtext">Histórico en repositorio</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Tasa de Aprobación</span>
+            <span class="kpi-icon">✓</span>
+          </div>
+          <div class="kpi-value value-success" id="kpi-approval-rate">-%</div>
+          <div class="kpi-subtext" id="kpi-approvals-subtext">0 aprobadas / 0 invalidadas</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Éxito de Verificación</span>
+            <span class="kpi-icon">🛡️</span>
+          </div>
+          <div class="kpi-value value-cyan" id="kpi-verification-rate">-%</div>
+          <div class="kpi-subtext" id="kpi-verifications-subtext">0 pruebas ejecutadas</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Bypasses de Emergencia</span>
+            <span class="kpi-icon">⚠️</span>
+          </div>
+          <div class="kpi-value value-warning" id="kpi-total-bypasses">-</div>
+          <div class="kpi-subtext" id="kpi-bypasses-subtext">Excepciones de gobernanza</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Traspasos entre Agentes</span>
+            <span class="kpi-icon">🔄</span>
+          </div>
+          <div class="kpi-value value-purple" id="kpi-total-handoffs">-</div>
+          <div class="kpi-subtext" id="kpi-handoffs-subtext">Handoffs registrados</div>
+        </div>
+      </div>
+
+      <!-- Specs Table -->
+      <div class="card-panel">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h3>Historial Consolidado de Especificaciones</h3>
+            <span class="panel-subtitle">Registro del ciclo de vida de todas las especificaciones y cambios</span>
+          </div>
+          <input type="text" id="search-specs" class="input-search" placeholder="Filtrar specs por nombre o estado...">
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Change ID</th>
+                <th>Título</th>
+                <th>Estado</th>
+                <th>Aprobador / Responsable</th>
+                <th>Fecha de Creación</th>
+                <th>Hash Contenido</th>
+              </tr>
+            </thead>
+            <tbody id="specs-table-body">
+              <tr>
+                <td colspan="6" class="text-center text-muted">Cargando historial de especificaciones...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Configuration & Governance -->
+    <section id="tab-config" class="tab-pane">
+      <div class="config-layout">
+        <div class="config-section">
+          <h3>Gobernanza y Plataforma</h3>
+          <p class="section-desc">Regula cómo se aprueban los cambios y en qué pipeline se ejecutan las compuertas.</p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="cfg-spec-engine">Motor de Especificaciones:</label>
+              <select id="cfg-spec-engine" class="form-select">
+                <option value="openspec">OpenSpec (@fission-ai/openspec)</option>
+                <option value="builtin">Builtin (Motor nativo compatible)</option>
+              </select>
+              <span class="field-hint">OpenSpec utiliza la CLI oficial; Builtin utiliza gestión interna directa sin dependencias.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-ci-provider">Proveedor de Integración Continua (CI):</label>
+              <select id="cfg-ci-provider" class="form-select">
+                <option value="github">GitHub Actions (.github/workflows/specty.yml)</option>
+                <option value="gitlab">GitLab CI (.gitlab-ci.yml)</option>
+                <option value="azure">Azure Pipelines (azure-pipelines.yml)</option>
+                <option value="bitbucket">Bitbucket Pipelines (bitbucket-pipelines.yml)</option>
+                <option value="none">Ninguno / Manual</option>
+              </select>
+              <span class="field-hint">Define la plantilla del pipeline de compuerta de aprobación generada para el repositorio.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-approval-method">Método de Aprobación:</label>
+              <select id="cfg-approval-method" class="form-select">
+                <option value="hybrid">Híbrido (CLI local, UI web o PR Review de CI)</option>
+                <option value="cli">Estricto Local (Solo 'specty approve' o UI local)</option>
+                <option value="pr_review">Solo PR Review (Aprobado formalmente en el Pull Request)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-language">Idioma de Artefactos:</label>
+              <select id="cfg-language" class="form-select">
+                <option value="es">Español (es)</option>
+                <option value="en">English (en)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <h3>Alcance de Archivos Gobernados</h3>
+          <p class="section-desc">Los archivos gobernados requieren obligatoriamente una especificación aprobada para ser modificados.</p>
+
+          <div class="form-grid-full">
+            <div class="form-group">
+              <label for="cfg-source-paths">Rutas de Código Gobernadas (glob por línea):</label>
+              <textarea id="cfg-source-paths" class="form-textarea" rows="3" placeholder="src/**&#10;apps/**&#10;packages/**"></textarea>
+              <span class="field-hint">Cualquier cambio a estos archivos bloqueará pre-commit y el CI si el spec no está aprobado.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-exempt-paths">Rutas Exentas de Gobernanza (glob por línea):</label>
+              <textarea id="cfg-exempt-paths" class="form-textarea" rows="3" placeholder="**/*.md&#10;openspec/**&#10;docs/**"></textarea>
+              <span class="field-hint">Archivos de documentación o configuración excluidos de la compuerta dura.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <h3>Ganchos Git y Compuertas de Calidad</h3>
+          <p class="section-desc">Configuración de interceptores locales y umbrales para el comando specty gate.</p>
+
+          <div class="toggles-grid">
+            <label class="toggle-card">
+              <input type="checkbox" id="cfg-git-hooks" class="form-checkbox">
+              <div class="toggle-content">
+                <span class="toggle-title">Ganchos Git Locales (specty guard)</span>
+                <span class="toggle-desc">Intercepta 'git commit' para evitar commits de código huérfano.</span>
+              </div>
+            </label>
+
+            <label class="toggle-card">
+              <input type="checkbox" id="cfg-gate-lint" class="form-checkbox">
+              <div class="toggle-content">
+                <span class="toggle-title">Validación de Linter</span>
+                <span class="toggle-desc">Exige paso exitoso de linters configurados en scopes.</span>
+              </div>
+            </label>
+
+            <label class="toggle-card">
+              <input type="checkbox" id="cfg-gate-test" class="form-checkbox">
+              <div class="toggle-content">
+                <span class="toggle-title">Pruebas Unitarias</span>
+                <span class="toggle-desc">Exige que la suite de pruebas del proyecto pase en verde.</span>
+              </div>
+            </label>
+
+            <label class="toggle-card">
+              <input type="checkbox" id="cfg-gate-static" class="form-checkbox">
+              <div class="toggle-content">
+                <span class="toggle-title">Análisis Estático / Tipado</span>
+                <span class="toggle-desc">Verifica tipos y reglas de análisis estático del lenguaje.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="config-actions-bar">
+          <button type="button" id="btn-save-bottom" class="btn-primary">
+            💾 Guardar Cambios en .specty/config.yaml
+          </button>
+          <span id="save-status-msg" class="save-status"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: AI Tools & Rules Catalog -->
+    <section id="tab-ai-rules" class="tab-pane">
+      <div class="config-layout">
+        <div class="config-section">
+          <div class="panel-header-clean">
+            <div>
+              <h3>Herramientas de IA y Editores Soportados</h3>
+              <p class="section-desc">Selecciona qué editores y asistentes sincronizarán las reglas y contexto de Specty.</p>
+            </div>
+            <button type="button" id="btn-regenerate-tools" class="btn-secondary">
+              ⚡ Regenerar Adaptadores
+            </button>
+          </div>
+
+          <div class="ai-tools-grid" id="ai-tools-grid">
+            <!-- Dynamically populated or static tools -->
+          </div>
+        </div>
+
+        <div class="config-section">
+          <h3>Catálogo de Roles y Reglas del Proyecto</h3>
+          <p class="section-desc">Artefactos activos generados en el directorio <code>.specty/</code> del repositorio.</p>
+
+          <div class="catalog-grid">
+            <div class="catalog-card">
+              <h4>👥 Roles de Agentes (.specty/agents/)</h4>
+              <ul class="file-list" id="agents-file-list">
+                <li class="text-muted">Cargando...</li>
+              </ul>
+            </div>
+
+            <div class="catalog-card">
+              <h4>📜 Reglas Modulares (.specty/rules/)</h4>
+              <ul class="file-list" id="rules-file-list">
+                <li class="text-muted">Cargando...</li>
+              </ul>
+            </div>
+
+            <div class="catalog-card">
+              <h4>📄 Plantillas Base (.specty/templates/)</h4>
+              <ul class="file-list" id="templates-file-list">
+                <li class="text-muted">Cargando...</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="./settings.js"></script>
+</body>
+</html>

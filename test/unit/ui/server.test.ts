@@ -154,8 +154,69 @@ describe("ui/server", () => {
       const htmlText = await indexRes.text();
       expect(htmlText).toContain("Specty UI");
       expect(htmlText).toContain("window.__SPECTY_TOKEN__");
+      // Isolation assertion: index.html must not link to /settings
+      expect(htmlText).not.toContain('href="/settings"');
+      expect(htmlText).not.toContain("settings.html");
 
-      // 8. Test Path Traversal prevention
+      // 8. GET /settings (Static settings.html with injected session token)
+      const settingsRes = await fetch(`${serverInstance.url}/settings`);
+      expect(settingsRes.status).toBe(200);
+      const settingsHtml = await settingsRes.text();
+      expect(settingsHtml).toContain("Specty - Configuración y Métricas Globales");
+      expect(settingsHtml).toContain("window.__SPECTY_TOKEN__");
+      // Isolation assertion: settings.html must not link back to /
+      expect(settingsHtml).not.toContain('href="/"');
+
+      // 9. GET /api/config & PUT /api/config
+      const configGetRes = await fetch(`${serverInstance.url}/api/config`);
+      expect(configGetRes.status).toBe(200);
+      const configGetData = (await configGetRes.json()) as { config: { spec_engine: string } };
+      expect(configGetData.config.spec_engine).toBeDefined();
+
+      const configPutRes = await fetch(`${serverInstance.url}/api/config`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Specty-Token": serverInstance.sessionToken,
+        },
+        body: JSON.stringify({
+          ...configGetData.config,
+          spec_engine: "builtin",
+          governance: {
+            ...(((configGetData.config as Record<string, unknown>).governance as Record<
+              string,
+              unknown
+            >) || {}),
+            ci: "azure",
+          },
+        }),
+      });
+      expect(configPutRes.status).toBe(200);
+      const configPutData = (await configPutRes.json()) as {
+        success: boolean;
+        config: { spec_engine: string; governance: { ci: string } };
+      };
+      expect(configPutData.success).toBe(true);
+      expect(configPutData.config.spec_engine).toBe("builtin");
+      expect(configPutData.config.governance.ci).toBe("azure");
+
+      // 10. GET /api/metrics
+      const metricsRes = await fetch(`${serverInstance.url}/api/metrics?period=all`);
+      expect(metricsRes.status).toBe(200);
+      const metricsData = (await metricsRes.json()) as {
+        period: string;
+        summary: { totalEvents: number };
+      };
+      expect(metricsData.period).toBe("all");
+      expect(metricsData.summary).toBeDefined();
+
+      // 11. GET /api/infrastructure
+      const infraRes = await fetch(`${serverInstance.url}/api/infrastructure`);
+      expect(infraRes.status).toBe(200);
+      const infraData = (await infraRes.json()) as { config: unknown; manifest: unknown };
+      expect(infraData.config).toBeDefined();
+
+      // 12. Test Path Traversal prevention
       const badPathRes = await fetch(`${serverInstance.url}/../../../../etc/passwd`);
       // Should fallback to index.html or 404, NEVER expose /etc/passwd
       const badText = await badPathRes.text();
