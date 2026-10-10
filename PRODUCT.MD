@@ -187,9 +187,9 @@ Las convenciones de cada herramienta, incluida la ubicación de su configuració
 - **check-approval:** falla si hay cambios en código fuente sin un change approved, in-progress o done asociado.
 - **Hook pre-commit:** ejecuta check-approval y permite una salida de emergencia explícita (variable de entorno o trailer en el commit) que queda registrada para auditoría, pensada para hotfixes.
 - **Hook de IDE:** donde exista (por ejemplo PreToolUse en Claude Code), bloquea escrituras en rutas de código fuente si no hay un change aprobado activo.
-- **CI:** plantillas para GitHub Actions, GitLab CI y Azure Pipelines que validan los changes abiertos con OpenSpec, ejecutan check-approval y los comandos de verificación, y fallan si el PR toca código sin change asociado.
+- **CI / GitHub Action PR Gate (`specty gate`):** plantillas para GitHub Actions, GitLab CI y Azure Pipelines. En GitHub Actions, valida el diff del PR contra la rama base (`GITHUB_BASE_REF`), comprueba el hash criptográfico SHA-256 de la spec aprobada, detecta y audita si hubo bypass (vía variable de entorno o commit trailer `Specty-Bypass`), publica o actualiza de forma idempotente (*sticky comment*) un reporte en el PR con el resumen del change, las tareas completadas y la validez criptográfica, y bloquea el merge si se tocan archivos gobernados sin spec aprobada.
 - **Quality gates configurables:** lint, pruebas, análisis estático y cobertura mínima.
-- **Auditoría:** los changes archivados y los registros de aprobación forman el historial de decisiones.
+- **Auditoría:** los changes archivados, los registros de aprobación y el historial de bypasses (`.specty/audit/`) forman el historial de decisiones.
 
 ## 15. Lenguajes, frameworks y verificación por stack
 

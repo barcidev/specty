@@ -26,6 +26,11 @@ on:
   push:
     branches: [main, master]
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   governance-gate:
     runs-on: ubuntu-latest
@@ -43,8 +48,10 @@ jobs:
       - name: Install dependencies
         run: npm ci || npm install
 
-      - name: Check Specty Approval Gate
-        run: npx specty check-approval
+      - name: Check Specty Approval Gate & PR Report
+        run: npx specty gate --comment
+        env:
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
 
 ${verifySection}
 `;

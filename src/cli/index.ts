@@ -173,6 +173,35 @@ program
     }
   });
 
+program
+  .command("gate")
+  .description("verify specification approval gate and optionally publish report to GitHub PR")
+  .option(
+    "--base <ref>",
+    "base Git reference for PR diff (defaults to GITHUB_BASE_REF or origin/main)",
+  )
+  .option("--head <ref>", "head Git reference (defaults to HEAD)")
+  .option("--comment", "publish or update sticky gate comment on GitHub PR")
+  .option("--no-comment", "disable automatic PR comment posting")
+  .option("--token <token>", "GitHub API token (defaults to GITHUB_TOKEN)")
+  .option("--pr <number>", "Pull Request number")
+  .option("--output-comment <file>", "write markdown report to specified file")
+  .option("--lang <lang>", "report language (en or es)")
+  .option("--strict", "strictly fail on drafts or required re-approvals")
+  .option("--json", "output report as JSON")
+  .action(async (options) => {
+    try {
+      const { executeGate } = await import("./commands/gate.js");
+      const passed = await executeGate(options);
+      if (!passed) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 const hooksCmd = program.command("hooks").description("manage Git pre-commit governance hooks");
 
 hooksCmd
