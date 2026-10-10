@@ -30,8 +30,8 @@ describe("Specty Verifier (specty verify)", () => {
           path: ".",
           stack: { language: "typescript", frameworks: [] },
           verify: {
-            lint: "node -e 'process.exit(0)'",
-            test: "node -e 'process.exit(0)'",
+            lint: 'node -e "process.exit(0)"',
+            test: 'node -e "process.exit(0)"',
           },
         },
       ],
@@ -82,7 +82,7 @@ describe("Specty Verifier (specty verify)", () => {
     const tasksContent = `# Tasks: Test Feature
 ## 1. Implementation
 - [ ] 1.1 First task [agent: backend] [files: src/**]
-  verify: node -e 'process.exit(0)'
+  verify: node -e "process.exit(0)"
 `;
     await fs.writeFile(path.join(changeDir, "tasks.md"), tasksContent, "utf8");
 
@@ -93,7 +93,7 @@ describe("Specty Verifier (specty verify)", () => {
     expect(report.changeId).toBe("test-feature");
     expect(report.stackResults).toHaveLength(2);
     expect(report.tasksResults).toHaveLength(1);
-    expect(report.tasksResults[0]?.command).toBe("node -e 'process.exit(0)'");
+    expect(report.tasksResults[0]?.command).toBe('node -e "process.exit(0)"');
     expect(report.tasksResults[0]?.passed).toBe(true);
 
     // Verify verification.json exists
@@ -115,7 +115,7 @@ describe("Specty Verifier (specty verify)", () => {
     const tasksContent = `# Tasks: Failing Feature
 ## 1. Implementation
 - [ ] 1.1 Broken task [agent: backend] [files: src/**]
-  verify: node -e 'process.exit(1)'
+  verify: node -e "process.exit(1)"
 `;
     await fs.writeFile(path.join(changeDir, "tasks.md"), tasksContent, "utf8");
 
