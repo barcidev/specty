@@ -7,6 +7,8 @@ export interface ChangeState {
   change_id: string;
   status: ChangeStatus;
   created_at?: string;
+  started_at?: string;
+  completed_at?: string;
   approved_at?: string;
   approved_by?: string;
   content_hash?: string;

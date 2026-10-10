@@ -70,6 +70,28 @@ export async function checkApprovalStatus(
   }
 
   if (state.status === "archived") {
+    const normalizedDir = changeDir.replace(/\\/g, "/");
+    const isPhysicallyArchived =
+      normalizedDir.includes("/changes/archive/") || normalizedDir.includes("/archive/");
+
+    if (!isPhysicallyArchived) {
+      return {
+        code: "pending",
+        changeId,
+        approved: false,
+        reason: `Change "${changeId}" declares status "archived" but resides in the active changes directory. Active changes cannot claim archived status to bypass governance.`,
+      };
+    }
+
+    if (!state.content_hash) {
+      return {
+        code: "pending",
+        changeId,
+        approved: false,
+        reason: `Archived change "${changeId}" does not contain a verified historical approval hash.`,
+      };
+    }
+
     return {
       code: "approved",
       changeId,

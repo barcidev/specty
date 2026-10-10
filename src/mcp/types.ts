@@ -75,6 +75,15 @@ export interface SpectyVerifyCommandResult {
 
 export type SpectyVerifyResult = Record<string, SpectyVerifyCommandResult> | { message: string };
 
+export interface SpectyStateTransitionResult {
+  success: boolean;
+  changeId?: string;
+  fromStatus?: string;
+  toStatus?: string;
+  reason?: string;
+  message?: string;
+}
+
 export interface McpToolResultMap {
   specty_validate_change: SpectyValidateChangeResult;
   specty_get_active_change: SpectyGetActiveChangeResult;
@@ -84,4 +93,6 @@ export interface McpToolResultMap {
   specty_record_handoff: SpectyRecordHandoffResult;
   specty_get_code_graph: SpectyGetCodeGraphResult;
   specty_verify: SpectyVerifyResult;
+  specty_start_change: SpectyStateTransitionResult;
+  specty_complete_change: SpectyStateTransitionResult;
 }

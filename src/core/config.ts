@@ -41,11 +41,20 @@ export const ScopeSchema = z.object({
   verify: ScopeVerifySchema.default({}),
 });
 
+export const PROTECTED_GOVERNANCE_PATHS = [
+  "specty.yaml",
+  ".specty/config.yaml",
+  ".specty/audit/**",
+  ".husky/**",
+  ".githooks/**",
+  ".github/workflows/**",
+];
+
 export const GovernanceSchema = z.object({
   hooks: z.boolean().default(true),
   ci: z.enum(["github", "gitlab", "azure", "none"]).default("github"),
   source_paths: z.array(z.string()).default(["src/**"]),
-  exempt_paths: z.array(z.string()).default(["**/*.md", "openspec/**", ".specty/**", "docs/**"]),
+  exempt_paths: z.array(z.string()).default(["**/*.md", "openspec/**", "docs/**"]),
   bypass: z
     .object({
       env: z.string().default("SPECTY_BYPASS"),

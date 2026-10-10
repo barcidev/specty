@@ -3,9 +3,11 @@ import path from "node:path";
 import { loadConfig } from "../core/config.js";
 import { getSpecEngine } from "../engines/factory.js";
 import { checkApprovalStatus } from "../governance/approvals.js";
+import { resolveTargetChange } from "../governance/change-resolver.js";
 import { evaluateGuard } from "../governance/guard.js";
 import { determineNextAction } from "../governance/next-action.js";
 import { validateChangeSpecification } from "../governance/spec-validator.js";
+import { transitionChangeState } from "../governance/state-machine.js";
 import { executeVerification } from "../governance/verifier.js";
 import { createHandoff, getLatestHandoff } from "../handoff/manager.js";
 import type { CodeGraph } from "./graph.js";
@@ -65,7 +67,34 @@ export function getMcpToolDefinitions(): McpToolDefinition[] {
           changeId: {
             type: "string",
             description:
-              "Optional specific change identifier. If omitted, returns first active change.",
+              "Optional specific change identifier. If omitted, resolved from branch or active changes.",
+          },
+        },
+      },
+    },
+    {
+      name: "specty_start_change",
+      description: "Transition an approved change to in-progress state to commence development.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          changeId: {
+            type: "string",
+            description: "Optional change identifier. If omitted, resolved from current branch.",
+          },
+        },
+      },
+    },
+    {
+      name: "specty_complete_change",
+      description:
+        "Complete a change and transition to done after verifying tasks and test evidence.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          changeId: {
+            type: "string",
+            description: "Optional change identifier. If omitted, resolved from current branch.",
           },
         },
       },
@@ -242,8 +271,8 @@ export async function handleMcpToolCall(
 
     case "specty_get_active_change": {
       const changeId = typeof args.changeId === "string" ? args.changeId : undefined;
-      const changes = await engine.listChanges(repoRoot);
-      const target = changeId ? changes.find((c) => c.id === changeId) : changes[0];
+      const resolution = await resolveTargetChange(repoRoot, { changeId });
+      const target = resolution.change;
 
       if (!target) {
         return { message: "No active changes found in repository." };
@@ -266,6 +295,30 @@ export async function handleMcpToolCall(
         proposal: proposalContent,
         tasks: tasksContent,
       };
+    }
+
+    case "specty_start_change": {
+      const changeId = typeof args.changeId === "string" ? args.changeId : undefined;
+      const resolution = await resolveTargetChange(repoRoot, { changeId });
+      if (!resolution.resolvedId) {
+        return {
+          success: false,
+          message: resolution.reason ?? "No active specification change resolved.",
+        };
+      }
+      return await transitionChangeState(repoRoot, resolution.resolvedId, "in-progress");
+    }
+
+    case "specty_complete_change": {
+      const changeId = typeof args.changeId === "string" ? args.changeId : undefined;
+      const resolution = await resolveTargetChange(repoRoot, { changeId });
+      if (!resolution.resolvedId) {
+        return {
+          success: false,
+          message: resolution.reason ?? "No active specification change resolved.",
+        };
+      }
+      return await transitionChangeState(repoRoot, resolution.resolvedId, "done");
     }
 
     case "specty_get_rules": {

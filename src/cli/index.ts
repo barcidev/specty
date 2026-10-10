@@ -439,6 +439,58 @@ program
     }
   });
 
+program
+  .command("start [change]")
+  .description("transition an approved change to in-progress state to commence development")
+  .option("-f, --force", "bypass prerequisite state verification")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeStart } = await import("./commands/start.js");
+      const success = await executeStart(change, options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("done [change]")
+  .description("transition a change to done after verifying 100% completed tasks and passing tests")
+  .option("-f, --force", "bypass precondition checks (tasks completed and test verification)")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeDone } = await import("./commands/done.js");
+      const success = await executeDone(change, options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("archive [change]")
+  .description("archive a completed change and move it into historical storage")
+  .option("-f, --force", "force archiving even if not in done state")
+  .option("--dry-run", "preview archiving without moving files")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeArchive } = await import("./commands/archive.js");
+      const success = await executeArchive(change, options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 export function getRegisteredCommands(): string[] {
   const commands: string[] = [];
   for (const cmd of program.commands) {

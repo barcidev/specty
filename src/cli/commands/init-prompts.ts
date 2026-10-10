@@ -7,6 +7,7 @@ import {
 } from "../../core/config.js";
 import { getDictionary, normalizeLanguage, type SupportedLanguage } from "../../core/i18n.js";
 import { defaultDetectorRegistry } from "../../detect/detector-registry.js";
+import { resolveDefaultSourcePaths } from "../../detect/source-paths-resolver.js";
 import type { RepositoryDetectionResult } from "../../detect/types.js";
 import { getRecommendedArchitectures } from "./architectures.js";
 import type { InitCommandOptions, InitFlowResult } from "./init-types.js";
@@ -251,8 +252,8 @@ export async function runInteractiveInit(
     governance: {
       hooks: enableHooks,
       ci: selectedCi,
-      source_paths: ["src/**"],
-      exempt_paths: ["**/*.md", "openspec/**", ".specty/**", "docs/**"],
+      source_paths: resolveDefaultSourcePaths(detection),
+      exempt_paths: ["**/*.md", "openspec/**", "docs/**"],
       bypass: { env: "SPECTY_BYPASS", trailer: "Specty-Bypass" },
       quality_gates: { lint: true, test: true, static: true, coverage_min: 0 },
     },
