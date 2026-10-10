@@ -1,0 +1,44 @@
+name: "Specty PR Governance Gate"
+description: "Enforce specification-driven AI development governance and publish automated PR approval and bypass audit status comments."
+author: "Specty Team"
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  github-token:
+    description: "GitHub API Token for PR comment posting"
+    required: false
+    default: ${{ github.token }}
+  base-ref:
+    description: "Base branch reference for diff (defaults to GITHUB_BASE_REF or origin/main)"
+    required: false
+    default: ""
+  strict:
+    description: "Strict mode failing on unapproved drafts or required re-approvals"
+    required: false
+    default: "false"
+  lang:
+    description: "Language for PR comments (en or es)"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run Specty Gate
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        ARGS="--comment"
+        if [ -n "${{ inputs.base-ref }}" ]; then
+          ARGS="$ARGS --base ${{ inputs.base-ref }}"
+        fi
+        if [ "${{ inputs.strict }}" = "true" ]; then
+          ARGS="$ARGS --strict"
+        fi
+        if [ -n "${{ inputs.lang }}" ]; then
+          ARGS="$ARGS --lang ${{ inputs.lang }}"
+        fi
+        npx specty gate $ARGS

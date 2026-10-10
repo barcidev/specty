@@ -1,9 +1,11 @@
 export * from "./aider.js";
 export * from "./amazonq.js";
 export * from "./antigravity.js";
+export * from "./chatgpt.js";
 export * from "./claude.js";
 export * from "./cline.js";
 export * from "./codex.js";
+export * from "./cody.js";
 export * from "./common.js";
 export * from "./continue.js";
 export * from "./copilot.js";
@@ -16,3 +18,4 @@ export * from "./registry.js";
 export * from "./roo.js";
 export * from "./types.js";
 export * from "./windsurf.js";
+export * from "./zed.js";

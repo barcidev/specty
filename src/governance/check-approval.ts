@@ -4,19 +4,50 @@ import ignore from "ignore";
 import { loadConfig } from "../core/config.js";
 import { executeCommand } from "../core/exec.js";
 import { getSpecEngine } from "../engines/factory.js";
+import type { ChangeStatus, ChangeTaskSummary } from "../engines/types.js";
 import { recordMetricEvent } from "../metrics/index.js";
-import { checkApprovalStatus } from "./approvals.js";
+import { type ApprovalStateCode, checkApprovalStatus } from "./approvals.js";
+
+export interface GateChangeSummary {
+  id: string;
+  title?: string;
+  status: ChangeStatus;
+  approvalCode: ApprovalStateCode;
+  approved: boolean;
+  approvedBy?: string;
+  approvedAt?: string;
+  approvedHash?: string;
+  currentHash?: string;
+  tasks: ChangeTaskSummary;
+  isArchived: boolean;
+}
+
+export interface GateBypassRecord {
+  timestamp: string;
+  user: string;
+  env?: string;
+  source: "env" | "trailer" | "option";
+  reason: string;
+  files: string[];
+}
 
 export interface GateResult {
   passed: boolean;
   bypassed: boolean;
+  bypassDetails?: GateBypassRecord;
   modifiedSourceFiles: string[];
+  modifiedExemptFiles?: string[];
+  allModifiedFiles?: string[];
   activeApprovedChange?: string;
+  changeDetails?: GateChangeSummary;
+  allChanges?: GateChangeSummary[];
   reason?: string;
 }
 
 export interface CheckApprovalGateOptions {
   stagedOnly?: boolean;
+  baseRef?: string;
+  headRef?: string;
   bypassReason?: string;
 }
 
@@ -33,37 +64,94 @@ export async function checkApprovalGate(
   const config = await loadConfig(repoRoot);
 
   // 1. Gather modified files from git
-  const gitCmd = options.stagedOnly ? "git diff --cached --name-only" : "git diff --name-only HEAD";
+  let modifiedFiles: string[] = [];
+  const baseRef =
+    options.baseRef || (!options.stagedOnly ? process.env.GITHUB_BASE_REF : undefined);
+  const headRef = options.headRef || "HEAD";
+  let resolvedBase = baseRef;
 
-  const diffRes = await executeCommand(gitCmd, { cwd: repoRoot, silent: true });
-  let modifiedFiles = diffRes.stdout
-    .split("\n")
-    .map((f) => f.trim().replace(/\\/g, "/"))
-    .filter(Boolean);
-
-  // Fallback to git status --porcelain if working tree check is needed
-  if (!options.stagedOnly && modifiedFiles.length === 0) {
-    const statusRes = await executeCommand("git status --porcelain", {
+  if (options.stagedOnly) {
+    const diffRes = await executeCommand("git diff --cached --name-only", {
       cwd: repoRoot,
       silent: true,
     });
-    modifiedFiles = statusRes.stdout
+    modifiedFiles = diffRes.stdout
       .split("\n")
-      .map((line) => line.slice(3).trim().replace(/\\/g, "/"))
+      .map((f) => f.trim().replace(/\\/g, "/"))
       .filter(Boolean);
+  } else if (baseRef) {
+    const baseCandidates = baseRef.startsWith("origin/")
+      ? [baseRef, baseRef.replace(/^origin\//, "")]
+      : [`origin/${baseRef}`, baseRef];
+
+    let diffSuccess = false;
+    for (const cand of baseCandidates) {
+      const diffRes = await executeCommand(`git diff --name-only ${cand}...${headRef}`, {
+        cwd: repoRoot,
+        silent: true,
+      });
+      if (diffRes.success) {
+        modifiedFiles = diffRes.stdout
+          .split("\n")
+          .map((f) => f.trim().replace(/\\/g, "/"))
+          .filter(Boolean);
+        diffSuccess = true;
+        resolvedBase = cand;
+        break;
+      }
+    }
+
+    if (!diffSuccess) {
+      const diffRes = await executeCommand("git diff --name-only HEAD", {
+        cwd: repoRoot,
+        silent: true,
+      });
+      modifiedFiles = diffRes.stdout
+        .split("\n")
+        .map((f) => f.trim().replace(/\\/g, "/"))
+        .filter(Boolean);
+    }
+  } else {
+    const diffRes = await executeCommand("git diff --name-only HEAD", {
+      cwd: repoRoot,
+      silent: true,
+    });
+    modifiedFiles = diffRes.stdout
+      .split("\n")
+      .map((f) => f.trim().replace(/\\/g, "/"))
+      .filter(Boolean);
+
+    // Fallback to git status --porcelain if working tree check is needed
+    if (modifiedFiles.length === 0) {
+      const statusRes = await executeCommand("git status --porcelain", {
+        cwd: repoRoot,
+        silent: true,
+      });
+      modifiedFiles = statusRes.stdout
+        .split("\n")
+        .map((line) => line.slice(3).trim().replace(/\\/g, "/"))
+        .filter(Boolean);
+    }
   }
 
   // 2. Filter modified files against source_paths and exempt_paths
   const sourceIg = ignore().add(config.governance.source_paths);
   const exemptIg = ignore().add(config.governance.exempt_paths);
 
-  const modifiedSourceFiles = modifiedFiles.filter((file) => {
-    // Must match source paths
-    const isSource = sourceIg.ignores(file);
-    // Must NOT be exempt
+  const modifiedSourceFiles: string[] = [];
+  const modifiedExemptFiles: string[] = [];
+
+  for (const file of modifiedFiles) {
     const isExempt = exemptIg.ignores(file);
-    return isSource && !isExempt;
-  });
+    const isSource = sourceIg.ignores(file);
+    if (isExempt) {
+      modifiedExemptFiles.push(file);
+    } else if (isSource) {
+      modifiedSourceFiles.push(file);
+    } else {
+      modifiedExemptFiles.push(file);
+    }
+  }
 
   // If no source files are modified, gate passes trivially
   if (modifiedSourceFiles.length === 0) {
@@ -71,22 +159,70 @@ export async function checkApprovalGate(
       passed: true,
       bypassed: false,
       modifiedSourceFiles: [],
+      modifiedExemptFiles,
+      allModifiedFiles: modifiedFiles,
       reason: "No governed source files were modified.",
     };
   }
 
   // 3. Check for Emergency Bypass
   const bypassEnvVar = config.governance.bypass.env;
-  const isBypassed = Boolean(process.env[bypassEnvVar] || options.bypassReason);
+  const bypassTrailerKey = config.governance.bypass.trailer || "Specty-Bypass";
+
+  let isBypassed = Boolean(process.env[bypassEnvVar] || options.bypassReason);
+  let bypassSource: "env" | "trailer" | "option" = options.bypassReason
+    ? "option"
+    : process.env[bypassEnvVar]
+      ? "env"
+      : "option";
+  let bypassReason =
+    options.bypassReason || (process.env[bypassEnvVar] ? "Emergency environment bypass" : "");
+
+  // If not bypassed yet, check Git commit trailers in commit range
+  if (!isBypassed) {
+    try {
+      const logRange = resolvedBase ? `${resolvedBase}...${headRef}` : "-1";
+      const trailerRes = await executeCommand(
+        `git log ${logRange} --format="%(trailers:key=${bypassTrailerKey},valueonly)"`,
+        { cwd: repoRoot, silent: true },
+      );
+      const trailers = trailerRes.stdout
+        .split("\n")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      const firstTrailer = trailers[0];
+      if (firstTrailer) {
+        isBypassed = true;
+        bypassSource = "trailer";
+        bypassReason = firstTrailer;
+      } else {
+        const bodyRes = await executeCommand(`git log ${logRange} --format="%B"`, {
+          cwd: repoRoot,
+          silent: true,
+        });
+        const match = bodyRes.stdout.match(new RegExp(`^${bypassTrailerKey}:\\s*(.+)`, "mi"));
+        if (match?.[1]) {
+          isBypassed = true;
+          bypassSource = "trailer";
+          bypassReason = match[1].trim();
+        }
+      }
+    } catch {
+      // Ignore git log errors
+    }
+  }
 
   if (isBypassed) {
     const auditDir = path.join(repoRoot, ".specty/audit");
     await fs.mkdir(auditDir, { recursive: true });
-    const auditEntry = {
+    const user = process.env.GITHUB_ACTOR || process.env.USER || "unknown";
+    const auditEntry: GateBypassRecord = {
       timestamp: new Date().toISOString(),
-      user: process.env.USER || "unknown",
-      env: bypassEnvVar,
-      reason: options.bypassReason || "Emergency hotfix bypass",
+      user,
+      env: bypassSource === "env" ? bypassEnvVar : undefined,
+      source: bypassSource,
+      reason: bypassReason || "Emergency hotfix bypass",
       files: modifiedSourceFiles,
     };
     await fs.appendFile(
@@ -105,19 +241,42 @@ export async function checkApprovalGate(
     return {
       passed: true,
       bypassed: true,
+      bypassDetails: auditEntry,
       modifiedSourceFiles,
-      reason: `Emergency bypass active via ${bypassEnvVar}. Action logged for audit.`,
+      modifiedExemptFiles,
+      allModifiedFiles: modifiedFiles,
+      reason: `Emergency bypass active via ${bypassSource === "env" ? bypassEnvVar : bypassSource}. Action logged for audit.`,
     };
   }
 
   // 4. Verify Active Approved Specification Change
   const engine = getSpecEngine(config.spec_engine);
   const activeChanges = await engine.listChanges(repoRoot);
+  const changeSummaries: GateChangeSummary[] = [];
+
+  let approvedChangeSummary: GateChangeSummary | undefined;
+  let reapprovalChangeSummary: GateChangeSummary | undefined;
 
   for (const change of activeChanges) {
     const status = await checkApprovalStatus(repoRoot, change.id);
 
+    const summary: GateChangeSummary = {
+      id: change.id,
+      title: change.title,
+      status: change.status,
+      approvalCode: status.code,
+      approved: status.approved,
+      approvedBy: status.approvedBy,
+      approvedAt: status.approvedAt,
+      approvedHash: status.approvedHash,
+      currentHash: status.currentHash,
+      tasks: change.tasks,
+      isArchived: change.isArchived,
+    };
+    changeSummaries.push(summary);
+
     if (status.code === "reapproval_required") {
+      reapprovalChangeSummary ??= summary;
       await recordMetricEvent(repoRoot, {
         type: "approval_invalidated",
         changeId: change.id,
@@ -132,20 +291,46 @@ export async function checkApprovalGate(
         change.status === "in-progress" ||
         change.status === "review")
     ) {
-      return {
-        passed: true,
-        bypassed: false,
-        modifiedSourceFiles,
-        activeApprovedChange: change.id,
-        reason: `Governed by approved change "${change.id}".`,
-      };
+      approvedChangeSummary ??= summary;
     }
   }
 
+  if (approvedChangeSummary) {
+    return {
+      passed: true,
+      bypassed: false,
+      modifiedSourceFiles,
+      modifiedExemptFiles,
+      allModifiedFiles: modifiedFiles,
+      activeApprovedChange: approvedChangeSummary.id,
+      changeDetails: approvedChangeSummary,
+      allChanges: changeSummaries,
+      reason: `Governed by approved change "${approvedChangeSummary.id}".`,
+    };
+  }
+
+  if (reapprovalChangeSummary) {
+    return {
+      passed: false,
+      bypassed: false,
+      modifiedSourceFiles,
+      modifiedExemptFiles,
+      allModifiedFiles: modifiedFiles,
+      changeDetails: reapprovalChangeSummary,
+      allChanges: changeSummaries,
+      reason: `Specification change "${reapprovalChangeSummary.id}" was modified after approval. Re-approval required.\nApproved hash: ${reapprovalChangeSummary.approvedHash}\nCurrent hash:  ${reapprovalChangeSummary.currentHash}\n\nRun 'specty approve ${reapprovalChangeSummary.id}' to re-approve.`,
+    };
+  }
+
+  const draftChange = changeSummaries.find((c) => c.status === "draft");
   return {
     passed: false,
     bypassed: false,
     modifiedSourceFiles,
+    modifiedExemptFiles,
+    allModifiedFiles: modifiedFiles,
+    changeDetails: draftChange,
+    allChanges: changeSummaries,
     reason: `Modifications in source files without an active approved change:\n${modifiedSourceFiles.map((f) => `  - ${f}`).join("\n")}\n\nRun 'specty approve <change>' or plan a new change with 'specty'.`,
   };
 }

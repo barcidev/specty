@@ -83,16 +83,57 @@ specty init -y --tool antigravity,claude,cursor --lang en
 | `specty sync` | Synchronizes `.specty/` rules, templates, and agent definitions into all enabled tool adapters. |
 | `specty doctor` | Validates configuration, tools, hooks, and specs with automated repairs (`--fix`). |
 | `specty check-approval` | Governance gate evaluated by Git hooks and CI (`--staged`, `--bypass <reason>`). |
+| `specty gate` | Automated PR gate and comment bot for GitHub Actions (`--comment`, `--base <ref>`). |
 | `specty handoff create` | Records a subagent session transition with completed tasks and decisions. |
 | `specty handoff list` | Lists all handoffs for a specification change. |
 | `specty handoff show` | Displays markdown content of a handoff. |
 | `specty mcp` | Starts the stdio Model Context Protocol (MCP) server. |
 | `specty metrics` | Displays governance compliance, pass rates, and handoff statistics. |
-| `specty adapters list` | Lists all 14 supported AI assistants and their enabled state. |
+| `specty adapters list` | Lists all 17 supported AI assistants and their enabled state. |
 | `specty adapters add <tool>` | Enables and generates configuration files for an assistant tool. |
 | `specty adapters remove <tool>`| Disables and cleans up adapter files for an assistant tool. |
 | `specty hooks install` | Installs `.git/hooks/pre-commit` to prevent unauthorized source code commits. |
 | `specty hooks uninstall` | Removes specty pre-commit Git hooks. |
+
+---
+
+## 🚦 GitHub Action & PR Gate Bot
+
+Specty includes native GitHub Actions integration with `action.yml` and the `specty gate` command:
+
+```yaml
+# .github/workflows/specty.yml
+name: Specty PR Gate
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Check Specty Gate & Comment PR
+        run: npx specty gate --comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The automated bot posts and updates an idempotent (sticky, no-spam) comment on each PR:
+1. **Associated Change Summary**: Change ID, title, and task completion progress from `tasks.md`.
+2. **Approval Status & Verification Hash**: SHA-256 cryptographic integrity verification proving the specification was not tampered with after human sign-off.
+3. **Emergency Bypass Audit**: Prominent warnings and audit logging if emergency bypass was triggered (`SPECTY_BYPASS` or commit trailer `Specty-Bypass: <reason>`).
 
 ---
 
@@ -116,6 +157,9 @@ specty init -y --tool antigravity,claude,cursor --lang en
 | **Amazon Q Developer**| `.amazonq/rules.md` |
 | **Aider** | `.aider.conf.yml`, `.aider.model.metadata.json` |
 | **OpenCode** | `opencode.json`, `AGENTS.md` |
+| **Zed Editor** | `.zed/settings.json` |
+| **Sourcegraph Cody** | `.cody/project.json`, `.cody/rules.json` |
+| **OpenAI Canvas / ChatGPT Projects** | `.specty/exports/chatgpt-instructions.md`, `.specty/exports/openai-context.md` |
 
 ---
 

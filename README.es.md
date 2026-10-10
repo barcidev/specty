@@ -86,7 +86,8 @@ specty init -y --tool antigravity,claude,cursor --lang es
 | `specty handoff show`  | Muestra los detalles de un handoff específico. |
 | `specty mcp`           | Inicia el servidor MCP local sobre stdio. |
 | `specty metrics`       | Muestra métricas de cumplimiento, tasa de aprobación y traspasos entre agentes. |
-| `specty adapters list` | Lista los 14 asistentes de IA compatibles y su estado de habilitación. |
+| `specty gate`          | PR Gate y bot comentador para CI (comenta estado, hashes y auditoría de bypass). |
+| `specty adapters list` | Lista los 17 asistentes de IA compatibles y su estado de habilitación. |
 | `specty adapters add <herramienta>` | Habilita y genera archivos de adaptación para un asistente. |
 | `specty adapters remove <herramienta>` | Deshabilita y limpia archivos para un asistente. |
 | `specty hooks install` | Instala el hook `.git/hooks/pre-commit` para prevenir commits sin aprobación. |
@@ -94,7 +95,47 @@ specty init -y --tool antigravity,claude,cursor --lang es
 
 ---
 
-## 🤖 14 Adaptadores de Asistentes de IA
+## 🚦 GitHub Action & PR Gate Automatizado
+
+Specty incluye soporte nativo para Pull Requests en GitHub Actions (`action.yml` y comando `specty gate`):
+
+```yaml
+# .github/workflows/specty.yml
+name: Specty PR Gate
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Check Specty Gate & Comment PR
+        run: npx specty gate --comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+El bot publica y actualiza de manera idempotente (*sticky comment*, sin spam) un comentario en el PR que audita:
+1. **Resumen del change**: Título, estado y progreso de tareas de `tasks.md`.
+2. **Estado de aprobación y hash**: Verificación criptográfica SHA-256 (`content_hash`) certificando que la spec no fue modificada tras la aprobación.
+3. **Auditoría de Bypass**: Alertas automáticas si se utilizó una salida de emergencia (`SPECTY_BYPASS` o commit trailer `Specty-Bypass: <motivo>`).
+
+---
+
+## 🤖 17 Adaptadores de Asistentes de IA
 
 `specty` centraliza y distribuye reglas hacia los principales entornos de desarrollo:
 
@@ -112,6 +153,9 @@ specty init -y --tool antigravity,claude,cursor --lang es
 - **Amazon Q Developer:** `.amazonq/rules.md`
 - **Aider:** `.aider.conf.yml`, `.aider.model.metadata.json`
 - **OpenCode:** `opencode.json`, `AGENTS.md`
+- **Zed Editor:** `.zed/settings.json`
+- **Sourcegraph Cody:** `.cody/project.json`, `.cody/rules.json`
+- **OpenAI Canvas / ChatGPT Projects:** `.specty/exports/chatgpt-instructions.md`, `.specty/exports/openai-context.md`
 
 ---
 

@@ -173,6 +173,35 @@ program
     }
   });
 
+program
+  .command("gate")
+  .description("verify specification approval gate and optionally publish report to GitHub PR")
+  .option(
+    "--base <ref>",
+    "base Git reference for PR diff (defaults to GITHUB_BASE_REF or origin/main)",
+  )
+  .option("--head <ref>", "head Git reference (defaults to HEAD)")
+  .option("--comment", "publish or update sticky gate comment on GitHub PR")
+  .option("--no-comment", "disable automatic PR comment posting")
+  .option("--token <token>", "GitHub API token (defaults to GITHUB_TOKEN)")
+  .option("--pr <number>", "Pull Request number")
+  .option("--output-comment <file>", "write markdown report to specified file")
+  .option("--lang <lang>", "report language (en or es)")
+  .option("--strict", "strictly fail on drafts or required re-approvals")
+  .option("--json", "output report as JSON")
+  .action(async (options) => {
+    try {
+      const { executeGate } = await import("./commands/gate.js");
+      const passed = await executeGate(options);
+      if (!passed) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 const hooksCmd = program.command("hooks").description("manage Git pre-commit governance hooks");
 
 hooksCmd
@@ -284,6 +313,45 @@ program
     try {
       const { executeMetrics } = await import("./commands/metrics.js");
       await executeMetrics(options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("ui")
+  .alias("dashboard")
+  .description("launch local visual web interface for specifications, tasks, diffs, and approvals")
+  .option("-p, --port <number>", "HTTP port (defaults to 4173)")
+  .option("--host <host>", "HTTP host interface (defaults to 127.0.0.1)")
+  .option("-c, --change <id>", "open directly to specified change")
+  .option("--no-open", "do not automatically open web browser")
+  .option("--ide-plan", "enable IDE plan projection mode")
+  .action(async (options) => {
+    try {
+      const { executeUi } = await import("./commands/ui.js");
+      await executeUi(options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+
+  .command("view [change]")
+  .description(
+    "view specification in IDE plan mode (Antigravity) or auto-launch local web dashboard",
+  )
+  .option("--ide-plan", "force IDE plan viewer projection")
+  .option("--web", "force local web dashboard viewer")
+  .option("-p, --port <number>", "HTTP port (defaults to 4173)")
+  .option("--no-open", "do not automatically open web browser")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeView } = await import("./commands/view.js");
+      await executeView(change, options);
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exit(1);

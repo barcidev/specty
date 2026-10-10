@@ -3,9 +3,11 @@ import type { GeneratedFile } from "../generate/types.js";
 import { aiderAdapter } from "./aider.js";
 import { amazonqAdapter } from "./amazonq.js";
 import { antigravityAdapter } from "./antigravity.js";
+import { chatgptAdapter } from "./chatgpt.js";
 import { claudeAdapter } from "./claude.js";
 import { clineAdapter } from "./cline.js";
 import { codexAdapter } from "./codex.js";
+import { codyAdapter } from "./cody.js";
 import { continueAdapter } from "./continue.js";
 import { copilotAdapter } from "./copilot.js";
 import { cursorAdapter } from "./cursor.js";
@@ -15,6 +17,7 @@ import { opencodeAdapter } from "./opencode.js";
 import { rooAdapter } from "./roo.js";
 import type { AdapterContext, ToolAdapter } from "./types.js";
 import { windsurfAdapter } from "./windsurf.js";
+import { zedAdapter } from "./zed.js";
 
 const ADAPTERS: Record<SupportedTool, ToolAdapter> = {
   antigravity: antigravityAdapter,
@@ -31,6 +34,9 @@ const ADAPTERS: Record<SupportedTool, ToolAdapter> = {
   "amazon-q": amazonqAdapter,
   aider: aiderAdapter,
   opencode: opencodeAdapter,
+  zed: zedAdapter,
+  cody: codyAdapter,
+  chatgpt: chatgptAdapter,
 };
 
 const TOOL_ALIASES: Record<string, SupportedTool> = {
@@ -38,6 +44,14 @@ const TOOL_ALIASES: Record<string, SupportedTool> = {
   roo: "roocode",
   amazonq: "amazon-q",
   "open-code": "opencode",
+  "zed-editor": "zed",
+  zededitor: "zed",
+  "sourcegraph-cody": "cody",
+  sourcegraph: "cody",
+  openai: "chatgpt",
+  "openai-canvas": "chatgpt",
+  "chatgpt-projects": "chatgpt",
+  canvas: "chatgpt",
 };
 
 export function normalizeToolId(id: string): SupportedTool | undefined {
