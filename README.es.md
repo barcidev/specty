@@ -94,7 +94,7 @@ specty init -y --tool antigravity,claude,cursor --lang es
 
 ---
 
-## 🤖 14 Adaptadores de Asistentes de IA
+## 🤖 17 Adaptadores de Asistentes de IA
 
 `specty` centraliza y distribuye reglas hacia los principales entornos de desarrollo:
 
@@ -112,6 +112,9 @@ specty init -y --tool antigravity,claude,cursor --lang es
 - **Amazon Q Developer:** `.amazonq/rules.md`
 - **Aider:** `.aider.conf.yml`, `.aider.model.metadata.json`
 - **OpenCode:** `opencode.json`, `AGENTS.md`
+- **Zed Editor:** `.zed/settings.json`
+- **Sourcegraph Cody:** `.cody/project.json`, `.cody/rules.json`
+- **OpenAI Canvas / ChatGPT Projects:** `.specty/exports/chatgpt-instructions.md`, `.specty/exports/openai-context.md`
 
 ---
 

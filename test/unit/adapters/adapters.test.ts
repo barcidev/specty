@@ -13,9 +13,9 @@ import { createDefaultConfig, SUPPORTED_TOOLS, saveConfig } from "../../../src/c
 import { loadManifest } from "../../../src/core/manifest.js";
 
 describe("tool adapters registry", () => {
-  it("registers all 14 supported tools", () => {
+  it("registers all 17 supported tools", () => {
     const all = getAllAdapters();
-    expect(all).toHaveLength(14);
+    expect(all).toHaveLength(17);
 
     for (const toolId of SUPPORTED_TOOLS) {
       const adapter = getAdapter(toolId);
@@ -326,6 +326,171 @@ describe("individual tool adapter generation", () => {
       await fs.rm(testDir, { recursive: true, force: true });
     }
   });
+
+  it("generates expected files for Zed Editor with MCP", async () => {
+    const adapter = getAdapter("zed");
+    expect(adapter.id).toBe("zed");
+    expect(adapter.name).toBe("Zed Editor");
+
+    const files = await adapter.generateFiles(dummyCtx);
+    expect(files).toHaveLength(1);
+    expect(files[0]?.relativePath).toBe(".zed/settings.json");
+
+    const parsed = JSON.parse(files[0]?.content ?? "{}");
+    expect(parsed.context_servers.specty).toEqual({
+      command: "specty",
+      args: ["mcp"],
+    });
+    expect(parsed.context_servers["codebase-memory"]).toEqual({
+      command: "codebase-memory-mcp",
+      args: [],
+    });
+    expect(parsed.agent.commit_message_instructions).toContain("Conventional Commits");
+    expect(adapter.getMcpInstructions?.("es")).toContain(".zed/settings.json");
+    expect(adapter.getMcpInstructions?.("en")).toContain(".zed/settings.json");
+  });
+
+  it("resolves zed, cody, and chatgpt aliases correctly", () => {
+    expect(getAdapter("zed-editor").id).toBe("zed");
+    expect(getAdapter("zededitor").id).toBe("zed");
+    expect(getAdapter("sourcegraph-cody").id).toBe("cody");
+    expect(getAdapter("sourcegraph").id).toBe("cody");
+    expect(getAdapter("openai").id).toBe("chatgpt");
+    expect(getAdapter("openai-canvas").id).toBe("chatgpt");
+    expect(getAdapter("chatgpt-projects").id).toBe("chatgpt");
+    expect(getAdapter("canvas").id).toBe("chatgpt");
+  });
+
+  it("performs safe merge on existing .zed/settings.json preserving user settings", async () => {
+    const testDir = await fs.mkdtemp(path.join(os.tmpdir(), "specty-zed-merge-"));
+    try {
+      await fs.mkdir(path.join(testDir, ".zed"), { recursive: true });
+      const existingSettings = {
+        theme: "One Dark",
+        vim_mode: true,
+        context_servers: {
+          customServer: {
+            command: "custom-mcp",
+            args: ["--port", "3000"],
+          },
+        },
+      };
+      await fs.writeFile(
+        path.join(testDir, ".zed/settings.json"),
+        JSON.stringify(existingSettings, null, 2),
+      );
+
+      const adapter = getAdapter("zed");
+      const files = await adapter.generateFiles({
+        ...dummyCtx,
+        repoRoot: testDir,
+        enableMcp: true,
+      });
+
+      const merged = JSON.parse(files[0]?.content ?? "{}");
+      expect(merged.theme).toBe("One Dark");
+      expect(merged.vim_mode).toBe(true);
+      expect(merged.context_servers.customServer).toBeDefined();
+      expect(merged.context_servers.specty).toBeDefined();
+      expect(merged.agent.commit_message_instructions).toBeDefined();
+    } finally {
+      await fs.rm(testDir, { recursive: true, force: true });
+    }
+  });
+
+  it("generates expected files for Sourcegraph Cody", async () => {
+    const adapter = getAdapter("cody");
+    expect(adapter.id).toBe("cody");
+    expect(adapter.name).toBe("Sourcegraph Cody");
+
+    const files = await adapter.generateFiles(dummyCtx);
+    const relPaths = files.map((f) => f.relativePath);
+    expect(relPaths).toContain(".cody/project.json");
+    expect(relPaths).toContain(".cody/rules.json");
+
+    const project = JSON.parse(
+      files.find((f) => f.relativePath === ".cody/project.json")?.content ?? "{}",
+    );
+    expect(project.instructions).toBe("AGENTS.md");
+    expect(project.rules).toBe(".cody/rules.json");
+
+    const rulesObj = JSON.parse(
+      files.find((f) => f.relativePath === ".cody/rules.json")?.content ?? "{}",
+    );
+    expect(rulesObj.rules).toHaveLength(4);
+    const ruleNames = rulesObj.rules.map((r: { name: string }) => r.name);
+    expect(ruleNames).toContain("sovereign-rule");
+    expect(ruleNames).toContain("mandatory-workflow");
+    expect(ruleNames).toContain("role-routing");
+    expect(ruleNames).toContain("verification-gates");
+
+    expect(adapter.getMcpInstructions?.("es")).toContain("OpenCTX");
+    expect(adapter.getMcpInstructions?.("en")).toContain("OpenCTX");
+  });
+
+  it("performs safe merge on existing .cody/rules.json preserving custom rules", async () => {
+    const testDir = await fs.mkdtemp(path.join(os.tmpdir(), "specty-cody-merge-"));
+    try {
+      await fs.mkdir(path.join(testDir, ".cody"), { recursive: true });
+      const existingRules = {
+        name: "custom-team-rules",
+        description: "My custom rules",
+        rules: [
+          {
+            name: "team-convention",
+            rule: "Always use strict typing.",
+          },
+        ],
+      };
+      await fs.writeFile(
+        path.join(testDir, ".cody/rules.json"),
+        JSON.stringify(existingRules, null, 2),
+      );
+
+      const adapter = getAdapter("cody");
+      const files = await adapter.generateFiles({
+        ...dummyCtx,
+        repoRoot: testDir,
+      });
+
+      const rulesObj = JSON.parse(
+        files.find((f) => f.relativePath === ".cody/rules.json")?.content ?? "{}",
+      );
+      const ruleNames = rulesObj.rules.map((r: { name: string }) => r.name);
+      expect(ruleNames).toContain("team-convention");
+      expect(ruleNames).toContain("sovereign-rule");
+      expect(rulesObj.rules.length).toBeGreaterThanOrEqual(5);
+    } finally {
+      await fs.rm(testDir, { recursive: true, force: true });
+    }
+  });
+
+  it("generates compact exports for OpenAI Canvas / ChatGPT Projects", async () => {
+    const adapter = getAdapter("chatgpt");
+    expect(adapter.id).toBe("chatgpt");
+    expect(adapter.name).toBe("OpenAI Canvas / ChatGPT Projects");
+
+    const files = await adapter.generateFiles(dummyCtx);
+    const relPaths = files.map((f) => f.relativePath);
+    expect(relPaths).toContain(".specty/exports/chatgpt-instructions.md");
+    expect(relPaths).toContain(".specty/exports/openai-context.md");
+
+    const instructions =
+      files.find((f) => f.relativePath === ".specty/exports/chatgpt-instructions.md")?.content ??
+      "";
+    expect(instructions).toContain("AGENTS.md");
+    expect(instructions).toContain("orchestrator");
+    expect(instructions).toContain("openspec/changes/");
+
+    const context =
+      files.find((f) => f.relativePath === ".specty/exports/openai-context.md")?.content ?? "";
+    expect(context).toContain("Paquete de Contexto Compacto");
+    expect(context).toContain("Matriz de Roles");
+    expect(context).toContain("Comandos de Verificacion");
+
+    expect(adapter.getMcpInstructions?.("es")).toContain(".specty/exports/");
+    expect(adapter.getMcpInstructions?.("en")).toContain(".specty/exports/");
+  });
 });
 
 describe("adapters CLI commands: add, remove, list", () => {
@@ -417,6 +582,79 @@ describe("adapters CLI commands: add, remove, list", () => {
     expect(
       await fs
         .access(configPath)
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(false);
+  });
+
+  it("adds and removes zed, cody, and chatgpt adapters via CLI commands", async () => {
+    expect(await executeAdaptersAdd("zed", { cwd: tmpDir })).toBe(true);
+    expect(await executeAdaptersAdd("cody", { cwd: tmpDir })).toBe(true);
+    expect(await executeAdaptersAdd("chatgpt", { cwd: tmpDir })).toBe(true);
+
+    expect(
+      await fs
+        .access(path.join(tmpDir, ".zed/settings.json"))
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(true);
+    expect(
+      await fs
+        .access(path.join(tmpDir, ".cody/project.json"))
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(true);
+    expect(
+      await fs
+        .access(path.join(tmpDir, ".cody/rules.json"))
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(true);
+    expect(
+      await fs
+        .access(path.join(tmpDir, ".specty/exports/chatgpt-instructions.md"))
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(true);
+    expect(
+      await fs
+        .access(path.join(tmpDir, ".specty/exports/openai-context.md"))
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(true);
+
+    expect(await executeAdaptersRemove("zed", { cwd: tmpDir })).toBe(true);
+    expect(
+      await fs
+        .access(path.join(tmpDir, ".zed/settings.json"))
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(false);
+
+    expect(await executeAdaptersRemove("cody", { cwd: tmpDir })).toBe(true);
+    expect(
+      await fs
+        .access(path.join(tmpDir, ".cody/project.json"))
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(false);
+    expect(
+      await fs
+        .access(path.join(tmpDir, ".cody/rules.json"))
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(false);
+
+    expect(await executeAdaptersRemove("chatgpt", { cwd: tmpDir })).toBe(true);
+    expect(
+      await fs
+        .access(path.join(tmpDir, ".specty/exports/chatgpt-instructions.md"))
+        .then(() => true)
+        .catch(() => false),
+    ).toBe(false);
+    expect(
+      await fs
+        .access(path.join(tmpDir, ".specty/exports/openai-context.md"))
         .then(() => true)
         .catch(() => false),
     ).toBe(false);

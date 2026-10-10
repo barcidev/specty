@@ -176,6 +176,9 @@ Una matriz de enrutamiento (`.specty/routing.md`) indica qué rol y qué reglas 
 | Amazon Q Developer | `.amazonq/rules/` |
 | Aider | `CONVENTIONS.md` y referencia en `.aider.conf.yml` |
 | OpenCode | `opencode.json` (con servidor MCP specty) y `AGENTS.md` |
+| Zed Editor | `.zed/settings.json` (con context_servers MCP specty) |
+| Sourcegraph Cody | `.cody/project.json` y `.cody/rules.json` |
+| OpenAI Canvas / ChatGPT Projects | `.specty/exports/chatgpt-instructions.md` y `.specty/exports/openai-context.md` |
 
 Las convenciones de cada herramienta, incluida la ubicación de su configuración MCP, cambian; el implementador debe verificarlas todas antes de generar. Una herramienta nueva se agrega con un adaptador (`specty adapters add`).
 

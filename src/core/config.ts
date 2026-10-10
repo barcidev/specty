@@ -21,6 +21,9 @@ export const SUPPORTED_TOOLS = [
   "amazon-q",
   "aider",
   "opencode",
+  "zed",
+  "cody",
+  "chatgpt",
 ] as const;
 
 export type SupportedTool = (typeof SUPPORTED_TOOLS)[number];

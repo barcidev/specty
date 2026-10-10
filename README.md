@@ -116,6 +116,9 @@ specty init -y --tool antigravity,claude,cursor --lang en
 | **Amazon Q Developer**| `.amazonq/rules.md` |
 | **Aider** | `.aider.conf.yml`, `.aider.model.metadata.json` |
 | **OpenCode** | `opencode.json`, `AGENTS.md` |
+| **Zed Editor** | `.zed/settings.json` |
+| **Sourcegraph Cody** | `.cody/project.json`, `.cody/rules.json` |
+| **OpenAI Canvas / ChatGPT Projects** | `.specty/exports/chatgpt-instructions.md`, `.specty/exports/openai-context.md` |
 
 ---
 
