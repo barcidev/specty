@@ -1,0 +1,16 @@
+{
+  "name": "fixture-angular-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "@angular/core": "^19.0.0",
+    "@angular/common": "^19.0.0",
+    "rxjs": "^7.8.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  },
+  "scripts": {
+    "build": "echo 'building angular'",
+    "test": "echo 'testing angular'"
+  }
+}

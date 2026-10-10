@@ -1,0 +1,16 @@
+{
+  "name": "fixture-react-vite",
+  "version": "1.0.0",
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0",
+    "typescript": "^5.6.0"
+  },
+  "scripts": {
+    "build": "vite build",
+    "test": "echo 'testing react'"
+  }
+}

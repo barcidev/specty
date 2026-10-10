@@ -1,0 +1,98 @@
+name: Multi-Stack Verification Matrix
+
+on:
+  push:
+    branches: [main, develop, "feature/*"]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  test-stack:
+    name: Verify Stack (${{ matrix.stack }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - stack: angular-app
+            runtime: node
+            node-version: "22.x"
+          - stack: react-vite
+            runtime: node
+            node-version: "22.x"
+          - stack: nextjs-app
+            runtime: node
+            node-version: "22.x"
+          - stack: fastapi-app
+            runtime: python
+            python-version: "3.12"
+          - stack: django-app
+            runtime: python
+            python-version: "3.12"
+          - stack: go-service
+            runtime: go
+            go-version: "1.23"
+          - stack: dotnet-webapi
+            runtime: dotnet
+            dotnet-version: "8.0.x"
+          - stack: spring-boot-maven
+            runtime: java
+            java-version: "21"
+          - stack: rust-cli
+            runtime: rust
+            rust-version: "stable"
+
+    steps:
+      - name: Checkout Specty Core
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (Specty Runtime)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "npm"
+
+      - name: Install Specty Dependencies and Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Setup Python Runtime
+        if: matrix.runtime == 'python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup Go Runtime
+        if: matrix.runtime == 'go'
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Setup .NET Runtime
+        if: matrix.runtime == 'dotnet'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Setup Java Runtime
+        if: matrix.runtime == 'java'
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: ${{ matrix.java-version }}
+
+      - name: Setup Rust Runtime
+        if: matrix.runtime == 'rust'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Scaffold Playground Instance
+        run: |
+          node dist/cli/index.js playground init ${{ matrix.stack }} --dir ./test-workspace
+
+      - name: Run Diagnostics on Playground
+        run: |
+          cd ./test-workspace
+          node ../dist/cli/index.js doctor
+          node ../dist/cli/index.js status

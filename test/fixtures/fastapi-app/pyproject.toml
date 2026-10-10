@@ -1,0 +1,4 @@
+[project]
+name = "fixture-fastapi-app"
+version = "0.1.0"
+dependencies = ["fastapi>=0.110.0", "uvicorn>=0.28.0"]
