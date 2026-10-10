@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { validateChangeSpecification } from "../governance/spec-validator.js";
 import { parseTasksSummary, readChangeState, writeChangeState } from "./change-state.js";
 import type {
   ChangeMetadata,
@@ -118,7 +119,7 @@ export class BuiltinSpecEngine implements SpecEngine {
 
     const title = options?.title ?? changeId;
     const proposalContent = `# Change: ${title}\n\n## Objective\nDescribe the objective of this change.\n\n## Proposed Architecture\nOutline architectural decisions.\n\n## Acceptance Criteria\n- [ ] Criteria 1\n`;
-    const tasksContent = `# Tasks: ${title}\n\n## 1. Implementation\n- [ ] 1.1 Initial task\n`;
+    const tasksContent = `# Tasks: ${title}\n\n## 1. Implementation\n- [ ] 1.1 Initial task  [agent: orchestrator] [files: src/**]\n      verify: npm test\n`;
 
     await fs.writeFile(path.join(changeDir, "proposal.md"), proposalContent, "utf8");
     await fs.writeFile(path.join(changeDir, "tasks.md"), tasksContent, "utf8");
@@ -140,50 +141,22 @@ export class BuiltinSpecEngine implements SpecEngine {
       ? [changeId]
       : (await this.listChanges(repoRoot)).map((c) => c.id);
 
+    let totalErrors = 0;
+    let totalWarnings = 0;
+
     for (const id of changesToValidate) {
       const changeDir = path.join(this.getChangesDir(repoRoot), id);
-      const proposalPath = path.join(changeDir, "proposal.md");
-      const tasksPath = path.join(changeDir, "tasks.md");
-
-      try {
-        const proposalContent = await fs.readFile(proposalPath, "utf8");
-        if (proposalContent.trim().length === 0) {
-          issues.push({
-            file: `openspec/changes/${id}/proposal.md`,
-            message: "Proposal file is empty",
-            severity: "error",
-          });
-        }
-      } catch {
-        issues.push({
-          file: `openspec/changes/${id}/proposal.md`,
-          message: "Missing proposal.md in change",
-          severity: "error",
-        });
-      }
-
-      try {
-        const tasksContent = await fs.readFile(tasksPath, "utf8");
-        const summary = parseTasksSummary(tasksContent);
-        if (summary.total === 0) {
-          issues.push({
-            file: `openspec/changes/${id}/tasks.md`,
-            message: "Tasks file does not contain any checkboxes (- [ ])",
-            severity: "warning",
-          });
-        }
-      } catch {
-        issues.push({
-          file: `openspec/changes/${id}/tasks.md`,
-          message: "Missing tasks.md in change",
-          severity: "error",
-        });
-      }
+      const res = await validateChangeSpecification(changeDir);
+      issues.push(...res.issues);
+      totalErrors += res.errorsCount ?? 0;
+      totalWarnings += res.warningsCount ?? 0;
     }
 
     return {
-      valid: issues.filter((i) => i.severity === "error").length === 0,
+      valid: totalErrors === 0,
       issues,
+      errorsCount: totalErrors,
+      warningsCount: totalWarnings,
     };
   }
 

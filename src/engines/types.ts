@@ -21,11 +21,14 @@ export interface ValidationIssue {
   message: string;
   severity: "error" | "warning";
   line?: number;
+  rule?: string;
 }
 
 export interface ValidationResult {
   valid: boolean;
   issues: ValidationIssue[];
+  errorsCount?: number;
+  warningsCount?: number;
 }
 
 export interface CreateChangeOptions {

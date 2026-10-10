@@ -9,6 +9,7 @@ import { loadManifest } from "../../core/manifest.js";
 import { getSpecEngine } from "../../engines/factory.js";
 import { checkApprovalStatus } from "../../governance/approvals.js";
 import { checkGitHooksStatus, installHookWithManager } from "../../governance/git-hooks.js";
+import { validateChangeSpecification } from "../../governance/spec-validator.js";
 import { executeSync } from "./sync.js";
 
 export interface DoctorCommandOptions {
@@ -179,6 +180,42 @@ export async function executeDoctor(options: DoctorCommandOptions = {}): Promise
           title: "Specification Integrity",
           status: "warn",
           message: `${driftCount} change(s) have drift and require re-approval.`,
+        });
+      }
+
+      // 6b. Check Specification Semantic Validity
+      let semanticErrorCount = 0;
+      let semanticWarningCount = 0;
+      const invalidChanges: string[] = [];
+
+      for (const c of changes) {
+        const val = await validateChangeSpecification(c.path);
+        if (!val.valid) {
+          semanticErrorCount += val.errorsCount ?? 1;
+          invalidChanges.push(c.id);
+        }
+        if (val.warningsCount) {
+          semanticWarningCount += val.warningsCount;
+        }
+      }
+
+      if (semanticErrorCount === 0) {
+        const warnDetail = semanticWarningCount > 0 ? ` (${semanticWarningCount} warning(s))` : "";
+        checks.push({
+          id: "spec-semantics",
+          title: "Specification Semantics",
+          status: semanticWarningCount > 0 ? "warn" : "pass",
+          message:
+            changes.length === 0
+              ? "No active changes to validate."
+              : `All ${changes.length} active change(s) conform to markdown specification schemas${warnDetail}.`,
+        });
+      } else {
+        checks.push({
+          id: "spec-semantics",
+          title: "Specification Semantics",
+          status: "fail",
+          message: `${semanticErrorCount} semantic error(s) in change(s): ${invalidChanges.join(", ")}. Run 'specty validate' to inspect.`,
         });
       }
     } catch {

@@ -90,12 +90,13 @@ describe("MCP tools definitions and dispatch", () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it("exposes all 7 core MCP tools with schemas", () => {
+  it("exposes all 8 core MCP tools with schemas", () => {
     const tools = getMcpToolDefinitions();
-    expect(tools).toHaveLength(7);
+    expect(tools).toHaveLength(8);
 
     const names = tools.map((t) => t.name);
     expect(names).toContain("specty_get_active_change");
+    expect(names).toContain("specty_validate_change");
     expect(names).toContain("specty_get_rules");
     expect(names).toContain("specty_get_agent_role");
     expect(names).toContain("specty_get_latest_handoff");
@@ -109,6 +110,13 @@ describe("MCP tools definitions and dispatch", () => {
     expect(res.change).toBeDefined();
     expect(res.change.id).toBe("mcp-feat");
     expect(res.proposal).toContain("MCP Feature");
+  });
+
+  it("handles specty_validate_change", async () => {
+    const res = await handleMcpToolCall("specty_validate_change", {}, tmpDir, graph);
+    expect(res.changeId).toBe("mcp-feat");
+    expect(res.valid).toBe(true);
+    expect(res.errorsCount).toBe(0);
   });
 
   it("handles specty_get_rules", async () => {
@@ -155,8 +163,11 @@ describe("MCP tools definitions and dispatch", () => {
       tmpDir,
       graph,
     );
-    expect(latest.id).toContain("orchestrator-to-backend");
-    expect(latest.tasksCompleted).toContain("Task 1");
+    expect("id" in latest).toBe(true);
+    if ("id" in latest) {
+      expect(latest.id).toContain("orchestrator-to-backend");
+      expect(latest.tasksCompleted).toContain("Task 1");
+    }
   });
 
   it("handles specty_get_code_graph", async () => {

@@ -58,12 +58,12 @@ describe("E2E Full Governed Workflow", () => {
     await fs.mkdir(changeDir, { recursive: true });
     await fs.writeFile(
       path.join(changeDir, "proposal.md"),
-      "# Proposal: User Login\nImplement OAuth login for users.\n",
+      "# Proposal: User Login\n\n## Why\nImplement OAuth login for users.\n\n## What Changes\n- Add auth route\n- Validate token\n\n## Impact\n- APIs: /auth/login\n",
       "utf8",
     );
     await fs.writeFile(
       path.join(changeDir, "tasks.md"),
-      "# Tasks\n\n- [ ] Task 1: Setup auth route\n- [ ] Task 2: Validate token\n",
+      "# Tasks: User Login\n\n## 1. Implementation\n- [ ] 1.1 Setup auth route\n- [ ] 1.2 Validate token\n",
       "utf8",
     );
 
@@ -96,7 +96,7 @@ describe("E2E Full Governed Workflow", () => {
     // 7. Developer marks Task 1 as completed in tasks.md
     await fs.writeFile(
       path.join(changeDir, "tasks.md"),
-      "# Tasks\n\n- [x] Task 1: Setup auth route\n- [ ] Task 2: Validate token\n",
+      "# Tasks: User Login\n\n## 1. Implementation\n- [x] 1.1 Setup auth route\n- [ ] 1.2 Validate token\n",
       "utf8",
     );
 
