@@ -13,6 +13,7 @@ export interface UiCommandOptions {
   port?: number | string;
   host?: string;
   change?: string;
+  settings?: boolean;
   open?: boolean;
   idePlan?: boolean;
 }
@@ -32,9 +33,12 @@ export async function executeUi(options: UiCommandOptions = {}): Promise<void> {
     initialChangeId: options.change,
   });
 
-  const targetUrl = options.change
-    ? `${server.url}/?change=${encodeURIComponent(options.change)}`
-    : server.url;
+  let targetUrl = server.url;
+  if (options.settings) {
+    targetUrl = `${server.url}/settings`;
+  } else if (options.change) {
+    targetUrl = `${server.url}/?change=${encodeURIComponent(options.change)}`;
+  }
 
   console.log(
     `\n${picocolors.bold(picocolors.green("⚡ Specty UI disponible en:"))} ${picocolors.underline(picocolors.cyan(targetUrl))}`,

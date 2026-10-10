@@ -52,7 +52,7 @@ export const PROTECTED_GOVERNANCE_PATHS = [
 
 export const GovernanceSchema = z.object({
   hooks: z.boolean().default(true),
-  ci: z.enum(["github", "gitlab", "azure", "none"]).default("github"),
+  ci: z.enum(["github", "gitlab", "azure", "bitbucket", "none"]).default("github"),
   source_paths: z.array(z.string()).default(["src/**"]),
   exempt_paths: z.array(z.string()).default(["**/*.md", "openspec/**", "docs/**"]),
   bypass: z

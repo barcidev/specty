@@ -331,6 +331,7 @@ program
   .option("-p, --port <number>", "HTTP port (defaults to 4173)")
   .option("--host <host>", "HTTP host interface (defaults to 127.0.0.1)")
   .option("-c, --change <id>", "open directly to specified change")
+  .option("-s, --settings", "open directly to global settings and metrics console")
   .option("--no-open", "do not automatically open web browser")
   .option("--ide-plan", "enable IDE plan projection mode")
   .action(async (options) => {

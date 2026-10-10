@@ -2,10 +2,27 @@ import fs from "node:fs/promises";
 import type http from "node:http";
 import path from "node:path";
 import { execa } from "execa";
-import { createDefaultConfig, loadConfig, type SpectyConfig } from "../core/config.js";
+import {
+  createDefaultConfig,
+  loadConfig,
+  type SpectyConfig,
+  SpectyConfigSchema,
+  saveConfig,
+} from "../core/config.js";
 import { getCurrentBranch, getGitUser } from "../core/git.js";
+import { loadManifest } from "../core/manifest.js";
 import { getSpecEngine } from "../engines/factory.js";
+import { generateProjectInfrastructure } from "../generate/generator.js";
 import { approveChange } from "../governance/approvals.js";
+import { generateCiPipeline } from "../governance/ci-templates.js";
+import { computeGovernanceAnalytics, filterEventsByPeriod } from "../metrics/analytics.js";
+import {
+  computeMetricsSummary,
+  exportGovernanceReport,
+  type ReportFormat,
+  type ReportPeriod,
+  readMetricEvents,
+} from "../metrics/index.js";
 import { getChangeDetail, toggleTaskStatus } from "./change-service.js";
 import { getChangeDiffSummary } from "./diff-service.js";
 import {
@@ -297,7 +314,126 @@ export class UiRouter {
         return;
       }
 
-      // 14. Static Files
+      // 14. Configuration API: GET /api/config & PUT /api/config
+      if (pathname === "/api/config" && method === "GET") {
+        let config: SpectyConfig;
+        try {
+          config = await loadConfig(this.repoRoot);
+        } catch {
+          config = createDefaultConfig();
+        }
+        this.jsonResponse(res, 200, { config });
+        return;
+      }
+
+      if (pathname === "/api/config" && method === "PUT") {
+        const body = await this.readJsonBody(req);
+        const configData = body.config && typeof body.config === "object" ? body.config : body;
+        const validatedConfig = SpectyConfigSchema.parse(configData);
+        await saveConfig(this.repoRoot, validatedConfig);
+        this.sseHub.broadcast("config:updated", { config: validatedConfig });
+        this.jsonResponse(res, 200, { success: true, config: validatedConfig });
+        return;
+      }
+
+      // 15. Metrics API: GET /api/metrics & POST /api/metrics/export
+      if (pathname === "/api/metrics" && method === "GET") {
+        const period = (parsedUrl.searchParams.get("period") as ReportPeriod) || "all";
+        const events = await readMetricEvents(this.repoRoot);
+        const filteredEvents = filterEventsByPeriod(events, period);
+        const summary = computeMetricsSummary(filteredEvents);
+        const executiveReport = await computeGovernanceAnalytics(this.repoRoot, {
+          period,
+        }).catch(() => null);
+
+        this.jsonResponse(res, 200, {
+          period,
+          summary,
+          executiveReport,
+          events: filteredEvents,
+        });
+        return;
+      }
+
+      if (pathname === "/api/metrics/export" && method === "POST") {
+        const body = await this.readJsonBody(req);
+        const format = (body.format as ReportFormat) || "html";
+        const period = (body.period as ReportPeriod) || "all";
+        const result = await exportGovernanceReport(this.repoRoot, {
+          format,
+          period,
+          open: false,
+        });
+        this.jsonResponse(res, 200, { success: true, result });
+        return;
+      }
+
+      // 16. Infrastructure API: GET /api/infrastructure & POST /api/infrastructure/regenerate
+      if (pathname === "/api/infrastructure" && method === "GET") {
+        const manifest = await loadManifest(this.repoRoot);
+        let config: SpectyConfig;
+        try {
+          config = await loadConfig(this.repoRoot);
+        } catch {
+          config = createDefaultConfig();
+        }
+
+        const readFilesRecursively = async (dir: string, base = ""): Promise<string[]> => {
+          try {
+            const entries = await fs.readdir(dir, { withFileTypes: true });
+            const list: string[] = [];
+            for (const entry of entries) {
+              const rel = base ? `${base}/${entry.name}` : entry.name;
+              if (entry.isDirectory()) {
+                list.push(...(await readFilesRecursively(path.join(dir, entry.name), rel)));
+              } else {
+                list.push(rel);
+              }
+            }
+            return list;
+          } catch {
+            return [];
+          }
+        };
+
+        const [agents, rules, templates] = await Promise.all([
+          readFilesRecursively(path.join(this.repoRoot, ".specty", "agents")),
+          readFilesRecursively(path.join(this.repoRoot, ".specty", "rules")),
+          readFilesRecursively(path.join(this.repoRoot, ".specty", "templates")),
+        ]);
+
+        this.jsonResponse(res, 200, {
+          manifest,
+          config,
+          agents,
+          rules,
+          templates,
+        });
+        return;
+      }
+
+      if (pathname === "/api/infrastructure/regenerate" && method === "POST") {
+        const config = await loadConfig(this.repoRoot);
+        const result = await generateProjectInfrastructure({
+          repoRoot: this.repoRoot,
+          config,
+          language: config.language,
+          dryRun: false,
+        });
+
+        const ciPipeline = generateCiPipeline(config);
+        if (ciPipeline) {
+          const ciFullPath = path.join(this.repoRoot, ciPipeline.relativePath);
+          await fs.mkdir(path.dirname(ciFullPath), { recursive: true });
+          await fs.writeFile(ciFullPath, ciPipeline.content, "utf8");
+        }
+
+        this.sseHub.broadcast("infrastructure:regenerated", { result });
+        this.jsonResponse(res, 200, { success: true, result });
+        return;
+      }
+
+      // 17. Static Files
       if (method === "GET") {
         await this.serveStaticFile(pathname, res);
         return;
@@ -312,7 +448,10 @@ export class UiRouter {
   }
 
   private async serveStaticFile(urlPath: string, res: http.ServerResponse): Promise<void> {
-    const relPath = urlPath === "/" || !urlPath ? "index.html" : urlPath.replace(/^\//, "");
+    let relPath = urlPath === "/" || !urlPath ? "index.html" : urlPath.replace(/^\//, "");
+    if (urlPath === "/settings" || urlPath === "/settings/") {
+      relPath = "settings.html";
+    }
     // Prevent traversal outside clientStaticDir
     const safePath = path.normalize(relPath).replace(/^(\.\.(\/|\\|$))+/, "");
     const filePath = path.join(this.clientStaticDir, safePath);
