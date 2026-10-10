@@ -412,6 +412,8 @@ export function generateHtmlReport(report: GovernanceExecutiveReport): string {
           <div class="gauge-stats">
             <div class="gauge-stat-item"><span>Integridad (Spec Drift):</span> <strong>${compliance.specIntegrityRate}%</strong></div>
             <div class="gauge-stat-item"><span>Adherencia de Gate:</span> <strong>${compliance.gateAdherenceRate}%</strong></div>
+            <div class="gauge-stat-item"><span>Tasa de Adherencia (Reglas/Evals):</span> <strong>${compliance.adherenceRate ?? compliance.gateAdherenceRate}%</strong></div>
+            <div class="gauge-stat-item"><span>Desvíos Bloqueados:</span> <strong>${compliance.blockedDriftAttempts ?? 0}</strong></div>
             <div class="gauge-stat-item"><span>Éxito Verificaciones:</span> <strong>${compliance.verificationSuccessRate}%</strong></div>
             <div class="gauge-stat-item"><span>Completitud de Tareas:</span> <strong>${compliance.taskCompletionRate}%</strong></div>
           </div>

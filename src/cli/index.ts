@@ -439,6 +439,133 @@ program
     }
   });
 
+program
+  .command("start [change]")
+  .description("transition an approved change to in-progress state to commence development")
+  .option("-f, --force", "bypass prerequisite state verification")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeStart } = await import("./commands/start.js");
+      const success = await executeStart(change, options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("done [change]")
+  .description("transition a change to done after verifying 100% completed tasks and passing tests")
+  .option("-f, --force", "bypass precondition checks (tasks completed and test verification)")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeDone } = await import("./commands/done.js");
+      const success = await executeDone(change, options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("archive [change]")
+  .description("archive a completed change and move it into historical storage")
+  .option("-f, --force", "force archiving even if not in done state")
+  .option("--dry-run", "preview archiving without moving files")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeArchive } = await import("./commands/archive.js");
+      const success = await executeArchive(change, options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("branch [change]")
+  .description("create or switch to a Git branch linked to a specification change")
+  .option("--prefix <prefix>", "branch prefix convention (defaults to feature/)")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeBranch } = await import("./commands/branch.js");
+      const success = await executeBranch(change, options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("sync-approval [change]")
+  .description("verify and synchronize specification approval from a GitHub PR review")
+  .option("--pr <number>", "pull request number")
+  .option("--repo <owner/repo>", "GitHub repository in owner/repo format")
+  .option("--token <token>", "GitHub authentication token")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeSyncApproval } = await import("./commands/sync-approval.js");
+      const success = await executeSyncApproval(change, options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("eval")
+  .description("run adversarial evaluations suite to test governance adherence and defenses")
+  .option("-s, --scenario <id>", "run a single adversarial evaluation scenario by id")
+  .option("-v, --verbose", "display detailed prompts and decisions per scenario")
+  .option("--json", "output evaluation report as JSON")
+  .action(async (options) => {
+    try {
+      const { executeEval } = await import("./commands/eval.js");
+      const passed = await executeEval(options);
+      if (!passed) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("trace [change]")
+  .description("generate requirement-to-task-to-commit traceability matrix for a change")
+  .option("--base <ref>", "base git ref (branch or commit sha)")
+  .option("--head <ref>", "head git ref (defaults to HEAD)")
+  .option("--output <path>", "write traceability matrix JSON report to file")
+  .option("--json", "output traceability matrix report as JSON")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeTrace } = await import("./commands/trace.js");
+      const success = await executeTrace(change, options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 export function getRegisteredCommands(): string[] {
   const commands: string[] = [];
   for (const cmd of program.commands) {

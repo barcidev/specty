@@ -1,12 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import ignore from "ignore";
-import { loadConfig } from "../core/config.js";
+import { loadConfig, PROTECTED_GOVERNANCE_PATHS } from "../core/config.js";
 import { executeFile } from "../core/exec.js";
-import { getSpecEngine } from "../engines/factory.js";
 import type { ChangeStatus, ChangeTaskSummary } from "../engines/types.js";
 import { recordMetricEvent } from "../metrics/index.js";
 import { type ApprovalStateCode, checkApprovalStatus } from "./approvals.js";
+import { resolveTargetChange } from "./change-resolver.js";
+import { getGitHubContext } from "./github-client.js";
+import { getAllTasksFileGlobs, isPathMatchingGlobs, parseTasksWithScope } from "./task-scope.js";
 
 export interface GateChangeSummary {
   id: string;
@@ -37,10 +39,19 @@ export interface GateResult {
   bypassDetails?: GateBypassRecord;
   modifiedSourceFiles: string[];
   modifiedExemptFiles?: string[];
-  allModifiedFiles?: string[];
+  allModifiedFiles: string[];
   activeApprovedChange?: string;
   changeDetails?: GateChangeSummary;
   allChanges?: GateChangeSummary[];
+  outOfScopeFiles?: string[];
+  protectedFilesModified?: string[];
+  errorCode?:
+    | "no_approved_change"
+    | "reapproval_required"
+    | "out_of_scope"
+    | "protected_config_tampered"
+    | "ambiguous_active_changes"
+    | "branch_change_mismatch";
   reason?: string;
 }
 
@@ -49,6 +60,9 @@ export interface CheckApprovalGateOptions {
   baseRef?: string;
   headRef?: string;
   bypassReason?: string;
+  changeId?: string;
+  prLabels?: string[];
+  prBody?: string;
 }
 
 export const BYPASS_AUDIT_FILENAME = ".specty/audit/bypasses.jsonl";
@@ -142,7 +156,11 @@ export async function checkApprovalGate(
     }
   }
 
-  // 2. Filter modified files against source_paths and exempt_paths
+  // 2. Identify protected governance files (A4)
+  const protectedIg = ignore().add(PROTECTED_GOVERNANCE_PATHS);
+  const modifiedProtectedFiles = modifiedFiles.filter((f) => protectedIg.ignores(f));
+
+  // 3. Filter modified files against source_paths and exempt_paths
   const sourceIg = ignore().add(config.governance.source_paths);
   const exemptIg = ignore().add(config.governance.exempt_paths);
 
@@ -161,14 +179,15 @@ export async function checkApprovalGate(
     }
   }
 
-  // If no source files are modified, gate passes trivially
-  if (modifiedSourceFiles.length === 0) {
+  // If no source files and no protected files are modified, gate passes trivially
+  if (modifiedSourceFiles.length === 0 && modifiedProtectedFiles.length === 0) {
     return {
       passed: true,
       bypassed: false,
       modifiedSourceFiles: [],
       modifiedExemptFiles,
       allModifiedFiles: modifiedFiles,
+      protectedFilesModified: [],
       reason: "No governed source files were modified.",
     };
   }
@@ -231,6 +250,20 @@ export async function checkApprovalGate(
     }
   }
 
+  // Enforce protected governance paths (A4): block changes unless explicitly bypassed
+  if (modifiedProtectedFiles.length > 0 && !isBypassed) {
+    return {
+      passed: false,
+      bypassed: false,
+      modifiedSourceFiles,
+      modifiedExemptFiles,
+      allModifiedFiles: modifiedFiles,
+      protectedFilesModified: modifiedProtectedFiles,
+      errorCode: "protected_config_tampered",
+      reason: `Governance configuration and hooks are protected from unauthorized modification:\n${modifiedProtectedFiles.map((f) => `  - ${f}`).join("\n")}\n\nTo modify governance settings, an emergency bypass (e.g. SPECTY_BYPASS=1 or commit trailer) is required.`,
+    };
+  }
+
   if (isBypassed) {
     const auditDir = path.join(repoRoot, ".specty/audit");
     await fs.mkdir(auditDir, { recursive: true });
@@ -241,7 +274,7 @@ export async function checkApprovalGate(
       env: bypassSource === "env" ? bypassEnvVar : undefined,
       source: bypassSource,
       reason: bypassReason || "Emergency hotfix bypass",
-      files: modifiedSourceFiles,
+      files: modifiedSourceFiles.length > 0 ? modifiedSourceFiles : modifiedProtectedFiles,
     };
     await fs.appendFile(
       path.join(repoRoot, BYPASS_AUDIT_FILENAME),
@@ -263,16 +296,41 @@ export async function checkApprovalGate(
       modifiedSourceFiles,
       modifiedExemptFiles,
       allModifiedFiles: modifiedFiles,
+      protectedFilesModified: modifiedProtectedFiles,
       reason: `Emergency bypass active via ${bypassSource === "env" ? bypassEnvVar : bypassSource}. Action logged for audit.`,
     };
   }
 
-  // 4. Verify Active Approved Specification Change
-  const engine = getSpecEngine(config.spec_engine);
-  const activeChanges = await engine.listChanges(repoRoot);
-  const changeSummaries: GateChangeSummary[] = [];
+  // If no source files were modified (and protected check already verified), pass trivially
+  if (modifiedSourceFiles.length === 0) {
+    return {
+      passed: true,
+      bypassed: false,
+      modifiedSourceFiles: [],
+      modifiedExemptFiles,
+      allModifiedFiles: modifiedFiles,
+      protectedFilesModified: modifiedProtectedFiles,
+      reason: "No governed source files were modified.",
+    };
+  }
 
-  let approvedChangeSummary: GateChangeSummary | undefined;
+  // 5. Verify Active Approved Specification Change and Validate Scope (C3)
+  const ghCtx = getGitHubContext();
+  const prLabels = options.prLabels || ghCtx.prLabels;
+  const prBody = options.prBody || ghCtx.prBody;
+  const prHeadRef = ghCtx.headRef;
+
+  const resolution = await resolveTargetChange(repoRoot, {
+    changeId: options.changeId,
+    headRef,
+    baseRef: resolvedBase,
+    prLabels,
+    prBody,
+    prHeadRef,
+  });
+
+  const activeChanges = resolution.activeChanges;
+  const changeSummaries: GateChangeSummary[] = [];
   let reapprovalChangeSummary: GateChangeSummary | undefined;
 
   for (const change of activeChanges) {
@@ -302,28 +360,111 @@ export async function checkApprovalGate(
         actualHash: status.currentHash ?? "",
       });
     }
-
-    if (
-      status.approved &&
-      (change.status === "approved" ||
-        change.status === "in-progress" ||
-        change.status === "review")
-    ) {
-      approvedChangeSummary ??= summary;
-    }
   }
 
-  if (approvedChangeSummary) {
+  if (resolution.isAmbiguous) {
+    return {
+      passed: false,
+      bypassed: false,
+      modifiedSourceFiles,
+      modifiedExemptFiles,
+      allModifiedFiles: modifiedFiles,
+      allChanges: changeSummaries,
+      errorCode: "ambiguous_active_changes",
+      reason: resolution.reason,
+    };
+  }
+
+  const targetChange = resolution.change;
+  const targetSummary = targetChange
+    ? changeSummaries.find((c) => c.id === targetChange.id)
+    : undefined;
+
+  // Validate branch/change coherence if the branch explicitly declares a change
+  if (
+    resolution.branchCandidateId &&
+    targetSummary &&
+    resolution.branchCandidateId !== targetSummary.id &&
+    activeChanges.some((c) => c.id === resolution.branchCandidateId)
+  ) {
+    return {
+      passed: false,
+      bypassed: false,
+      modifiedSourceFiles,
+      modifiedExemptFiles,
+      allModifiedFiles: modifiedFiles,
+      activeApprovedChange: targetSummary.id,
+      changeDetails: targetSummary,
+      allChanges: changeSummaries,
+      errorCode: "branch_change_mismatch",
+      reason: `Branch indicates change "${resolution.branchCandidateId}", but targeted change is "${targetSummary.id}". Branch and active specification change must match.`,
+    };
+  }
+
+  if (targetSummary && targetSummary.approvalCode === "reapproval_required") {
+    return {
+      passed: false,
+      bypassed: false,
+      modifiedSourceFiles,
+      modifiedExemptFiles,
+      allModifiedFiles: modifiedFiles,
+      changeDetails: targetSummary,
+      allChanges: changeSummaries,
+      errorCode: "reapproval_required",
+      reason: `Specification change "${targetSummary.id}" was modified after approval. Re-approval required.\nApproved hash: ${targetSummary.approvedHash}\nCurrent hash:  ${targetSummary.currentHash}\n\nRun 'specty approve ${targetSummary.id}' to re-approve.`,
+    };
+  }
+
+  if (
+    targetChange &&
+    targetSummary?.approved &&
+    (targetSummary.status === "approved" ||
+      targetSummary.status === "in-progress" ||
+      targetSummary.status === "verifying" ||
+      targetSummary.status === "review")
+  ) {
+    // Validate scope of files against [files: ...] in tasks.md
+    let tasksContent = "";
+    try {
+      tasksContent = await fs.readFile(path.join(targetChange.path, "tasks.md"), "utf8");
+    } catch {
+      // no tasks.md
+    }
+
+    const parsedTasks = parseTasksWithScope(tasksContent);
+    const allowedGlobs = getAllTasksFileGlobs(parsedTasks);
+
+    const outOfScopeFiles =
+      allowedGlobs.length > 0
+        ? modifiedSourceFiles.filter((file) => !isPathMatchingGlobs(file, allowedGlobs))
+        : [];
+
+    if (outOfScopeFiles.length > 0) {
+      return {
+        passed: false,
+        bypassed: false,
+        modifiedSourceFiles,
+        modifiedExemptFiles,
+        allModifiedFiles: modifiedFiles,
+        activeApprovedChange: targetSummary.id,
+        changeDetails: targetSummary,
+        allChanges: changeSummaries,
+        outOfScopeFiles,
+        errorCode: "out_of_scope",
+        reason: `Modified files outside the scope of approved change "${targetSummary.id}":\n${outOfScopeFiles.map((f) => `  - ${f}`).join("\n")}\n\nAllowed file scopes for this change:\n${allowedGlobs.map((g) => `  [files: ${g}]`).join("\n")}\n\nTo modify these files, amend the change specification tasks and re-approve.`,
+      };
+    }
+
     return {
       passed: true,
       bypassed: false,
       modifiedSourceFiles,
       modifiedExemptFiles,
       allModifiedFiles: modifiedFiles,
-      activeApprovedChange: approvedChangeSummary.id,
-      changeDetails: approvedChangeSummary,
+      activeApprovedChange: targetSummary.id,
+      changeDetails: targetSummary,
       allChanges: changeSummaries,
-      reason: `Governed by approved change "${approvedChangeSummary.id}".`,
+      reason: `Governed by approved change "${targetSummary.id}".`,
     };
   }
 
@@ -336,6 +477,7 @@ export async function checkApprovalGate(
       allModifiedFiles: modifiedFiles,
       changeDetails: reapprovalChangeSummary,
       allChanges: changeSummaries,
+      errorCode: "reapproval_required",
       reason: `Specification change "${reapprovalChangeSummary.id}" was modified after approval. Re-approval required.\nApproved hash: ${reapprovalChangeSummary.approvedHash}\nCurrent hash:  ${reapprovalChangeSummary.currentHash}\n\nRun 'specty approve ${reapprovalChangeSummary.id}' to re-approve.`,
     };
   }
@@ -349,6 +491,7 @@ export async function checkApprovalGate(
     allModifiedFiles: modifiedFiles,
     changeDetails: draftChange,
     allChanges: changeSummaries,
+    errorCode: "no_approved_change",
     reason: `Modifications in source files without an active approved change:\n${modifiedSourceFiles.map((f) => `  - ${f}`).join("\n")}\n\nRun 'specty approve <change>' or plan a new change with 'specty'.`,
   };
 }

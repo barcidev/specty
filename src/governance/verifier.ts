@@ -267,6 +267,9 @@ export async function executeVerification(
       const state = await readChangeState(targetChangeDir);
       if (state) {
         state.verification_passed = overallPassed;
+        if (state.status === "approved" || state.status === "in-progress") {
+          state.status = "verifying";
+        }
         await writeChangeState(targetChangeDir, state);
       }
     } catch {

@@ -320,6 +320,19 @@ export async function computeGovernanceAnalytics(
       0.15 * taskCompletionRate,
   );
 
+  const blockedDriftAttempts = summary.totalInvalidations + (totalBypasses > 0 ? totalBypasses : 0);
+  const adherenceRate = gateAdherenceRate;
+  const adherenceByTool: Record<
+    string,
+    { totalOperations: number; violationsBlocked: number; adherenceRate: number }
+  > = {
+    general: {
+      totalOperations: totalGateChecks || 1,
+      violationsBlocked: summary.totalInvalidations,
+      adherenceRate: gateAdherenceRate,
+    },
+  };
+
   const compliance: ComplianceMetrics = {
     healthScore,
     specIntegrityRate,
@@ -333,6 +346,9 @@ export async function computeGovernanceAnalytics(
     totalVerifications: summary.totalVerifications,
     totalTasks,
     completedTasks,
+    adherenceRate,
+    blockedDriftAttempts,
+    adherenceByTool,
   };
 
   // 4. Compute Subagent Efficacy and Handoffs

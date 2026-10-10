@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { loadConfig } from "../core/config.js";
+import { loadConfig, type SpectyConfig } from "../core/config.js";
 import { getSpecEngine } from "../engines/factory.js";
 import { checkApprovalStatus } from "./approvals.js";
 import {
@@ -171,7 +171,7 @@ export async function evaluateGuard(repoRoot: string, input: GuardInput): Promis
     }
 
     // Load specty config
-    let config;
+    let config: SpectyConfig;
     try {
       config = await loadConfig(repoRoot);
     } catch {

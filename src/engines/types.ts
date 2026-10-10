@@ -1,4 +1,11 @@
-export type ChangeStatus = "draft" | "approved" | "in-progress" | "review" | "done" | "archived";
+export type ChangeStatus =
+  | "draft"
+  | "review"
+  | "approved"
+  | "in-progress"
+  | "verifying"
+  | "done"
+  | "archived";
 
 export interface ChangeTaskSummary {
   total: number;

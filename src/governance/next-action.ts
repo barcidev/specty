@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { loadConfig } from "../core/config.js";
+import { loadConfig, type SpectyConfig } from "../core/config.js";
 import { getCurrentBranch } from "../core/git.js";
 import { readChangeState } from "../engines/change-state.js";
 import { getSpecEngine } from "../engines/factory.js";
@@ -38,7 +38,7 @@ export async function determineNextAction(
   repoRoot: string,
   changeIdArg?: string,
 ): Promise<NextActionReport> {
-  let config;
+  let config: SpectyConfig;
   try {
     config = await loadConfig(repoRoot);
   } catch {

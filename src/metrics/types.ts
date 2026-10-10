@@ -4,7 +4,8 @@ export type MetricEventType =
   | "approval_invalidated"
   | "verification_run"
   | "handoff_recorded"
-  | "bypass_used";
+  | "bypass_used"
+  | "state_transition";
 
 export interface BaseMetricEvent {
   type: MetricEventType;
@@ -57,13 +58,22 @@ export interface BypassUsedEvent extends BaseMetricEvent {
   stagedFilesCount: number;
 }
 
+export interface StateTransitionEvent extends BaseMetricEvent {
+  type: "state_transition";
+  changeId: string;
+  fromState: string;
+  toState: string;
+  user?: string;
+}
+
 export type SpectyEvent =
   | ChangeCreatedEvent
   | ApprovalGrantedEvent
   | ApprovalInvalidatedEvent
   | VerificationRunEvent
   | HandoffRecordedEvent
-  | BypassUsedEvent;
+  | BypassUsedEvent
+  | StateTransitionEvent;
 
 export type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
@@ -126,6 +136,12 @@ export interface ComplianceMetrics {
   totalVerifications: number;
   totalTasks: number;
   completedTasks: number;
+  adherenceRate?: number;
+  blockedDriftAttempts?: number;
+  adherenceByTool?: Record<
+    string,
+    { totalOperations: number; violationsBlocked: number; adherenceRate: number }
+  >;
 }
 
 export type BypassReasonCategory =

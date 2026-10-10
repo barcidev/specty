@@ -158,6 +158,8 @@ ${mttaRows}
 - **Índice de Salud de Gobernanza:** **${compliance.healthScore} / 100**
 - **Integridad de Especificación (Spec Drift):** **${compliance.specIntegrityRate}%** (${compliance.totalApprovals} aprobaciones / ${compliance.totalInvalidations} invalidaciones por hash)
 - **Adherencia de Gate:** **${compliance.gateAdherenceRate}%**
+- **Tasa de Adherencia a Reglas y Scopes:** **${compliance.adherenceRate ?? compliance.gateAdherenceRate}%**
+- **Intentos de Desvío Bloqueados:** **${compliance.blockedDriftAttempts ?? 0}**
 - **Tasa de Éxito en Verificaciones:** **${compliance.verificationSuccessRate}%** (${compliance.totalVerifications} ejecuciones)
 - **Completitud de Tareas:** **${compliance.taskCompletionRate}%** (${compliance.completedTasks}/${compliance.totalTasks} tareas cerradas)
 

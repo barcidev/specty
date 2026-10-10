@@ -95,3 +95,41 @@ export async function initGitRepo(cwd: string, branch = "main"): Promise<void> {
     // ignore
   }
 }
+
+export async function listLocalBranches(cwd: string): Promise<string[]> {
+  try {
+    const result = await execa("git", ["branch", "--format=%(refname:short)"], { cwd });
+    return result.stdout
+      .split("\n")
+      .map((b) => b.trim())
+      .filter((b) => b.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+export async function checkoutBranch(
+  cwd: string,
+  branch: string,
+  create = false,
+): Promise<{ success: boolean; created: boolean; error?: string }> {
+  try {
+    const existing = await listLocalBranches(cwd);
+    if (existing.includes(branch)) {
+      await execa("git", ["checkout", branch], { cwd });
+      return { success: true, created: false };
+    }
+    if (create) {
+      await execa("git", ["checkout", "-b", branch], { cwd });
+      return { success: true, created: true };
+    }
+    await execa("git", ["checkout", branch], { cwd });
+    return { success: true, created: false };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      created: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
