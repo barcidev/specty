@@ -90,11 +90,13 @@ describe("MCP tools definitions and dispatch", () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it("exposes all 8 core MCP tools with schemas", () => {
+  it("exposes all 10 core MCP tools with schemas", () => {
     const tools = getMcpToolDefinitions();
-    expect(tools).toHaveLength(8);
+    expect(tools).toHaveLength(10);
 
     const names = tools.map((t) => t.name);
+    expect(names).toContain("specty_guard");
+    expect(names).toContain("specty_next_action");
     expect(names).toContain("specty_get_active_change");
     expect(names).toContain("specty_validate_change");
     expect(names).toContain("specty_get_rules");
@@ -103,6 +105,26 @@ describe("MCP tools definitions and dispatch", () => {
     expect(names).toContain("specty_record_handoff");
     expect(names).toContain("specty_get_code_graph");
     expect(names).toContain("specty_verify");
+  });
+
+  it("handles specty_guard and specty_next_action", async () => {
+    // 1. specty_next_action
+    const nextRes = (await handleMcpToolCall("specty_next_action", {}, tmpDir, graph)) as Record<
+      string,
+      unknown
+    >;
+    expect(nextRes.actionType).toBeDefined();
+    expect(nextRes.statusCard).toBeDefined();
+
+    // 2. specty_guard
+    const guardRes = (await handleMcpToolCall(
+      "specty_guard",
+      { tool: "Bash", command: "specty approve foo" },
+      tmpDir,
+      graph,
+    )) as Record<string, unknown>;
+    expect(guardRes.allowed).toBe(false);
+    expect(guardRes.code).toBe("BASH_FORBIDDEN_COMMAND");
   });
 
   it("handles specty_get_active_change", async () => {

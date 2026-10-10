@@ -114,6 +114,7 @@ program
   .command("status")
   .description("show project status, active scopes, configured tools, and changes")
   .option("--json", "output status as JSON")
+  .option("--card", "output status as a compact one-line status card")
   .action(async (options) => {
     try {
       const { executeStatus } = await import("./commands/status.js");
@@ -395,6 +396,43 @@ program
       if (exitCode !== 0) {
         process.exit(exitCode);
       }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("guard")
+  .description("evaluate pre-execution tool calls and edits under hard governance rules")
+  .option("--tool <tool>", "tool name being invoked (e.g. Edit, Write, Bash)")
+  .option("--file <file>", "file path targeted for modification")
+  .option("--command <cmd>", "bash or shell command being executed")
+  .option("--change <change>", "target specification change identifier")
+  .option("--json", "output guard evaluation decision as JSON")
+  .action(async (options) => {
+    try {
+      const { executeGuard } = await import("./commands/guard.js");
+      const allowed = await executeGuard(options);
+      if (!allowed) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("next")
+  .description("determine and display the single prescriptive next action and status card")
+  .option("--change <change>", "target specification change identifier")
+  .option("--card", "output compact one-line status card")
+  .option("--json", "output next action report as JSON")
+  .action(async (options) => {
+    try {
+      const { executeNext } = await import("./commands/next.js");
+      await executeNext(options);
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exit(1);
