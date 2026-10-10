@@ -85,8 +85,8 @@
   function setupSse() {
     try {
       sseSource = new EventSource("/api/events");
-      sseSource.addEventListener("fs:change", () => {
-        if (currentChangeId) loadChange(currentChangeId, true);
+      sseSource.addEventListener("fs:change", async () => {
+        await refreshChangesList(true);
       });
       sseSource.addEventListener("task:toggled", () => {
         if (currentChangeId) loadChange(currentChangeId, true);
@@ -122,12 +122,22 @@
         approveUserInput.value = statusRes.gitUser.name;
       }
 
+      await refreshChangesList(false);
+    } catch (err) {
+      console.error("Error loading initial data", err);
+    }
+  }
+
+  async function refreshChangesList(autoSelectNew = true) {
+    try {
       const changesRes = await fetch("/api/changes").then((r) => r.json());
       const changes = changesRes.changes || [];
+      const prevIds = Array.from(changeSelectEl.options).map((o) => o.value).filter(Boolean);
 
       changeSelectEl.innerHTML = "";
       if (changes.length === 0) {
         changeSelectEl.innerHTML = '<option value="">No hay changes activos</option>';
+        currentChangeId = null;
         return;
       }
 
@@ -138,17 +148,31 @@
         changeSelectEl.appendChild(opt);
       });
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const paramChange = urlParams.get("change");
-      const targetId =
-        paramChange && changes.some((c) => c.id === paramChange) ? paramChange : changes[0].id;
+      // Si se creó un spec nuevo que no estaba en el dropdown, cambiar automáticamente a él
+      const newChange = changes.find((c) => !prevIds.includes(c.id));
+      if (autoSelectNew && newChange) {
+        changeSelectEl.value = newChange.id;
+        await loadChange(newChange.id);
+        return;
+      }
 
-      changeSelectEl.value = targetId;
-      await loadChange(targetId);
+      // Si ya hay un change seleccionado y sigue existiendo, refrescarlo
+      if (currentChangeId && changes.some((c) => c.id === currentChangeId)) {
+        changeSelectEl.value = currentChangeId;
+        await loadChange(currentChangeId, true);
+      } else {
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramChange = urlParams.get("change");
+        const targetId =
+          paramChange && changes.some((c) => c.id === paramChange) ? paramChange : changes[0].id;
+        changeSelectEl.value = targetId;
+        await loadChange(targetId);
+      }
     } catch (err) {
-      console.error("Error loading initial data", err);
+      console.error("Error refreshing changes list", err);
     }
   }
+
 
   // Load Change Detail
   async function loadChange(changeId, isBackgroundSync = false) {
