@@ -6,6 +6,29 @@ export interface GitHubContext {
   token?: string;
   apiUrl: string;
   prNumber?: number;
+  prLabels?: string[];
+  prBody?: string;
+  headRef?: string;
+}
+
+export interface GitHubReview {
+  id: number;
+  user: {
+    login: string;
+    type?: string;
+    site_admin?: boolean;
+  };
+  state: "APPROVED" | "CHANGES_REQUESTED" | "COMMENTED" | "DISMISSED" | "PENDING";
+  submitted_at: string;
+  commit_id: string;
+  author_association?: string;
+}
+
+export interface FetchPrReviewsOptions {
+  repo: string;
+  prNumber: number;
+  token: string;
+  apiUrl?: string;
 }
 
 export interface UpsertCommentOptions {
@@ -32,6 +55,9 @@ export function getGitHubContext(): GitHubContext {
   const apiUrl = process.env.GITHUB_API_URL || "https://api.github.com";
 
   let prNumber: number | undefined;
+  let prLabels: string[] | undefined;
+  let prBody: string | undefined;
+  let headRef: string | undefined = process.env.GITHUB_HEAD_REF;
 
   // 1. Try reading from GitHub Actions event payload JSON file
   const eventPath = process.env.GITHUB_EVENT_PATH;
@@ -39,10 +65,29 @@ export function getGitHubContext(): GitHubContext {
     try {
       const raw = fs.readFileSync(eventPath, "utf8");
       const event = JSON.parse(raw);
-      if (typeof event.pull_request?.number === "number") {
-        prNumber = event.pull_request.number;
+      if (event.pull_request) {
+        if (typeof event.pull_request.number === "number") {
+          prNumber = event.pull_request.number;
+        }
+        if (Array.isArray(event.pull_request.labels)) {
+          prLabels = event.pull_request.labels
+            .map((l: { name?: string }) => l.name || "")
+            .filter(Boolean);
+        }
+        if (typeof event.pull_request.body === "string") {
+          prBody = event.pull_request.body;
+        }
+        if (typeof event.pull_request.head?.ref === "string") {
+          headRef = event.pull_request.head.ref;
+        }
       } else if (typeof event.issue?.number === "number") {
         prNumber = event.issue.number;
+        if (Array.isArray(event.issue.labels)) {
+          prLabels = event.issue.labels.map((l: { name?: string }) => l.name || "").filter(Boolean);
+        }
+        if (typeof event.issue.body === "string") {
+          prBody = event.issue.body;
+        }
       } else if (typeof event.number === "number") {
         prNumber = event.number;
       }
@@ -64,7 +109,36 @@ export function getGitHubContext(): GitHubContext {
     token,
     apiUrl,
     prNumber,
+    prLabels,
+    prBody,
+    headRef,
   };
+}
+
+/**
+ * Fetches reviews for a given pull request from GitHub API.
+ */
+export async function fetchPrReviews(options: FetchPrReviewsOptions): Promise<GitHubReview[]> {
+  const { repo, prNumber, token } = options;
+  const apiUrl = (options.apiUrl || "https://api.github.com").replace(/\/$/, "");
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "specty-pr-gate",
+  };
+
+  const url = `${apiUrl}/repos/${repo}/pulls/${prNumber}/reviews?per_page=100`;
+  const res = await fetch(url, { headers });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Failed to fetch PR reviews (${res.status}): ${errText}`);
+  }
+
+  const reviews = (await res.json()) as GitHubReview[];
+  return Array.isArray(reviews) ? reviews : [];
 }
 
 /**

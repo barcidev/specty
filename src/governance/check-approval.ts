@@ -7,6 +7,7 @@ import type { ChangeStatus, ChangeTaskSummary } from "../engines/types.js";
 import { recordMetricEvent } from "../metrics/index.js";
 import { type ApprovalStateCode, checkApprovalStatus } from "./approvals.js";
 import { resolveTargetChange } from "./change-resolver.js";
+import { getGitHubContext } from "./github-client.js";
 import { getAllTasksFileGlobs, isPathMatchingGlobs, parseTasksWithScope } from "./task-scope.js";
 
 export interface GateChangeSummary {
@@ -38,7 +39,7 @@ export interface GateResult {
   bypassDetails?: GateBypassRecord;
   modifiedSourceFiles: string[];
   modifiedExemptFiles?: string[];
-  allModifiedFiles?: string[];
+  allModifiedFiles: string[];
   activeApprovedChange?: string;
   changeDetails?: GateChangeSummary;
   allChanges?: GateChangeSummary[];
@@ -49,7 +50,8 @@ export interface GateResult {
     | "reapproval_required"
     | "out_of_scope"
     | "protected_config_tampered"
-    | "ambiguous_active_changes";
+    | "ambiguous_active_changes"
+    | "branch_change_mismatch";
   reason?: string;
 }
 
@@ -59,6 +61,8 @@ export interface CheckApprovalGateOptions {
   headRef?: string;
   bypassReason?: string;
   changeId?: string;
+  prLabels?: string[];
+  prBody?: string;
 }
 
 export const BYPASS_AUDIT_FILENAME = ".specty/audit/bypasses.jsonl";
@@ -311,10 +315,18 @@ export async function checkApprovalGate(
   }
 
   // 5. Verify Active Approved Specification Change and Validate Scope (C3)
+  const ghCtx = getGitHubContext();
+  const prLabels = options.prLabels || ghCtx.prLabels;
+  const prBody = options.prBody || ghCtx.prBody;
+  const prHeadRef = ghCtx.headRef;
+
   const resolution = await resolveTargetChange(repoRoot, {
     changeId: options.changeId,
     headRef,
     baseRef: resolvedBase,
+    prLabels,
+    prBody,
+    prHeadRef,
   });
 
   const activeChanges = resolution.activeChanges;
@@ -367,6 +379,27 @@ export async function checkApprovalGate(
   const targetSummary = targetChange
     ? changeSummaries.find((c) => c.id === targetChange.id)
     : undefined;
+
+  // Validate branch/change coherence if the branch explicitly declares a change
+  if (
+    resolution.branchCandidateId &&
+    targetSummary &&
+    resolution.branchCandidateId !== targetSummary.id &&
+    activeChanges.some((c) => c.id === resolution.branchCandidateId)
+  ) {
+    return {
+      passed: false,
+      bypassed: false,
+      modifiedSourceFiles,
+      modifiedExemptFiles,
+      allModifiedFiles: modifiedFiles,
+      activeApprovedChange: targetSummary.id,
+      changeDetails: targetSummary,
+      allChanges: changeSummaries,
+      errorCode: "branch_change_mismatch",
+      reason: `Branch indicates change "${resolution.branchCandidateId}", but targeted change is "${targetSummary.id}". Branch and active specification change must match.`,
+    };
+  }
 
   if (targetSummary && targetSummary.approvalCode === "reapproval_required") {
     return {

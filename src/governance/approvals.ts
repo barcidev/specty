@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { readChangeState, writeChangeState } from "../engines/change-state.js";
+import { fetchPrReviews, type GitHubReview, getGitHubContext } from "./github-client.js";
 import { computeChangeContentHash } from "./hashing.js";
 
 export interface ApprovalRecord {
@@ -208,4 +209,136 @@ export async function approveChange(
   }
 
   return record;
+}
+
+export interface VerifyPrReviewOptions {
+  repo?: string;
+  prNumber?: number;
+  token?: string;
+  apiUrl?: string;
+  requiredReviewers?: string[];
+  requireCodeowner?: boolean;
+  dryRun?: boolean;
+}
+
+export interface PrReviewApprovalResult {
+  approved: boolean;
+  review?: GitHubReview;
+  record?: ApprovalRecord;
+  reason?: string;
+}
+
+/**
+ * Verifies if a specification change has a formal APPROVED review on GitHub Pull Request,
+ * ensuring tamper-proof approval by human developers/CODEOWNERS.
+ */
+export async function verifyPrReviewApproval(
+  repoRoot: string,
+  changeId: string,
+  options: VerifyPrReviewOptions = {},
+): Promise<PrReviewApprovalResult> {
+  const ghCtx = getGitHubContext();
+  const repo = options.repo || ghCtx.repo;
+  const token = options.token || ghCtx.token;
+  const prNumber = options.prNumber || ghCtx.prNumber;
+  const apiUrl = options.apiUrl || ghCtx.apiUrl;
+
+  if (!repo || !token || !prNumber) {
+    return {
+      approved: false,
+      reason:
+        "Missing required GitHub context (repository, token, or PR number) to verify PR reviews.",
+    };
+  }
+
+  const changeDir = path.join(repoRoot, "openspec", "changes", changeId);
+  try {
+    await fs.stat(changeDir);
+  } catch {
+    return {
+      approved: false,
+      reason: `Change directory does not exist: "${changeDir}"`,
+    };
+  }
+
+  let reviews: GitHubReview[];
+  try {
+    reviews = await fetchPrReviews({ repo, prNumber, token, apiUrl });
+  } catch (err: unknown) {
+    return {
+      approved: false,
+      reason: `Failed to fetch GitHub PR reviews: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+
+  // Filter approved reviews from human users
+  const validApprovedReviews = reviews.filter((r) => {
+    if (r.state !== "APPROVED") return false;
+    const login = r.user.login.toLowerCase();
+    if (r.user.type === "Bot" || login.endsWith("[bot]")) return false;
+    if (DISALLOWED_APPROVER_ROLES.includes(login)) return false;
+
+    if (options.requiredReviewers && options.requiredReviewers.length > 0) {
+      const allowed = options.requiredReviewers.map((u) => u.toLowerCase());
+      if (!allowed.includes(login)) return false;
+    }
+
+    if (options.requireCodeowner && r.author_association) {
+      const allowedAssociations = ["COLLABORATOR", "MEMBER", "OWNER"];
+      if (!allowedAssociations.includes(r.author_association)) return false;
+    }
+
+    return true;
+  });
+
+  if (validApprovedReviews.length === 0) {
+    return {
+      approved: false,
+      reason: `No valid human APPROVED review found on PR #${prNumber} for change "${changeId}".`,
+    };
+  }
+
+  // Pick latest approved review
+  const latestReview = validApprovedReviews[validApprovedReviews.length - 1];
+  if (!latestReview) {
+    return {
+      approved: false,
+      reason: `No valid human APPROVED review found on PR #${prNumber} for change "${changeId}".`,
+    };
+  }
+  const contentHash = await computeChangeContentHash(changeDir);
+  const approvedBy = latestReview.user.login;
+  const approvedAt = latestReview.submitted_at;
+
+  const record: ApprovalRecord = {
+    changeId,
+    approvedAt,
+    approvedBy,
+    contentHash,
+    notes: `Approved via GitHub PR #${prNumber} review`,
+  };
+
+  if (!options.dryRun) {
+    const existingState = (await readChangeState(changeDir)) ?? {
+      change_id: changeId,
+      status: "draft",
+    };
+
+    await writeChangeState(changeDir, {
+      ...existingState,
+      status: "approved",
+      approved_at: approvedAt,
+      approved_by: approvedBy,
+      content_hash: contentHash,
+    });
+
+    await appendApprovalAuditLog(repoRoot, record);
+  }
+
+  return {
+    approved: true,
+    review: latestReview,
+    record,
+    reason: `Change "${changeId}" approved by @${approvedBy} on PR #${prNumber}.`,
+  };
 }

@@ -491,6 +491,81 @@ program
     }
   });
 
+program
+  .command("branch [change]")
+  .description("create or switch to a Git branch linked to a specification change")
+  .option("--prefix <prefix>", "branch prefix convention (defaults to feature/)")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeBranch } = await import("./commands/branch.js");
+      const success = await executeBranch(change, options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("sync-approval [change]")
+  .description("verify and synchronize specification approval from a GitHub PR review")
+  .option("--pr <number>", "pull request number")
+  .option("--repo <owner/repo>", "GitHub repository in owner/repo format")
+  .option("--token <token>", "GitHub authentication token")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeSyncApproval } = await import("./commands/sync-approval.js");
+      const success = await executeSyncApproval(change, options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("eval")
+  .description("run adversarial evaluations suite to test governance adherence and defenses")
+  .option("-s, --scenario <id>", "run a single adversarial evaluation scenario by id")
+  .option("-v, --verbose", "display detailed prompts and decisions per scenario")
+  .option("--json", "output evaluation report as JSON")
+  .action(async (options) => {
+    try {
+      const { executeEval } = await import("./commands/eval.js");
+      const passed = await executeEval(options);
+      if (!passed) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("trace [change]")
+  .description("generate requirement-to-task-to-commit traceability matrix for a change")
+  .option("--base <ref>", "base git ref (branch or commit sha)")
+  .option("--head <ref>", "head git ref (defaults to HEAD)")
+  .option("--output <path>", "write traceability matrix JSON report to file")
+  .option("--json", "output traceability matrix report as JSON")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeTrace } = await import("./commands/trace.js");
+      const success = await executeTrace(change, options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 export function getRegisteredCommands(): string[] {
   const commands: string[] = [];
   for (const cmd of program.commands) {

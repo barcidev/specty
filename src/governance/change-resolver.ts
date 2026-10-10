@@ -9,9 +9,19 @@ export interface ResolveChangeOptions {
   trailerKey?: string;
   headRef?: string;
   baseRef?: string;
+  prLabels?: string[];
+  prBody?: string;
+  prHeadRef?: string;
 }
 
-export type ChangeResolutionSource = "option" | "trailer" | "branch" | "single_active" | "none";
+export type ChangeResolutionSource =
+  | "option"
+  | "trailer"
+  | "pr_label"
+  | "pr_body"
+  | "branch"
+  | "single_active"
+  | "none";
 
 export interface TargetChangeResolution {
   resolvedId: string | null;
@@ -19,6 +29,7 @@ export interface TargetChangeResolution {
   source: ChangeResolutionSource;
   activeChanges: ChangeMetadata[];
   isAmbiguous: boolean;
+  branchCandidateId?: string | null;
   reason?: string;
 }
 
@@ -40,12 +51,56 @@ export function extractChangeIdFromBranch(branch: string): string | null {
 }
 
 /**
+ * Extracts a candidate change ID from Pull Request labels.
+ * Matches labels like:
+ * - specty:change/my-change -> my-change
+ * - specty:my-change        -> my-change
+ * - change:my-change        -> my-change
+ */
+export function extractChangeIdFromLabels(labels?: string[]): string | null {
+  if (!labels || labels.length === 0) return null;
+  for (const label of labels) {
+    const clean = label.trim();
+    const match = clean.match(/^(?:specty:change\/|specty:|change:)([a-zA-Z0-9._-]+)$/i);
+    if (match?.[1]) {
+      return match[1].trim();
+    }
+  }
+  return null;
+}
+
+/**
+ * Extracts a candidate change ID from Pull Request body text or commit messages.
+ * Matches:
+ * - Specty-Change: my-change
+ * - Resolves change: my-change
+ * - Closes change: my-change
+ */
+export function extractChangeIdFromBody(
+  body?: string,
+  trailerKey = "Specty-Change",
+): string | null {
+  if (!body) return null;
+  const trailerMatch = body.match(new RegExp(`^${trailerKey}:\\s*([a-zA-Z0-9._-]+)`, "mi"));
+  if (trailerMatch?.[1]) {
+    return trailerMatch[1].trim();
+  }
+  const resolvesMatch = body.match(/(?:resolves|closes|fixes)\s+change:\s*([a-zA-Z0-9._-]+)/i);
+  if (resolvesMatch?.[1]) {
+    return resolvesMatch[1].trim();
+  }
+  return null;
+}
+
+/**
  * Resolves the active specification change associated with the current working context,
  * checking in order:
  * 1. Explicit CLI/function option (`options.changeId`)
  * 2. Git commit trailer (`Specty-Change: <id>`)
- * 3. Git branch name (`feature/<id>`, `change/<id>`)
- * 4. Single active approved change in repository
+ * 3. PR labels (`specty:change/<id>`)
+ * 4. PR body text trailer (`Specty-Change: <id>`)
+ * 5. PR head ref or current Git branch name (`feature/<id>`, `change/<id>`)
+ * 6. Single active approved change in repository
  */
 export async function resolveTargetChange(
   repoRoot: string,
@@ -54,6 +109,12 @@ export async function resolveTargetChange(
   const config = await loadConfig(repoRoot);
   const engine = getSpecEngine(config.spec_engine);
   const activeChanges = await engine.listChanges(repoRoot);
+
+  const currentBranch = await getCurrentBranch(repoRoot);
+  const branchCandidateId =
+    extractChangeIdFromBranch(currentBranch ?? "") ||
+    extractChangeIdFromBranch(options?.prHeadRef ?? "") ||
+    null;
 
   // 1. Explicit change ID
   if (options?.changeId) {
@@ -64,6 +125,7 @@ export async function resolveTargetChange(
       source: "option",
       activeChanges,
       isAmbiguous: false,
+      branchCandidateId,
       reason: `Specified explicitly via option '${options.changeId}'.`,
     };
   }
@@ -90,6 +152,7 @@ export async function resolveTargetChange(
         source: "trailer",
         activeChanges,
         isAmbiguous: false,
+        branchCandidateId,
         reason: `Linked via Git commit trailer '${trailerKey}: ${trailerVal}'.`,
       };
     }
@@ -97,10 +160,44 @@ export async function resolveTargetChange(
     // Git log error non-fatal
   }
 
-  // 3. Current Git branch name
-  const currentBranch = await getCurrentBranch(repoRoot);
-  if (currentBranch) {
-    const candidateId = extractChangeIdFromBranch(currentBranch);
+  // 3. PR Labels
+  if (options?.prLabels && options.prLabels.length > 0) {
+    const labelCandidate = extractChangeIdFromLabels(options.prLabels);
+    if (labelCandidate) {
+      const match = activeChanges.find((c) => c.id === labelCandidate);
+      return {
+        resolvedId: labelCandidate,
+        change: match ?? null,
+        source: "pr_label",
+        activeChanges,
+        isAmbiguous: false,
+        branchCandidateId,
+        reason: `Linked via Pull Request label for change '${labelCandidate}'.`,
+      };
+    }
+  }
+
+  // 4. PR Body
+  if (options?.prBody) {
+    const bodyCandidate = extractChangeIdFromBody(options.prBody, trailerKey);
+    if (bodyCandidate) {
+      const match = activeChanges.find((c) => c.id === bodyCandidate);
+      return {
+        resolvedId: bodyCandidate,
+        change: match ?? null,
+        source: "pr_body",
+        activeChanges,
+        isAmbiguous: false,
+        branchCandidateId,
+        reason: `Linked via Pull Request body reference to change '${bodyCandidate}'.`,
+      };
+    }
+  }
+
+  // 5. PR head ref or current Git branch name
+  const candidateBranch = options?.prHeadRef || currentBranch;
+  if (candidateBranch) {
+    const candidateId = extractChangeIdFromBranch(candidateBranch);
     if (candidateId) {
       const match = activeChanges.find((c) => c.id === candidateId);
       if (match) {
@@ -110,26 +207,28 @@ export async function resolveTargetChange(
           source: "branch",
           activeChanges,
           isAmbiguous: false,
-          reason: `Resolved from current Git branch '${currentBranch}'.`,
+          branchCandidateId,
+          reason: `Resolved from Git branch '${candidateBranch}'.`,
         };
       }
     }
 
     // Direct match between branch name and active change ID
-    const directMatch = activeChanges.find((c) => c.id === currentBranch);
+    const directMatch = activeChanges.find((c) => c.id === candidateBranch);
     if (directMatch) {
       return {
-        resolvedId: currentBranch,
+        resolvedId: candidateBranch,
         change: directMatch,
         source: "branch",
         activeChanges,
         isAmbiguous: false,
-        reason: `Branch name matches active change '${currentBranch}'.`,
+        branchCandidateId,
+        reason: `Branch name matches active change '${candidateBranch}'.`,
       };
     }
   }
 
-  // 4. Fallback: single active change or single approved active change
+  // 6. Fallback: single active change or single approved active change
   if (activeChanges.length === 1 && activeChanges[0]) {
     const single = activeChanges[0];
     return {
@@ -138,6 +237,7 @@ export async function resolveTargetChange(
       source: "single_active",
       activeChanges,
       isAmbiguous: false,
+      branchCandidateId,
       reason: `Single active specification change found in repository ('${single.id}').`,
     };
   }
@@ -154,6 +254,7 @@ export async function resolveTargetChange(
       source: "single_active",
       activeChanges,
       isAmbiguous: false,
+      branchCandidateId,
       reason: `Single approved active change found in repository ('${singleApproved.id}').`,
     };
   }
@@ -165,6 +266,7 @@ export async function resolveTargetChange(
       source: "none",
       activeChanges,
       isAmbiguous: true,
+      branchCandidateId,
       reason: `Multiple active changes detected (${approvedChanges.map((c) => c.id).join(", ")}). Specify change via --change <id>, commit trailer 'Specty-Change: <id>', or branch 'feature/<id>'.`,
     };
   }
@@ -175,6 +277,7 @@ export async function resolveTargetChange(
     source: "none",
     activeChanges,
     isAmbiguous: false,
+    branchCandidateId,
     reason: "No active specification change found for the current branch or commit.",
   };
 }

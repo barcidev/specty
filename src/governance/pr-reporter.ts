@@ -1,10 +1,12 @@
 import type { GateResult } from "./check-approval.js";
+import type { TraceabilityMatrix } from "./traceability.js";
 
 export const PR_GATE_COMMENT_MARKER = "<!-- specty-pr-gate-comment -->";
 
 export interface PrReportOptions {
   lang?: "en" | "es";
   prNumber?: number;
+  traceabilityMatrix?: TraceabilityMatrix;
 }
 
 export function generatePrGateReport(result: GateResult, options: PrReportOptions = {}): string {
@@ -192,6 +194,36 @@ export function generatePrGateReport(result: GateResult, options: PrReportOption
     lines.push(
       `*${isEs ? "Todas las modificaciones de código cumplen el protocolo estricto de gobernanza guiada por especificaciones." : "All source changes strictly adhere to spec-driven development governance."}*\n`,
     );
+  }
+
+  // Section 4: Traceability Matrix
+  if (options.traceabilityMatrix) {
+    const tm = options.traceabilityMatrix;
+    lines.push(
+      `### 🔗 ${isEs ? "Matriz de Trazabilidad (Requisito -> Tarea -> Commit -> Test)" : "Traceability Matrix (Requirement -> Task -> Commit -> Test)"}`,
+    );
+    lines.push(
+      `<details><summary>${isEs ? "Ver desglose de trazabilidad completa" : "View complete traceability matrix"} (${tm.overallCompliance}% ${isEs ? "cumplimiento" : "compliance"})</summary>\n`,
+    );
+
+    lines.push(
+      `| ${isEs ? "Req / Tarea" : "Req / Task"} | ${isEs ? "Rol" : "Role"} | ${isEs ? "Estado" : "State"} | Commits | ${isEs ? "Verificación" : "Verification"} |`,
+    );
+    lines.push("| :--- | :---: | :---: | :---: | :---: |");
+
+    for (const req of tm.requirements) {
+      for (const t of req.tasks) {
+        const statusIcon = t.completed ? "✅" : "⏳";
+        const roleStr = t.agentRole ? `@${t.agentRole}` : "@dev";
+        const commitCount = t.commits.length;
+        const verifyStr = t.verification ? (t.verification.success ? "✅ PASS" : "❌ FAIL") : "—";
+
+        lines.push(
+          `| **${t.id}** ${t.description.slice(0, 35)} | \`${roleStr}\` | ${statusIcon} | ${commitCount} | ${verifyStr} |`,
+        );
+      }
+    }
+    lines.push("\n</details>\n");
   }
 
   // Footer

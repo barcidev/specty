@@ -136,6 +136,12 @@ export interface ComplianceMetrics {
   totalVerifications: number;
   totalTasks: number;
   completedTasks: number;
+  adherenceRate?: number;
+  blockedDriftAttempts?: number;
+  adherenceByTool?: Record<
+    string,
+    { totalOperations: number; violationsBlocked: number; adherenceRate: number }
+  >;
 }
 
 export type BypassReasonCategory =

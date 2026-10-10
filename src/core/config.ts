@@ -77,6 +77,9 @@ export const GovernanceSchema = z.object({
       static: true,
       coverage_min: 0,
     }),
+  approval_method: z.enum(["cli", "pr_review", "hybrid"]).default("hybrid"),
+  required_reviewers: z.array(z.string()).default([]),
+  require_codeowner_review: z.boolean().default(false),
 });
 
 export const McpGraphProviderSchema = z

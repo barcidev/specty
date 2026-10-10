@@ -5,6 +5,7 @@ import { logger } from "../../core/logger.js";
 import { checkApprovalGate } from "../../governance/check-approval.js";
 import { getGitHubContext, upsertPrComment } from "../../governance/github-client.js";
 import { generatePrGateReport } from "../../governance/pr-reporter.js";
+import type { TraceabilityMatrix } from "../../governance/traceability.js";
 
 export interface GateCliOptions {
   cwd?: string;
@@ -24,14 +25,75 @@ export async function executeGate(options: GateCliOptions = {}): Promise<boolean
   const config = await loadConfig(repoRoot);
   const lang = options.lang || (config.language === "es" ? "es" : "en");
 
-  const result = await checkApprovalGate(repoRoot, {
+  let result = await checkApprovalGate(repoRoot, {
     baseRef: options.base,
     headRef: options.head,
   });
 
+  const ghCtx = getGitHubContext();
+  const repo = ghCtx.repo;
+  const token = options.token || ghCtx.token;
+  const prNumber = options.pr ? Number(options.pr) : ghCtx.prNumber;
+
+  // Auto-verify via GitHub PR Review if unapproved and approval_method supports pr_review
+  if (
+    !result.passed &&
+    !result.bypassed &&
+    repo &&
+    token &&
+    prNumber &&
+    (config.governance.approval_method === "pr_review" ||
+      config.governance.approval_method === "hybrid")
+  ) {
+    const candidateId = result.changeDetails?.id || result.allChanges?.[0]?.id;
+    if (candidateId) {
+      const { verifyPrReviewApproval } = await import("../../governance/approvals.js");
+      const syncRes = await verifyPrReviewApproval(repoRoot, candidateId, {
+        repo,
+        token,
+        prNumber,
+        apiUrl: ghCtx.apiUrl,
+        requiredReviewers: config.governance.required_reviewers,
+        requireCodeowner: config.governance.require_codeowner_review,
+      });
+
+      if (syncRes.approved) {
+        logger.success(`✓ Synchronized formal approval from PR #${prNumber} review.`);
+        result = await checkApprovalGate(repoRoot, {
+          baseRef: options.base,
+          headRef: options.head,
+        });
+      }
+    }
+  }
+
+  let traceabilityMatrix: TraceabilityMatrix | undefined;
+  const targetChangeId = result.changeDetails?.id || result.activeApprovedChange;
+  if (targetChangeId) {
+    try {
+      const { buildTraceabilityMatrix } = await import("../../governance/traceability.js");
+      traceabilityMatrix = await buildTraceabilityMatrix(repoRoot, targetChangeId, {
+        baseRef: options.base,
+        headRef: options.head,
+      });
+
+      // Write audit artifact file
+      const auditDir = path.join(repoRoot, ".specty/audit");
+      await fs.mkdir(auditDir, { recursive: true });
+      await fs.writeFile(
+        path.join(auditDir, `traceability-${targetChangeId}.json`),
+        JSON.stringify(traceabilityMatrix, null, 2),
+        "utf8",
+      );
+    } catch {
+      // Non-fatal traceability generation error
+    }
+  }
+
   const reportMarkdown = generatePrGateReport(result, {
     lang,
     prNumber: options.pr ? Number(options.pr) : undefined,
+    traceabilityMatrix,
   });
 
   if (options.outputComment) {
@@ -42,7 +104,6 @@ export async function executeGate(options: GateCliOptions = {}): Promise<boolean
   }
 
   // Determine if PR comment posting should occur
-  const ghCtx = getGitHubContext();
   const shouldComment =
     options.comment !== false && (Boolean(options.comment) || Boolean(ghCtx.prNumber));
 
