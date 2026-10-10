@@ -1,8 +1,12 @@
 import path from "node:path";
-import { execa } from "execa";
 import picocolors from "picocolors";
+
 import { logger } from "../../core/logger.js";
-import { startUiServer } from "../../ui/index.js";
+import {
+  openExternalBrowserFallback,
+  openInIdeInternalViewer,
+  startUiServer,
+} from "../../ui/index.js";
 
 export interface UiCommandOptions {
   cwd?: string;
@@ -39,16 +43,13 @@ export async function executeUi(options: UiCommandOptions = {}): Promise<void> {
   console.log(`${picocolors.dim("  - Presiona Ctrl+C para detener el servidor")}\n`);
 
   if (shouldOpen) {
-    try {
-      if (process.platform === "darwin") {
-        await execa("open", [targetUrl]).catch(() => {});
-      } else if (process.platform === "win32") {
-        await execa("cmd", ["/c", "start", targetUrl]).catch(() => {});
-      } else {
-        await execa("xdg-open", [targetUrl]).catch(() => {});
-      }
-    } catch {
-      // Non-fatal if browser opening fails
+    // Prioridad 1: Visor interno del IDE (Simple Browser)
+    const openedInIde = await openInIdeInternalViewer({ url: targetUrl });
+    if (openedInIde) {
+      console.log(picocolors.green("  ✓ Abierto en el visor interno del IDE"));
+    } else {
+      // Última opción: Navegador externo del sistema
+      await openExternalBrowserFallback(targetUrl);
     }
   }
 

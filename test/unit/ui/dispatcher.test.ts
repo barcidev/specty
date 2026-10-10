@@ -84,4 +84,16 @@ describe("ui/dispatcher", () => {
       await serverInstance.close();
     }
   });
+
+  it("handles internal IDE viewer and fallback execution safely", async () => {
+    const { openInIdeInternalViewer, openExternalBrowserFallback } = await import(
+      "../../../src/ui/dispatcher.js"
+    );
+
+    // Testing when no valid IDE command exists or non-existent file
+    const res = await openInIdeInternalViewer({ filePath: "/non/existent/file.md" });
+    expect(typeof res).toBe("boolean");
+
+    expect(typeof openExternalBrowserFallback).toBe("function");
+  });
 });

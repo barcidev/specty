@@ -16,6 +16,8 @@ export interface ViewerDispatchResult {
   mode: "ide-plan" | "ui-server";
   url?: string;
   planFilePath?: string;
+  openedInIde: boolean;
+  openedInBrowser: boolean;
   message: string;
 }
 
@@ -158,6 +160,94 @@ export async function projectPlanForIde(repoRoot: string, changeId: string): Pro
   return planPath;
 }
 
+/**
+ * Prioridad 1: Intenta abrir el recurso en el visor interno del IDE
+ * (panel de planes del editor o Simple Browser interno).
+ * Devuelve true si tuvo éxito abriendo dentro del IDE.
+ */
+export async function openInIdeInternalViewer(target: {
+  url?: string;
+  filePath?: string;
+}): Promise<boolean> {
+  const ide = detectIdeEnvironment();
+
+  // 1. Si es archivo de plan, abrir directamente en el visor de archivos/planes del IDE
+  if (target.filePath) {
+    if (ide.isCursor) {
+      try {
+        await execa("cursor", ["-g", target.filePath]);
+        return true;
+      } catch {
+        // continue
+      }
+    }
+
+    if (ide.isVsCode || ide.isAntigravity || ide.isWindsurf) {
+      try {
+        await execa("code", ["-g", target.filePath]);
+        return true;
+      } catch {
+        // continue
+      }
+    }
+  }
+
+  // 2. Si es URL web, intentar abrir en el Simple Browser interno del IDE
+  if (target.url) {
+    // 2.1 Intentar comando CLI del editor con flag --open-url
+    if (ide.isCursor) {
+      try {
+        await execa("cursor", ["--open-url", target.url]);
+        return true;
+      } catch {
+        // continue
+      }
+    }
+
+    if (ide.isVsCode || ide.isAntigravity || ide.isWindsurf) {
+      try {
+        await execa("code", ["--open-url", target.url]);
+        return true;
+      } catch {
+        // continue
+      }
+    }
+
+    // 2.2 En macOS, intentar handler directo del Simple Browser del editor
+    if (process.platform === "darwin" && (ide.isVsCode || ide.isCursor)) {
+      try {
+        const handlerUri = ide.isCursor
+          ? `cursor://vscode.simple-browser/open?url=${encodeURIComponent(target.url)}`
+          : `vscode://vscode.simple-browser/open?url=${encodeURIComponent(target.url)}`;
+        await execa("open", [handlerUri]);
+        return true;
+      } catch {
+        // continue
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Última opción: Abrir en el navegador externo del sistema (Chrome, Safari, etc.)
+ */
+export async function openExternalBrowserFallback(url: string): Promise<boolean> {
+  try {
+    if (process.platform === "darwin") {
+      await execa("open", [url]);
+    } else if (process.platform === "win32") {
+      await execa("cmd", ["/c", "start", url]);
+    } else {
+      await execa("xdg-open", [url]);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function dispatchSpecViewer(
   repoRoot: string,
   changeId: string,
@@ -165,38 +255,49 @@ export async function dispatchSpecViewer(
 ): Promise<ViewerDispatchResult> {
   const ideInfo = detectIdeEnvironment();
 
-  // Prioridad 1: Visor nativo de planes de Antigravity o si se pide explícitamente preferIdePlan
+  // Prioridad 1: Visor nativo de planes de Antigravity / IDE
   if (ideInfo.isAntigravity || options.preferIdePlan) {
     const planFilePath = await projectPlanForIde(repoRoot, changeId);
+    const openedInIde = await openInIdeInternalViewer({ filePath: planFilePath });
+
     return {
       mode: "ide-plan",
       planFilePath,
-      message: `Plan proyectado para el visor de Antigravity en: ${planFilePath}`,
+      openedInIde,
+      openedInBrowser: false,
+      message: openedInIde
+        ? `Plan proyectado y abierto en el visor interno del IDE: ${planFilePath}`
+        : `Plan proyectado para el visor de Antigravity en: ${planFilePath}`,
     };
   }
 
   // Prioridad 2: Servidor Web Local (Specty UI)
   const { url, wasStarted } = await ensureUiServerActive(repoRoot, changeId);
 
-  if (options.openBrowser !== false) {
-    try {
-      if (process.platform === "darwin") {
-        await execa("open", [url]).catch(() => {});
-      } else if (process.platform === "win32") {
-        await execa("cmd", ["/c", "start", url]).catch(() => {});
-      } else {
-        await execa("xdg-open", [url]).catch(() => {});
-      }
-    } catch {
-      // ignore
-    }
+  // Intentar primero en el visor / Simple Browser interno del IDE
+  const openedInIde = await openInIdeInternalViewer({ url });
+  let openedInBrowser = false;
+
+  // ÚLTIMA OPCIÓN: Solo abrir navegador externo si falló el visor interno del IDE
+  if (!openedInIde && options.openBrowser !== false) {
+    openedInBrowser = await openExternalBrowserFallback(url);
+  }
+
+  let message = wasStarted
+    ? `Servidor Specty UI activado automáticamente en segundo plano: ${url}`
+    : `Specty UI activo: ${url}`;
+
+  if (openedInIde) {
+    message += ` (Abierto en el visor interno del IDE)`;
+  } else if (openedInBrowser) {
+    message += ` (Abierto en navegador del sistema como última opción)`;
   }
 
   return {
     mode: "ui-server",
     url,
-    message: wasStarted
-      ? `Servidor Specty UI activado automáticamente en segundo plano: ${url}`
-      : `Specty UI activo. Visualizando spec en: ${url}`,
+    openedInIde,
+    openedInBrowser,
+    message,
   };
 }
