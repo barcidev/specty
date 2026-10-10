@@ -132,7 +132,9 @@
     try {
       const changesRes = await fetch("/api/changes").then((r) => r.json());
       const changes = changesRes.changes || [];
-      const prevIds = Array.from(changeSelectEl.options).map((o) => o.value).filter(Boolean);
+      const prevIds = Array.from(changeSelectEl.options)
+        .map((o) => o.value)
+        .filter(Boolean);
 
       changeSelectEl.innerHTML = "";
       if (changes.length === 0) {
@@ -172,7 +174,6 @@
       console.error("Error refreshing changes list", err);
     }
   }
-
 
   // Load Change Detail
   async function loadChange(changeId, isBackgroundSync = false) {

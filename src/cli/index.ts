@@ -338,4 +338,24 @@ program
     }
   });
 
+program
+
+  .command("view [change]")
+  .description(
+    "view specification in IDE plan mode (Antigravity) or auto-launch local web dashboard",
+  )
+  .option("--ide-plan", "force IDE plan viewer projection")
+  .option("--web", "force local web dashboard viewer")
+  .option("-p, --port <number>", "HTTP port (defaults to 4173)")
+  .option("--no-open", "do not automatically open web browser")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeView } = await import("./commands/view.js");
+      await executeView(change, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 program.parse(process.argv);
