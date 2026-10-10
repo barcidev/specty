@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Specty UI - Governance & Spec Dashboard</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="dark-theme">
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand">
+        <span class="brand-logo">⚡</span>
+        <span class="brand-title">specty</span>
+        <span class="brand-badge">UI</span>
+      </div>
+      <div class="live-indicator" id="live-indicator" title="Sincronización en vivo vía Server-Sent Events">
+        <span class="live-dot"></span>
+        <span class="live-text">Live Sync</span>
+      </div>
+      <div class="branch-pill" id="branch-pill">
+        <span class="branch-icon">⎇</span>
+        <span id="branch-name">main</span>
+      </div>
+    </div>
+
+    <div class="topbar-center">
+      <div class="change-selector-wrapper">
+        <label for="change-select" class="selector-label">Change:</label>
+        <select id="change-select" class="change-select">
+          <option value="" disabled selected>Cargando changes...</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div class="approval-badge-wrapper">
+        <div id="approval-status-badge" class="status-badge status-draft">
+          <span class="status-icon">●</span>
+          <span id="approval-status-text">Draft</span>
+        </div>
+      </div>
+      <button type="button" id="btn-quick-reviews" class="btn-subtle" title="Ver comentarios y revisiones">
+        💬 <span id="reviews-counter">0</span>
+      </button>
+      <button type="button" id="btn-open-ide" class="btn-secondary" title="Abrir en el editor / IDE">
+        ↗ Abrir en IDE
+      </button>
+      <button type="button" id="btn-approve" class="btn-primary" title="Aprobar especificación en 1 clic">
+        ✓ Aprobar Spec
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-layout">
+    <!-- Sub-header / Tabs -->
+    <nav class="tabs-nav">
+      <div class="tabs-list">
+        <button type="button" class="tab-btn active" data-tab="tab-proposal">
+          📋 Propuesta <span class="tab-sub">proposal.md</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-tasks">
+          ✅ Lista de Tareas <span id="tab-tasks-badge" class="pill-badge">0/0</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-diff">
+          🔀 Diffs de Código & Specs <span id="tab-diff-badge" class="pill-badge">0</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-reviews">
+          💬 Reviews & Feedback <span id="tab-reviews-badge" class="pill-badge pill-amber">0</span>
+        </button>
+      </div>
+      <div class="tabs-actions">
+        <span id="spec-engine-tag" class="engine-tag">Engine: openspec</span>
+      </div>
+    </nav>
+
+    <!-- Tab 1: Proposal View -->
+    <section id="tab-proposal" class="tab-pane active">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2 id="change-title">Título de la Propuesta</h2>
+          <span id="change-id-sub" class="sub-hash">openspec/changes/...</span>
+        </div>
+        <div class="pane-actions">
+          <button type="button" id="btn-add-general-review" class="btn-secondary btn-sm">
+            💬 Comentar Sección
+          </button>
+        </div>
+      </div>
+
+      <div id="proposal-sections-container" class="sections-container">
+        <!-- Rendered sections injected here -->
+      </div>
+    </section>
+
+    <!-- Tab 2: Tasks View -->
+    <section id="tab-tasks" class="tab-pane">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2>Lista de Tareas</h2>
+          <p class="sub-description">Checklist interactiva sincronizada con <code>tasks.md</code>. Marca tareas con un clic.</p>
+        </div>
+        <div class="progress-box">
+          <div class="progress-stats">
+            <span id="tasks-progress-text">0 de 0 tareas completadas</span>
+            <span id="tasks-progress-percent">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="tasks-progress-bar" class="progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tasks-container" class="tasks-container">
+        <!-- Tasks rendered by role groups -->
+      </div>
+    </section>
+
+    <!-- Tab 3: Diffs View -->
+    <section id="tab-diff" class="tab-pane">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2>Diferencias de Código y Especificaciones</h2>
+          <p class="sub-description">Inspecciona los cambios propuestos en el repositorio y los deltas de especificaciones.</p>
+        </div>
+        <div class="diff-scope-selector">
+          <button type="button" class="scope-btn active" data-scope="all">Todos</button>
+          <button type="button" class="scope-btn" data-scope="staged">Staged</button>
+          <button type="button" class="scope-btn" data-scope="unstaged">Unstaged</button>
+        </div>
+      </div>
+
+      <div class="diff-layout">
+        <aside class="diff-file-sidebar">
+          <div class="sidebar-header">
+            <span>Archivos Modificados</span>
+            <span id="diff-file-count" class="counter">0</span>
+          </div>
+          <ul id="diff-files-list" class="diff-files-list">
+            <!-- File items -->
+          </ul>
+        </aside>
+
+        <div class="diff-viewer-panel">
+          <div id="diff-empty-state" class="empty-state">
+            <p>Selecciona un archivo modificado para inspeccionar el diff.</p>
+          </div>
+          <div id="diff-content-wrapper" class="diff-content-wrapper hidden">
+            <div class="diff-file-header">
+              <span id="diff-current-file-name" class="current-file-name">archivo</span>
+              <button type="button" id="btn-open-diff-file" class="btn-subtle btn-xs">Abrir archivo ↗</button>
+            </div>
+            <pre id="diff-code-pre" class="diff-code-pre"><code></code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Reviews & Feedback View -->
+    <section id="tab-reviews" class="tab-pane">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2>Sesión de Revisión y Retroalimentación</h2>
+          <p class="sub-description">Comentarios y solicitudes de cambio anclados por sección (estilo Antigravity Plan Viewer).</p>
+        </div>
+        <div class="pane-actions">
+          <button type="button" id="btn-apply-suggestions" class="btn-primary btn-sm">
+            ⚡ Aplicar Sugerencias al Spec
+          </button>
+        </div>
+      </div>
+
+      <div class="reviews-layout">
+        <div id="reviews-list-container" class="reviews-list-container">
+          <!-- Review cards -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal: Crear Comentario / Review -->
+  <div id="modal-review" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-review-title">Agregar Comentario a Sección</h3>
+        <button type="button" class="modal-close" id="modal-review-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="review-section-name">Sección:</label>
+          <input type="text" id="review-section-name" class="form-control" readonly>
+          <input type="hidden" id="review-section-id">
+        </div>
+        <div class="form-group" id="group-selected-text">
+          <label for="review-selected-text">Texto Referenciado (Opcional):</label>
+          <textarea id="review-selected-text" class="form-control form-textarea-sm" placeholder="Texto o línea seleccionada..."></textarea>
+        </div>
+        <div class="form-group">
+          <span class="group-label">Tipo de Observación:</span>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="review-type" value="comment" checked>
+              <span>💬 Comentario / Pregunta</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="review-type" value="change_request">
+              <span>⚠️ Solicitud de Cambio</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="review-comment-text">Observación / Comentario:</label>
+          <textarea id="review-comment-text" class="form-control form-textarea" placeholder="Escribe tu feedback detallado aquí..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="review-suggestion-text">Sugerencia de Reemplazo Textual (Opcional):</label>
+          <textarea id="review-suggestion-text" class="form-control form-textarea-sm mono" placeholder="Si tienes una propuesta de texto exacto, colócala aquí para aplicarla automáticamente..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-cancel-review" class="btn-secondary">Cancelar</button>
+        <button type="button" id="btn-save-review" class="btn-primary">Guardar Comentario</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Aprobar Especificación -->
+  <div id="modal-approve" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Aprobar Especificación</h3>
+        <button type="button" class="modal-close" id="modal-approve-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro">Estás a punto de aprobar el change <strong id="modal-approve-change-id"></strong>.</p>
+        <div id="modal-validation-summary" class="validation-summary-box">
+          <!-- Validation warnings or errors -->
+        </div>
+        <div class="form-group">
+          <label for="approve-user-input">Aprobado por:</label>
+          <input type="text" id="approve-user-input" class="form-control" placeholder="Nombre o usuario de Git">
+        </div>
+        <div class="form-group">
+          <label for="approve-notes-input">Notas de Aprobación (Opcional):</label>
+          <input type="text" id="approve-notes-input" class="form-control" placeholder="Ej. Aprobado tras revisión de arquitectura">
+        </div>
+        <p class="approval-hint">
+          ✓ Se calculará el hash criptográfico SHA-256 de la especificación.<br>
+          ✓ Se registrará en <code>.specty/audit/approvals.jsonl</code> para la auditoría y compuertas de Git/CI.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-cancel-approve" class="btn-secondary">Cancelar</button>
+        <button type="button" id="btn-confirm-approve" class="btn-primary btn-success">✓ Confirmar y Firmar Aprobación</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -319,4 +319,23 @@ program
     }
   });
 
+program
+  .command("ui")
+  .alias("dashboard")
+  .description("launch local visual web interface for specifications, tasks, diffs, and approvals")
+  .option("-p, --port <number>", "HTTP port (defaults to 4173)")
+  .option("--host <host>", "HTTP host interface (defaults to 127.0.0.1)")
+  .option("-c, --change <id>", "open directly to specified change")
+  .option("--no-open", "do not automatically open web browser")
+  .option("--ide-plan", "enable IDE plan projection mode")
+  .action(async (options) => {
+    try {
+      const { executeUi } = await import("./commands/ui.js");
+      await executeUi(options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 program.parse(process.argv);
