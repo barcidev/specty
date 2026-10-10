@@ -6,6 +6,7 @@ import type { ChangeStatus, ChangeTaskSummary } from "./types.js";
 export interface ChangeState {
   change_id: string;
   status: ChangeStatus;
+  created_at?: string;
   approved_at?: string;
   approved_by?: string;
   content_hash?: string;

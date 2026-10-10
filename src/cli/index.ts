@@ -307,8 +307,12 @@ program
 
 program
   .command("metrics")
-  .description("display governance, approval, verification, and agent handoff metrics")
+  .description("display or export governance, approval, verification, and agent handoff metrics")
   .option("--json", "output metrics as formatted JSON")
+  .option("-e, --export [path]", "export executive governance report to HTML/Markdown file")
+  .option("-f, --format <format>", "report format: html, markdown, or all (defaults to html)")
+  .option("-p, --period <period>", "evaluation period: 7d, 30d, 90d, or all (defaults to all)")
+  .option("--open", "automatically open exported HTML report in default browser")
   .action(async (options) => {
     try {
       const { executeMetrics } = await import("./commands/metrics.js");

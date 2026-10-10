@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { validateChangeSpecification } from "../governance/spec-validator.js";
+import { recordMetricEvent } from "../metrics/recorder.js";
 import { parseTasksSummary, readChangeState, writeChangeState } from "./change-state.js";
 import type {
   ChangeMetadata,
@@ -124,11 +125,19 @@ export class BuiltinSpecEngine implements SpecEngine {
     await fs.writeFile(path.join(changeDir, "proposal.md"), proposalContent, "utf8");
     await fs.writeFile(path.join(changeDir, "tasks.md"), tasksContent, "utf8");
 
+    const createdAt = new Date().toISOString();
     await writeChangeState(changeDir, {
       change_id: changeId,
       status: "draft",
+      created_at: createdAt,
       tasks_total: 1,
       tasks_completed: 0,
+    });
+
+    await recordMetricEvent(repoRoot, {
+      type: "change_created",
+      changeId,
+      timestamp: createdAt,
     });
 
     return changeDir;

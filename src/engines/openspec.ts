@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { executeCommand } from "../core/exec.js";
+import { recordMetricEvent } from "../metrics/recorder.js";
 import { BuiltinSpecEngine } from "./builtin.js";
 import { readChangeState, writeChangeState } from "./change-state.js";
 import type { ChangeMetadata, CreateChangeOptions, SpecEngine, ValidationResult } from "./types.js";
@@ -56,12 +57,19 @@ export class OpenSpecEngine implements SpecEngine {
       if (res.exitCode === 0) {
         const changeDir = path.join(repoRoot, "openspec", "changes", changeId);
         const existingState = await readChangeState(changeDir);
+        const createdAt = new Date().toISOString();
         if (!existingState) {
           await writeChangeState(changeDir, {
             change_id: changeId,
             status: "draft",
+            created_at: createdAt,
           });
         }
+        await recordMetricEvent(repoRoot, {
+          type: "change_created",
+          changeId,
+          timestamp: createdAt,
+        });
         return changeDir;
       }
     } catch {

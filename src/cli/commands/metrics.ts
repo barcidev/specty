@@ -1,14 +1,53 @@
 import path from "node:path";
 import pc from "picocolors";
-import { computeMetricsSummary, readMetricEvents } from "../../metrics/index.js";
+import {
+  computeMetricsSummary,
+  exportGovernanceReport,
+  type ReportFormat,
+  type ReportPeriod,
+  readMetricEvents,
+} from "../../metrics/index.js";
+import { openExternalBrowserFallback } from "../../ui/index.js";
 
 export interface MetricsCommandOptions {
   cwd?: string;
   json?: boolean;
+  export?: string | boolean;
+  format?: ReportFormat;
+  period?: ReportPeriod;
+  open?: boolean;
 }
 
 export async function executeMetrics(options: MetricsCommandOptions = {}): Promise<void> {
   const repoRoot = path.resolve(options.cwd ?? process.cwd());
+
+  if (options.export !== undefined && options.export !== false) {
+    const targetPath = typeof options.export === "string" ? options.export : undefined;
+    const result = await exportGovernanceReport(repoRoot, {
+      outputPath: targetPath,
+      format: options.format,
+      period: options.period,
+      open: options.open,
+    });
+
+    process.stdout.write(
+      `\n${pc.bold(pc.green("✓ Reporte ejecutivo de gobernanza exportado exitosamente:"))}\n`,
+    );
+    for (const f of result.generatedFiles) {
+      process.stdout.write(`  • ${pc.bold(pc.cyan(`[${f.format.toUpperCase()}]`))} ${f.path}\n`);
+    }
+    process.stdout.write("\n");
+
+    if (options.open) {
+      const htmlFile = result.generatedFiles.find((f) => f.format === "html");
+      if (htmlFile) {
+        await openExternalBrowserFallback(`file://${htmlFile.path}`);
+      }
+    }
+
+    return;
+  }
+
   const events = await readMetricEvents(repoRoot);
   const summary = computeMetricsSummary(events);
 
