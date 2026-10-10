@@ -101,6 +101,34 @@ export async function detectMonorepo(repoRoot: string): Promise<MonorepoDetectio
     }
   }
 
+  // 5. Cargo workspace (Rust)
+  try {
+    const cargoPath = path.join(repoRoot, "Cargo.toml");
+    const raw = await fs.readFile(cargoPath, "utf8");
+    if (raw.includes("[workspace]")) {
+      let globs = ["crates/*"];
+      const membersMatch = raw.match(/members\s*=\s*\[([\s\S]*?)\]/);
+      if (membersMatch?.[1]) {
+        const parsedMembers = membersMatch[1]
+          .split(",")
+          .map((s) => s.trim().replace(/^["']|["']$/g, ""))
+          .filter(Boolean);
+        if (parsedMembers.length > 0) {
+          globs = parsedMembers;
+        }
+      }
+      const pkgPaths = await resolveGlobsToDirs(repoRoot, globs);
+      return {
+        isMonorepo: true,
+        kind: "cargo",
+        packageGlobs: globs,
+        packagePaths: pkgPaths,
+      };
+    }
+  } catch {
+    // not cargo
+  }
+
   return {
     isMonorepo: false,
     packageGlobs: [],

@@ -10,10 +10,23 @@ export function getDefaultVerificationCommands(stack: StackDetection): Verificat
     case "typescript":
     case "javascript": {
       const isAngular = stack.frameworks.includes("angular");
+      const isExpo = stack.frameworks.includes("expo");
+      const isSvelte =
+        stack.frameworks.includes("svelte") || stack.frameworks.includes("sveltekit");
+      const isAstro = stack.frameworks.includes("astro");
       const hasPrisma = stack.frameworks.includes("prisma");
 
+      let lintCmd = "npm run lint";
+      if (isExpo) {
+        lintCmd = "npx expo-doctor";
+      } else if (isSvelte) {
+        lintCmd = "npx svelte-check";
+      } else if (isAstro) {
+        lintCmd = "npx astro check";
+      }
+
       const cmds: VerificationCommands = {
-        lint: "npm run lint",
+        lint: lintCmd,
         test: isAngular ? "npx ng test --watch=false" : "npm test",
         build: "npm run build",
       };
@@ -57,6 +70,31 @@ export function getDefaultVerificationCommands(stack: StackDetection): Verificat
 
     case "python": {
       const isDjango = stack.frameworks.includes("django");
+      const isUv = stack.frameworks.includes("uv");
+      const isPoetry = stack.frameworks.includes("poetry");
+      const isPdm = stack.frameworks.includes("pdm");
+
+      if (isUv) {
+        return {
+          lint: "uv run ruff check",
+          test: isDjango ? "uv run python manage.py test" : "uv run pytest",
+        };
+      }
+
+      if (isPoetry) {
+        return {
+          lint: "poetry run ruff check",
+          test: isDjango ? "poetry run python manage.py test" : "poetry run pytest",
+        };
+      }
+
+      if (isPdm) {
+        return {
+          lint: "pdm run ruff check",
+          test: isDjango ? "pdm run python manage.py test" : "pdm run pytest",
+        };
+      }
+
       return {
         lint: "ruff check",
         test: isDjango ? "python manage.py test" : "pytest",
@@ -83,6 +121,38 @@ export function getDefaultVerificationCommands(stack: StackDetection): Verificat
       return {
         validate: "composer validate",
         test: isLaravel ? "php artisan test" : "vendor/bin/phpunit",
+      };
+    }
+
+    case "rust": {
+      return {
+        format: "cargo fmt --check",
+        lint: "cargo clippy -- -D warnings",
+        test: "cargo test",
+      };
+    }
+
+    case "swift": {
+      return {
+        lint: "swift-format lint -s",
+        test: "swift test",
+      };
+    }
+
+    case "c":
+    case "cpp": {
+      return {
+        build: "cmake --build build",
+        test: "ctest --test-dir build",
+        format: "clang-format --dry-run",
+      };
+    }
+
+    case "elixir": {
+      return {
+        format: "mix format --check-formatted",
+        test: "mix test",
+        lint: "mix credo",
       };
     }
 

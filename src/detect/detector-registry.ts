@@ -1,13 +1,17 @@
 import path from "node:path";
 import type { StackDetector } from "./detectors/base.js";
+import { CCppDetector } from "./detectors/c-cpp.js";
 import { DartDetector } from "./detectors/dart.js";
 import { DotNetDetector } from "./detectors/dotnet.js";
+import { ElixirDetector } from "./detectors/elixir.js";
 import { GoDetector } from "./detectors/go.js";
 import { JavaKotlinDetector } from "./detectors/java-kotlin.js";
 import { JavaScriptDetector } from "./detectors/javascript.js";
 import { PhpDetector } from "./detectors/php.js";
 import { PythonDetector } from "./detectors/python.js";
 import { RubyDetector } from "./detectors/ruby.js";
+import { RustDetector } from "./detectors/rust.js";
+import { SwiftDetector } from "./detectors/swift.js";
 import { detectMonorepo } from "./monorepo.js";
 import type { DetectedScope, RepositoryDetectionResult, StackDetection } from "./types.js";
 import { resolveVerificationCommands } from "./verify-resolver.js";
@@ -25,6 +29,10 @@ export class DetectorRegistry {
       new GoDetector(),
       new RubyDetector(),
       new PhpDetector(),
+      new RustDetector(),
+      new SwiftDetector(),
+      new CCppDetector(),
+      new ElixirDetector(),
     ];
   }
 
