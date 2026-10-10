@@ -3,6 +3,7 @@ import { generateAllSelectedTools } from "../adapters/index.js";
 import { SafeFileWriter } from "../core/fs-writer.js";
 import { loadManifest, saveManifest, updateManifestEntry } from "../core/manifest.js";
 import { computeShortHash } from "../core/markers.js";
+import { formatGitRuleContent } from "./git-rules-formatter.js";
 import { loadTemplate, renderTemplateString } from "./renderer.js";
 import type { GenerateContext, GeneratedFile, GenerationResult } from "./types.js";
 
@@ -58,7 +59,7 @@ export async function generateProjectInfrastructure(
   });
 
   // 4. Core rules in .specty/rules/core/
-  const coreRules = ["workflow", "spec-format", "tasks-format", "verification", "git"];
+  const coreRules = ["workflow", "spec-format", "tasks-format", "verification"];
 
   for (const rule of coreRules) {
     const rawRule = await loadTemplate(lang, `rules/core/${rule}.md`);
@@ -68,6 +69,15 @@ export async function generateProjectInfrastructure(
       description: `Core rule: ${rule}`,
     });
   }
+
+  const gitWorkflow = ctx.config.git?.workflow ?? "feature-branch";
+  const commitConvention = ctx.config.git?.commit_convention ?? "conventional";
+  const gitRuleContent = formatGitRuleContent(lang, gitWorkflow, commitConvention);
+  files.push({
+    relativePath: ".specty/rules/core/git.md",
+    content: gitRuleContent,
+    description: `Core rule: git (${gitWorkflow}, ${commitConvention})`,
+  });
 
   // 5. Task rules in .specty/rules/task/
   const taskRules = ["ui", "api", "data", "testing", "security"];

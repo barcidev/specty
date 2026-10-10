@@ -12,6 +12,8 @@ export interface InitCommandOptions {
   hooks?: boolean;
   ci?: boolean;
   mcp?: boolean;
+  gitWorkflow?: string;
+  commitConvention?: string;
   verbose?: boolean;
   cwd?: string;
 }

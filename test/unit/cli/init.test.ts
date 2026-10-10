@@ -114,4 +114,37 @@ describe("cli/commands/init", () => {
     expect(savedConfig.scopes[0]?.stack.language).toBe("dart");
     expect(savedConfig.scopes[0]?.stack.frameworks).toContain("flutter");
   });
+
+  it("configures default git workflow and commit convention in config and generates rules", async () => {
+    await executeInit({
+      yes: true,
+      cwd: tempDir,
+    });
+
+    const savedConfig = await loadConfig(tempDir);
+    expect(savedConfig.git.workflow).toBe("feature-branch");
+    expect(savedConfig.git.commit_convention).toBe("conventional");
+
+    const ruleFile = await fs.readFile(path.join(tempDir, ".specty/rules/core/git.md"), "utf8");
+    expect(ruleFile).toContain("Feature Branch Workflow");
+    expect(ruleFile).toContain("Conventional Commits");
+  });
+
+  it("configures custom git workflow and hybrid commit convention via flags", async () => {
+    await executeInit({
+      yes: true,
+      gitWorkflow: "gitflow",
+      commitConvention: "gitmoji-conventional-ticket",
+      cwd: tempDir,
+    });
+
+    const savedConfig = await loadConfig(tempDir);
+    expect(savedConfig.git.workflow).toBe("gitflow");
+    expect(savedConfig.git.commit_convention).toBe("gitmoji-conventional-ticket");
+
+    const ruleFile = await fs.readFile(path.join(tempDir, ".specty/rules/core/git.md"), "utf8");
+    expect(ruleFile).toContain("GitFlow");
+    expect(ruleFile).toContain("Híbrido: Gitmoji + Conventional Commits + Tickets");
+    expect(ruleFile).toContain("✨ feat(auth): [PROJ-123] add google oauth2 login");
+  });
 });

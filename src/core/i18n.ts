@@ -32,6 +32,8 @@ export interface TranslationDictionary {
     mcpPrompt: string;
     hooksPrompt: string;
     ciPrompt: string;
+    gitWorkflowPrompt: string;
+    commitConventionPrompt: string;
     summaryTitle: string;
     confirmPrompt: string;
     canceled: string;
@@ -94,6 +96,8 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       mcpPrompt: "Enable MCP code graph server and metrics?",
       hooksPrompt: "Configure git pre-commit hooks and IDE guards?",
       ciPrompt: "Generate CI workflow template?",
+      gitWorkflowPrompt: "Select Git branching workflow:",
+      commitConventionPrompt: "Select commit message convention:",
       summaryTitle: "Setup configuration summary",
       confirmPrompt: "Apply this configuration to the repository?",
       canceled: "Setup canceled by user.",
@@ -156,6 +160,8 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       mcpPrompt: "¿Activar servidor MCP de grafo de codigo y metricas?",
       hooksPrompt: "¿Configurar hooks pre-commit de git y compuertas de IDE?",
       ciPrompt: "¿Generar plantilla de CI para integracion continua?",
+      gitWorkflowPrompt: "Selecciona el flujo de trabajo de Git (branching workflow):",
+      commitConventionPrompt: "Selecciona la convención para los mensajes de commit:",
       summaryTitle: "Resumen de configuracion",
       confirmPrompt: "¿Aplicar esta configuracion al repositorio?",
       canceled: "Configuracion cancelada por el usuario.",

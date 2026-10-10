@@ -85,4 +85,21 @@ describe("core/config", () => {
     });
     expect(builtinConfig.mcp.graph_provider).toBe("builtin");
   });
+
+  it("defaults git workflow to feature-branch and commit convention to conventional", () => {
+    const config = createDefaultConfig();
+    expect(config.git.workflow).toBe("feature-branch");
+    expect(config.git.commit_convention).toBe("conventional");
+  });
+
+  it("supports configuring custom git workflow and hybrid commit convention", () => {
+    const config = createDefaultConfig({
+      git: {
+        workflow: "gitflow",
+        commit_convention: "gitmoji-conventional-ticket",
+      },
+    });
+    expect(config.git.workflow).toBe("gitflow");
+    expect(config.git.commit_convention).toBe("gitmoji-conventional-ticket");
+  });
 });

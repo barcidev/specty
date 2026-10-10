@@ -21,6 +21,14 @@ program
   .option("--no-hooks", "disable git hooks setup")
   .option("--no-ci", "disable CI pipeline setup")
   .option("--no-mcp", "disable MCP server configuration")
+  .option(
+    "--git-workflow <workflow>",
+    "git branch workflow (feature-branch, gitflow, trunk-based, centralized, forking)",
+  )
+  .option(
+    "--commit-convention <convention>",
+    "commit convention (conventional, classic, gitmoji, ticket, gitmoji-conventional, conventional-ticket, gitmoji-ticket, gitmoji-conventional-ticket)",
+  )
   .option("--verbose", "enable verbose logging")
   .action(async (options) => {
     try {

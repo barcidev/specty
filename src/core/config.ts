@@ -111,6 +111,40 @@ export const McpConfigSchema = z.object({
   }),
 });
 
+export const GIT_WORKFLOWS = [
+  "feature-branch",
+  "gitflow",
+  "trunk-based",
+  "centralized",
+  "forking",
+] as const;
+
+export const GitWorkflowSchema = z.enum(GIT_WORKFLOWS).default("feature-branch");
+
+export type GitWorkflow = z.infer<typeof GitWorkflowSchema>;
+
+export const COMMIT_CONVENTIONS = [
+  "conventional",
+  "classic",
+  "gitmoji",
+  "ticket",
+  "gitmoji-conventional",
+  "conventional-ticket",
+  "gitmoji-ticket",
+  "gitmoji-conventional-ticket",
+] as const;
+
+export const CommitConventionSchema = z.enum(COMMIT_CONVENTIONS).default("conventional");
+
+export type CommitConvention = z.infer<typeof CommitConventionSchema>;
+
+export const GitConfigSchema = z.object({
+  workflow: GitWorkflowSchema.default("feature-branch"),
+  commit_convention: CommitConventionSchema.default("conventional"),
+});
+
+export type GitConfig = z.infer<typeof GitConfigSchema>;
+
 export const SpectyConfigSchema = z.object({
   version: z.number().default(1),
   language: z.enum(["en", "es"]).default("es"),
@@ -123,6 +157,7 @@ export const SpectyConfigSchema = z.object({
   scopes: z.array(ScopeSchema).default([]),
   tools: z.array(z.string()).default([...SUPPORTED_TOOLS]),
   governance: GovernanceSchema.default(() => GovernanceSchema.parse({})),
+  git: GitConfigSchema.default(() => GitConfigSchema.parse({})),
   mcp: McpConfigSchema.default(() => McpConfigSchema.parse({})),
   metrics: z.object({ enabled: z.boolean().default(true) }).default({ enabled: true }),
 });
@@ -156,6 +191,7 @@ export function createDefaultConfig(options?: DeepPartial<SpectyConfig>): Specty
     ],
     tools: options?.tools ?? [...SUPPORTED_TOOLS],
     governance: options?.governance ?? {},
+    git: options?.git ?? {},
     mcp: options?.mcp ?? {},
     metrics: options?.metrics ?? { enabled: true },
   });

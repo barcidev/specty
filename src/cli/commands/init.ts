@@ -1,6 +1,10 @@
 import path from "node:path";
 import {
+  COMMIT_CONVENTIONS,
+  type CommitConvention,
   createDefaultConfig,
+  GIT_WORKFLOWS,
+  type GitWorkflow,
   type SpectyConfig,
   SUPPORTED_TOOLS,
   type SupportedTool,
@@ -73,6 +77,17 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
             },
           ];
 
+    const gitWorkflow =
+      options.gitWorkflow && (GIT_WORKFLOWS as readonly string[]).includes(options.gitWorkflow)
+        ? (options.gitWorkflow as GitWorkflow)
+        : "feature-branch";
+
+    const commitConvention =
+      options.commitConvention &&
+      (COMMIT_CONVENTIONS as readonly string[]).includes(options.commitConvention)
+        ? (options.commitConvention as CommitConvention)
+        : "conventional";
+
     const config: SpectyConfig = createDefaultConfig({
       language,
       spec_engine: options.specEngine ?? "openspec",
@@ -83,6 +98,10 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
       },
       scopes,
       tools: selectedTools,
+      git: {
+        workflow: gitWorkflow,
+        commit_convention: commitConvention,
+      },
       governance: {
         hooks: options.hooks !== false,
         ci: options.ci === false ? "none" : "github",
