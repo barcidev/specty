@@ -58,6 +58,16 @@ export async function getStagedFiles(cwd: string): Promise<string[]> {
   }
 }
 
+export async function getHeadCommitSha(cwd: string): Promise<string | null> {
+  try {
+    const result = await execa("git", ["rev-parse", "HEAD"], { cwd });
+    const sha = result.stdout.trim();
+    return sha.length > 0 ? sha : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getModifiedFiles(cwd: string, baseRef = "HEAD"): Promise<string[]> {
   try {
     const result = await execa("git", ["diff", "--name-only", baseRef], { cwd });

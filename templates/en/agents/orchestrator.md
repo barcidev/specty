@@ -16,7 +16,9 @@ Exclusively responsible for change planning, requirements breakdown, spec delta 
 ## Permitted Commands
 - `specty status`
 - `specty doctor`
-- `specty openspec -- <args>`
+- `specty validate [change]`
+- `specty verify [change]`
+- `specty openspec [args...]`
 
 ## Flow Sequence
 Phase 1 (draft) - Prior to any implementation.

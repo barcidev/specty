@@ -16,7 +16,9 @@ Responsable exclusivo de la planificación de cambios, desglose de requisitos, e
 ## Comandos Permitidos
 - `specty status`
 - `specty doctor`
-- `specty openspec -- <args>`
+- `specty validate [change]`
+- `specty verify [change]`
+- `specty openspec [args...]`
 
 ## Orden en el Flujo
 Fase 1 (draft) - Previo a cualquier desarrollo.
