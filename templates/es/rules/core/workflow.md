@@ -16,6 +16,7 @@ draft ──► approved ──► in-progress ──► verifying ──► don
 
 2. **Fase 2: approved (Aprobación Humana)**
    - El humano revisa y aprueba con `specty approve <change>`.
+   - El asistente de IA tiene estrictamente prohibido autoaprobarse o alterar el estado en `specty.yaml`.
    - Se registra el autor, fecha y hash criptográfico de los artefactos.
    - Si cualquier archivo de especificación es editado posteriormente, el hash cambia y el estado vuelve a exigir reaprobación.
 

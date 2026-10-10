@@ -32,6 +32,7 @@ export class UiRouter {
     private repoRoot: string,
     private sseHub: SseHub,
     private clientStaticDir: string,
+    private sessionToken?: string,
   ) {}
 
   async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
@@ -39,15 +40,35 @@ export class UiRouter {
     const pathname = parsedUrl.pathname;
     const method = req.method?.toUpperCase() || "GET";
 
-    // CORS headers for local dev convenience
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    // Restrict CORS to local origins only
+    const origin = req.headers.origin;
+    if (origin) {
+      const isLocalOrigin =
+        origin.startsWith("http://localhost:") ||
+        origin.startsWith("http://127.0.0.1:") ||
+        origin.startsWith("http://[::1]:");
+      if (isLocalOrigin) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+      }
+    }
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Specty-Token");
 
     if (method === "OPTIONS") {
       res.writeHead(204);
       res.end();
       return;
+    }
+
+    // CSRF Protection: Require valid X-Specty-Token for state-changing operations
+    if (this.sessionToken && (method === "POST" || method === "PATCH" || method === "DELETE")) {
+      const tokenHeader = req.headers["x-specty-token"];
+      if (tokenHeader !== this.sessionToken) {
+        this.jsonResponse(res, 403, {
+          error: "Forbidden: Missing or invalid X-Specty-Token header.",
+        });
+        return;
+      }
     }
 
     try {
@@ -74,6 +95,7 @@ export class UiRouter {
           branch: branch || "unknown",
           gitUser,
           config,
+          sessionToken: this.sessionToken,
         });
         return;
       }
@@ -111,10 +133,9 @@ export class UiRouter {
       const approveMatch = pathname.match(/^\/api\/changes\/([^/]+)\/approve$/);
       if (approveMatch?.[1] && method === "POST") {
         const changeId = decodeURIComponent(approveMatch[1]);
-        const body = await this.readJsonBody(req);
+        await this.readJsonBody(req);
         const gitUser = await getGitUser(this.repoRoot);
-        const approvedBy =
-          (body.user as string | undefined) || gitUser.name || gitUser.email || "specty-ui-user";
+        const approvedBy = gitUser.name || gitUser.email || process.env.USER || "human";
 
         const approvalResult = await approveChange(this.repoRoot, changeId, {
           approvedBy,
@@ -305,8 +326,23 @@ export class UiRouter {
 
       const ext = path.extname(filePath).toLowerCase();
       const contentType = MIME_TYPES[ext] || "application/octet-stream";
-      const content = await fs.readFile(filePath);
 
+      if (ext === ".html" || safePath === "index.html") {
+        let html = await fs.readFile(filePath, "utf8");
+        if (this.sessionToken) {
+          const injection = `<script>window.__SPECTY_TOKEN__ = ${JSON.stringify(this.sessionToken)};</script>`;
+          html = html.replace("<head>", `<head>\n    ${injection}`);
+        }
+        const buf = Buffer.from(html, "utf8");
+        res.writeHead(200, {
+          "Content-Type": "text/html; charset=utf-8",
+          "Content-Length": buf.length,
+        });
+        res.end(buf);
+        return;
+      }
+
+      const content = await fs.readFile(filePath);
       res.writeHead(200, {
         "Content-Type": contentType,
         "Content-Length": content.length,
@@ -320,12 +356,17 @@ export class UiRouter {
   private async fallbackToIndex(res: http.ServerResponse): Promise<void> {
     const indexPath = path.join(this.clientStaticDir, "index.html");
     try {
-      const content = await fs.readFile(indexPath);
+      let html = await fs.readFile(indexPath, "utf8");
+      if (this.sessionToken) {
+        const injection = `<script>window.__SPECTY_TOKEN__ = ${JSON.stringify(this.sessionToken)};</script>`;
+        html = html.replace("<head>", `<head>\n    ${injection}`);
+      }
+      const buf = Buffer.from(html, "utf8");
       res.writeHead(200, {
         "Content-Type": "text/html; charset=utf-8",
-        "Content-Length": content.length,
+        "Content-Length": buf.length,
       });
-      res.end(content);
+      res.end(buf);
     } catch {
       res.writeHead(404, { "Content-Type": "text/plain" });
       res.end("Specty UI: Static assets not found.");

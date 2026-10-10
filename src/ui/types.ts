@@ -84,11 +84,13 @@ export interface UiServerOptions {
   host?: string;
   openBrowser?: boolean;
   initialChangeId?: string;
+  sessionToken?: string;
 }
 
 export interface UiServerInstance {
   url: string;
   port: number;
   host: string;
+  sessionToken: string;
   close: () => Promise<void>;
 }

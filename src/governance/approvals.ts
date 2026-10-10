@@ -126,6 +126,30 @@ export async function checkApprovalStatus(
   };
 }
 
+export const DISALLOWED_APPROVER_ROLES = [
+  "orchestrator",
+  "frontend",
+  "backend",
+  "data",
+  "testing",
+  "security-review",
+  "agent",
+  "assistant",
+  "bot",
+  "ai",
+  "model",
+  "llm",
+];
+
+export function validateApproverIdentity(approver: string): void {
+  const normalized = approver.trim().toLowerCase();
+  if (DISALLOWED_APPROVER_ROLES.includes(normalized)) {
+    throw new Error(
+      `Approver identity "${approver}" is a recognized automated agent role. Specification approvals must be granted by a human developer.`,
+    );
+  }
+}
+
 export async function approveChange(
   repoRoot: string,
   changeId: string,
@@ -134,6 +158,7 @@ export async function approveChange(
   const changeDir = path.join(repoRoot, "openspec", "changes", changeId);
   const contentHash = await computeChangeContentHash(changeDir);
   const approvedBy = options.approvedBy || process.env.USER || "human";
+  validateApproverIdentity(approvedBy);
   const approvedAt = new Date().toISOString();
 
   const record: ApprovalRecord = {
