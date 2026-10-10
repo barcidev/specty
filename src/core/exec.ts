@@ -73,3 +73,54 @@ export async function executeCommand(
     };
   }
 }
+
+/**
+ * Executes a file/binary directly with arguments without invoking a shell.
+ */
+export async function executeFile(
+  file: string,
+  args: string[] = [],
+  options: ExecOptions = {},
+): Promise<ExecResult> {
+  const cwd = options.cwd ?? process.cwd();
+  const startTime = Date.now();
+  const displayCmd = `${file} ${args.join(" ")}`.trim();
+
+  if (!options.silent) {
+    logger.info(`$ ${displayCmd} (cwd: ${cwd})`);
+  }
+
+  try {
+    const result = await execa(file, args, {
+      shell: false,
+      cwd,
+      timeout: options.timeoutMs,
+      env: options.env,
+      reject: false,
+    });
+
+    const durationMs = Date.now() - startTime;
+    const exitCode = typeof result.exitCode === "number" ? result.exitCode : 1;
+
+    return {
+      command: displayCmd,
+      exitCode,
+      stdout: result.stdout,
+      stderr: result.stderr,
+      durationMs,
+      success: exitCode === 0,
+    };
+  } catch (err: unknown) {
+    const durationMs = Date.now() - startTime;
+    const errorMessage = err instanceof Error ? err.message : String(err);
+
+    return {
+      command: displayCmd,
+      exitCode: 1,
+      stdout: "",
+      stderr: errorMessage,
+      durationMs,
+      success: false,
+    };
+  }
+}

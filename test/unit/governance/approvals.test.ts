@@ -128,4 +128,27 @@ describe("governance approvals lifecycle", () => {
     });
     expect(res).toBe(false);
   });
+
+  it("approveChange rejects automated agent roles as approvers", async () => {
+    await engine.createChange(tmpDir, "agent-test-feature");
+
+    await expect(() =>
+      approveChange(tmpDir, "agent-test-feature", { approvedBy: "orchestrator" }),
+    ).rejects.toThrow(/automated agent role/);
+
+    await expect(() =>
+      approveChange(tmpDir, "agent-test-feature", { approvedBy: "assistant" }),
+    ).rejects.toThrow(/automated agent role/);
+  });
+
+  it("CLI executeApprove rejects agent role specified via --user", async () => {
+    await engine.createChange(tmpDir, "cli-agent-feature");
+
+    const success = await executeApprove("cli-agent-feature", {
+      cwd: tmpDir,
+      yes: true,
+      user: "bot",
+    });
+    expect(success).toBe(false);
+  });
 });

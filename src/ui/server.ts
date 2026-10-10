@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
@@ -42,12 +43,13 @@ export async function startUiServer(options: UiServerOptions = {}): Promise<UiSe
   const repoRoot = path.resolve(options.repoRoot || process.cwd());
   const host = options.host || DEFAULT_HOST;
   const preferredPort = options.port || DEFAULT_PORT;
+  const sessionToken = options.sessionToken || crypto.randomBytes(24).toString("hex");
 
   const clientStaticDir = await resolveClientDirectory();
   const sseHub = new SseHub();
   sseHub.startWatching(repoRoot);
 
-  const router = new UiRouter(repoRoot, sseHub, clientStaticDir);
+  const router = new UiRouter(repoRoot, sseHub, clientStaticDir, sessionToken);
 
   const server = http.createServer(async (req, res) => {
     await router.handleRequest(req, res);
@@ -60,6 +62,7 @@ export async function startUiServer(options: UiServerOptions = {}): Promise<UiSe
     url,
     port,
     host,
+    sessionToken,
     close: async () => {
       sseHub.close();
       await new Promise<void>((resolve) => {

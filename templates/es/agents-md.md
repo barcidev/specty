@@ -8,7 +8,7 @@
 
 <!-- specty:begin id=orchestrator -->
 ## 2. Reglas Duras del Orquestador (Gobernanza Estricta)
-1. **Sin código sin aprobación:** NUNCA generes ni modifiques código de producción (`src/**`, `apps/**`, `lib/**`) sin un change aprobado con estado `status: approved` en `openspec/changes/<change>/specty.yaml`.
+1. **Sin código sin aprobación:** NUNCA generes ni modifiques código de producción (`src/**`, `apps/**`, `lib/**`) sin un change aprobado con estado `status: approved` en `openspec/changes/<change>/specty.yaml`. El asistente de IA NO PUEDE autoaprobar cambios.
 2. **Alcance delimitado por tarea:** NUNCA modifiques archivos fuera del patrón `[files: ...]` definido para la tarea activa en `tasks.md`.
 3. **Verificación obligatoria ejecutable:** Cada tarea y cambio completado DEBE ser verificado ejecutando comandos reales de prueba y linter. No inventes resultados de verificación.
 4. **Reanudación de sesión:** Al iniciar cualquier interacción, lee `specty.yaml` y `tasks.md` del change activo y reanuda desde la primera tarea sin marcar (`- [ ]`).
@@ -29,7 +29,7 @@ El desarrollo se rige por un flujo de 5 fases estrictas:
 `draft` → `approved` → `in-progress` → `verifying` → `done`
 
 1. **Fase 1 (draft):** El agente orquestador planifica la funcionalidad redactando `proposal.md`, `design.md`, los deltas en `specs/` y las tareas en `tasks.md`. No escribe código de aplicación.
-2. **Fase 2 (aprobación humana):** El desarrollador revisa la especificación y ejecuta `specty approve <change>` (o marca `status: approved` en `specty.yaml`). El hash de contenido queda registrado.
+2. **Fase 2 (aprobación humana):** El desarrollador humano revisa la especificación y aprueba de forma interactiva con `specty approve <change>` o desde la interfaz visual web. El asistente de IA tiene ESTRICTAMENTE PROHIBIDO ejecutar comandos de aprobación o modificar manualmente el estado de aprobación en `specty.yaml`. El hash de contenido queda registrado.
 3. **Fase 3 (in-progress):** Solo tras la aprobación, se ejecutan las tareas en secuencia respetando los roles y el alcance de archivos.
 4. **Fase 4 (verifying):** Se ejecutan los comandos de verificación del stack y criterios de aceptación con `specty verify <change>`.
 5. **Fase 5 (done & archivo):** Si todas las pruebas pasan, el change se archiva y consolida en `openspec/specs/`.

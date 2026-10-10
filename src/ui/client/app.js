@@ -1,11 +1,20 @@
 // Specty UI - Client SPA Controller
 (() => {
+  let sessionToken = window.__SPECTY_TOKEN__ || null;
   let currentChangeId = null;
   let activeChangeData = null;
   let currentDiffScope = "all";
   let activeDiffFiles = [];
   let selectedDiffIndex = 0;
   let sseSource = null;
+
+  function authHeaders(extra = {}) {
+    const headers = { ...extra };
+    if (sessionToken) {
+      headers["X-Specty-Token"] = sessionToken;
+    }
+    return headers;
+  }
 
   // DOM Elements
   const branchNameEl = document.getElementById("branch-name");
@@ -112,6 +121,9 @@
   async function loadInitialData() {
     try {
       const statusRes = await fetch("/api/status").then((r) => r.json());
+      if (statusRes.sessionToken && !sessionToken) {
+        sessionToken = statusRes.sessionToken;
+      }
       if (statusRes.branch) {
         branchNameEl.textContent = statusRes.branch;
       }
@@ -348,7 +360,7 @@
     btnResolve.onclick = async () => {
       await fetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews/${rev.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ resolved: true }),
       });
       await loadChange(currentChangeId);
@@ -427,7 +439,7 @@
     try {
       const res = await fetch(`/api/changes/${encodeURIComponent(currentChangeId)}/tasks/toggle`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ lineIndex, completed }),
       });
       if (res.ok) {
@@ -557,7 +569,7 @@
     btnOpenIde.onclick = async () => {
       await fetch("/api/open-ide", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({}),
       });
     };
@@ -568,7 +580,7 @@
       if (file) {
         await fetch("/api/open-ide", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ file: file.file }),
         });
       }
@@ -606,7 +618,7 @@
 
       const res = await fetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           sectionId,
           sectionTitle,
@@ -633,7 +645,7 @@
       btnApplySuggestions.textContent = "Aplicando...";
       const res = await fetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews/apply`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({}),
       });
       btnApplySuggestions.textContent = "⚡ Aplicar Sugerencias al Spec";
@@ -667,7 +679,7 @@
 
       const res = await fetch(`/api/changes/${encodeURIComponent(currentChangeId)}/approve`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ user, notes }),
       });
 

@@ -30,15 +30,22 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_BASE_REF: ${{ inputs.base-ref }}
+        INPUT_STRICT: ${{ inputs.strict }}
+        INPUT_LANG: ${{ inputs.lang }}
       run: |
         ARGS="--comment"
-        if [ -n "${{ inputs.base-ref }}" ]; then
-          ARGS="$ARGS --base ${{ inputs.base-ref }}"
+        if [ -n "$INPUT_BASE_REF" ]; then
+          ARGS="$ARGS --base \"$INPUT_BASE_REF\""
         fi
-        if [ "${{ inputs.strict }}" = "true" ]; then
+        if [ "$INPUT_STRICT" = "true" ]; then
           ARGS="$ARGS --strict"
         fi
-        if [ -n "${{ inputs.lang }}" ]; then
-          ARGS="$ARGS --lang ${{ inputs.lang }}"
+        if [ -n "$INPUT_LANG" ]; then
+          ARGS="$ARGS --lang \"$INPUT_LANG\""
         fi
-        npx specty gate $ARGS
+        if [ -x "./node_modules/.bin/specty" ]; then
+          ./node_modules/.bin/specty gate $ARGS
+        else
+          npx --no-install @barcidev/specty gate $ARGS || npx -y @barcidev/specty gate $ARGS
+        fi

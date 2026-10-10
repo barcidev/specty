@@ -143,6 +143,35 @@ describe("governance check-approval gate", () => {
     const auditContent = await fs.readFile(path.join(tmpDir, BYPASS_AUDIT_FILENAME), "utf8");
     expect(auditContent).toContain("Critical outage incident 789");
   });
+
+  it("detects and logs audit when SPECTY_HOOK_DISABLED is active", async () => {
+    await fs.writeFile(path.join(tmpDir, "src/index.ts"), "export const hookDisabled = true;\n");
+    await execa("git", ["add", "src/index.ts"], { cwd: tmpDir });
+
+    const prevEnv = process.env.SPECTY_HOOK_DISABLED;
+    process.env.SPECTY_HOOK_DISABLED = "1";
+    try {
+      const result = await checkApprovalGate(tmpDir, { stagedOnly: true });
+      expect(result.passed).toBe(true);
+      expect(result.bypassed).toBe(true);
+      expect(result.bypassDetails?.reason).toContain("SPECTY_HOOK_DISABLED");
+
+      const auditContent = await fs.readFile(path.join(tmpDir, BYPASS_AUDIT_FILENAME), "utf8");
+      expect(auditContent).toContain("SPECTY_HOOK_DISABLED");
+    } finally {
+      if (prevEnv !== undefined) {
+        process.env.SPECTY_HOOK_DISABLED = prevEnv;
+      } else {
+        delete process.env.SPECTY_HOOK_DISABLED;
+      }
+    }
+  });
+
+  it("rejects command injection attempts in baseRef", async () => {
+    await expect(() => checkApprovalGate(tmpDir, { baseRef: "main; echo pwned" })).rejects.toThrow(
+      /Invalid git reference/,
+    );
+  });
 });
 
 describe("git hooks and CI templates", () => {

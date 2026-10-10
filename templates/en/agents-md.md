@@ -8,7 +8,7 @@
 
 <!-- specty:begin id=orchestrator -->
 ## 2. Hard Orchestrator Rules (Strict Governance)
-1. **No code without approval:** NEVER generate or modify production code (`src/**`, `apps/**`, `lib/**`) without an approved change (`status: approved` in `openspec/changes/<change>/specty.yaml`).
+1. **No code without approval:** NEVER generate or modify production code (`src/**`, `apps/**`, `lib/**`) without an approved change (`status: approved` in `openspec/changes/<change>/specty.yaml`). The AI assistant CANNOT approve changes.
 2. **Strict task file scoping:** NEVER modify files outside the `[files: ...]` pattern defined for the active task in `tasks.md`.
 3. **Mandatory executable verification:** Each completed task and change MUST be verified by executing actual test and linter commands. Never hallucinate command outputs.
 4. **Session resumption:** On starting any interaction, read `specty.yaml` and `tasks.md` of the active change and resume from the first unchecked task (`- [ ]`).
@@ -29,7 +29,7 @@ Development is governed by a strict 5-phase lifecycle:
 `draft` → `approved` → `in-progress` → `verifying` → `done`
 
 1. **Phase 1 (draft):** The orchestrator plans the feature by writing `proposal.md`, `design.md`, spec deltas in `specs/`, and checklist in `tasks.md`. It does NOT write production code.
-2. **Phase 2 (human approval):** The developer reviews specifications and runs `specty approve <change>` (or sets `status: approved` in `specty.yaml`). The content hash is recorded.
+2. **Phase 2 (human approval):** The human developer reviews specifications and interactively approves via `specty approve <change>` or the visual web dashboard. The AI assistant is STRICTLY FORBIDDEN from running approval commands or manually modifying approval status in `specty.yaml`. The content hash is recorded.
 3. **Phase 3 (in-progress):** Only after approval, tasks are executed sequentially respecting roles and file scopes.
 4. **Phase 4 (verifying):** Stack verification commands and acceptance criteria are executed using `specty verify <change>`.
 5. **Phase 5 (done & archive):** When all checks pass, the change is archived and consolidated into `openspec/specs/`.

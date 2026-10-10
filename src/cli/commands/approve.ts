@@ -20,6 +20,43 @@ export async function executeApprove(
   changeArg?: string,
   options: ApproveCommandOptions = {},
 ): Promise<boolean> {
+  const isInteractive = Boolean(process.stdin.isTTY);
+  const allowNonInteractive =
+    process.env.SPECTY_ALLOW_NON_INTERACTIVE_APPROVAL === "1" ||
+    process.env.NODE_ENV === "test" ||
+    Boolean(process.env.VITEST);
+
+  if (!isInteractive && !allowNonInteractive) {
+    logger.error(
+      "Interactive human terminal (TTY) is required to approve specification changes.\nAutomated model self-approval is forbidden.",
+    );
+    return false;
+  }
+
+  if (options.user) {
+    const normalizedUser = options.user.trim().toLowerCase();
+    const disallowed = [
+      "orchestrator",
+      "frontend",
+      "backend",
+      "data",
+      "testing",
+      "security-review",
+      "agent",
+      "assistant",
+      "bot",
+      "ai",
+      "model",
+      "llm",
+    ];
+    if (disallowed.includes(normalizedUser)) {
+      logger.error(
+        `Cannot approve as "${options.user}": automated agent roles are prohibited from approving specifications.`,
+      );
+      return false;
+    }
+  }
+
   const repoRoot = path.resolve(options.cwd ?? process.cwd());
   const config = await loadConfig(repoRoot);
   const engine = getSpecEngine(config.spec_engine);

@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import ignore from "ignore";
 import { loadConfig } from "../core/config.js";
-import { executeCommand } from "../core/exec.js";
+import { executeFile } from "../core/exec.js";
 import { getSpecEngine } from "../engines/factory.js";
 import type { ChangeStatus, ChangeTaskSummary } from "../engines/types.js";
 import { recordMetricEvent } from "../metrics/index.js";
@@ -53,6 +53,13 @@ export interface CheckApprovalGateOptions {
 
 export const BYPASS_AUDIT_FILENAME = ".specty/audit/bypasses.jsonl";
 
+function sanitizeGitRef(ref: string): string {
+  if (!ref || !/^[a-zA-Z0-9._/~^@-]+$/.test(ref)) {
+    throw new Error(`Invalid git reference: "${ref}"`);
+  }
+  return ref;
+}
+
 /**
  * Checks if modified files in git touch governed source paths
  * and verifies that a valid approved change is active.
@@ -65,13 +72,14 @@ export async function checkApprovalGate(
 
   // 1. Gather modified files from git
   let modifiedFiles: string[] = [];
-  const baseRef =
+  const rawBaseRef =
     options.baseRef || (!options.stagedOnly ? process.env.GITHUB_BASE_REF : undefined);
-  const headRef = options.headRef || "HEAD";
+  const baseRef = rawBaseRef ? sanitizeGitRef(rawBaseRef) : undefined;
+  const headRef = sanitizeGitRef(options.headRef || "HEAD");
   let resolvedBase = baseRef;
 
   if (options.stagedOnly) {
-    const diffRes = await executeCommand("git diff --cached --name-only", {
+    const diffRes = await executeFile("git", ["diff", "--cached", "--name-only"], {
       cwd: repoRoot,
       silent: true,
     });
@@ -86,7 +94,7 @@ export async function checkApprovalGate(
 
     let diffSuccess = false;
     for (const cand of baseCandidates) {
-      const diffRes = await executeCommand(`git diff --name-only ${cand}...${headRef}`, {
+      const diffRes = await executeFile("git", ["diff", "--name-only", `${cand}...${headRef}`], {
         cwd: repoRoot,
         silent: true,
       });
@@ -102,7 +110,7 @@ export async function checkApprovalGate(
     }
 
     if (!diffSuccess) {
-      const diffRes = await executeCommand("git diff --name-only HEAD", {
+      const diffRes = await executeFile("git", ["diff", "--name-only", "HEAD"], {
         cwd: repoRoot,
         silent: true,
       });
@@ -112,7 +120,7 @@ export async function checkApprovalGate(
         .filter(Boolean);
     }
   } else {
-    const diffRes = await executeCommand("git diff --name-only HEAD", {
+    const diffRes = await executeFile("git", ["diff", "--name-only", "HEAD"], {
       cwd: repoRoot,
       silent: true,
     });
@@ -123,7 +131,7 @@ export async function checkApprovalGate(
 
     // Fallback to git status --porcelain if working tree check is needed
     if (modifiedFiles.length === 0) {
-      const statusRes = await executeCommand("git status --porcelain", {
+      const statusRes = await executeFile("git", ["status", "--porcelain"], {
         cwd: repoRoot,
         silent: true,
       });
@@ -169,21 +177,31 @@ export async function checkApprovalGate(
   const bypassEnvVar = config.governance.bypass.env;
   const bypassTrailerKey = config.governance.bypass.trailer || "Specty-Bypass";
 
-  let isBypassed = Boolean(process.env[bypassEnvVar] || options.bypassReason);
+  const isHookDisabled = process.env.SPECTY_HOOK_DISABLED === "1";
+  const hasEnvBypass = Boolean(
+    process.env[bypassEnvVar] || process.env.SPECTY_BYPASS === "1" || isHookDisabled,
+  );
+  let isBypassed = Boolean(hasEnvBypass || options.bypassReason);
   let bypassSource: "env" | "trailer" | "option" = options.bypassReason
     ? "option"
-    : process.env[bypassEnvVar]
+    : hasEnvBypass
       ? "env"
       : "option";
   let bypassReason =
-    options.bypassReason || (process.env[bypassEnvVar] ? "Emergency environment bypass" : "");
+    options.bypassReason ||
+    (isHookDisabled
+      ? "Hook disabled via SPECTY_HOOK_DISABLED environment variable"
+      : process.env[bypassEnvVar] || process.env.SPECTY_BYPASS === "1"
+        ? "Emergency environment bypass"
+        : "");
 
   // If not bypassed yet, check Git commit trailers in commit range
   if (!isBypassed) {
     try {
       const logRange = resolvedBase ? `${resolvedBase}...${headRef}` : "-1";
-      const trailerRes = await executeCommand(
-        `git log ${logRange} --format="%(trailers:key=${bypassTrailerKey},valueonly)"`,
+      const trailerRes = await executeFile(
+        "git",
+        ["log", logRange, `--format=%(trailers:key=${bypassTrailerKey},valueonly)`],
         { cwd: repoRoot, silent: true },
       );
       const trailers = trailerRes.stdout
@@ -197,7 +215,7 @@ export async function checkApprovalGate(
         bypassSource = "trailer";
         bypassReason = firstTrailer;
       } else {
-        const bodyRes = await executeCommand(`git log ${logRange} --format="%B"`, {
+        const bodyRes = await executeFile("git", ["log", logRange, "--format=%B"], {
           cwd: repoRoot,
           silent: true,
         });

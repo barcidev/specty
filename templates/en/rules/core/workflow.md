@@ -16,6 +16,7 @@ draft ──► approved ──► in-progress ──► verifying ──► don
 
 2. **Phase 2: approved (Human Approval)**
    - The human reviews and approves via `specty approve <change>`.
+   - The AI assistant is strictly forbidden from self-approving or modifying `specty.yaml` status.
    - Records approver, timestamp, and cryptographic content hash.
    - If any spec artifact is edited subsequently, the hash invalidates and re-approval is required.
 

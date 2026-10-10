@@ -15,4 +15,22 @@ describe("core/exec", () => {
     expect(res.success).toBe(false);
     expect(res.exitCode).toBe(1);
   });
+
+  it("executes binary directly without shell interpretation via executeFile", async () => {
+    const { executeFile } = await import("../../../src/core/exec.js");
+    const res = await executeFile("node", ["-e", 'console.log("direct-exec")'], { silent: true });
+    expect(res.success).toBe(true);
+    expect(res.stdout.trim()).toBe("direct-exec");
+  });
+
+  it("does not expand shell metacharacters in executeFile arguments", async () => {
+    const { executeFile } = await import("../../../src/core/exec.js");
+    const res = await executeFile(
+      "node",
+      ["-e", "console.log(process.argv[1])", "arg1;echo pwned"],
+      { silent: true },
+    );
+    expect(res.success).toBe(true);
+    expect(res.stdout.trim()).toBe("arg1;echo pwned");
+  });
 });

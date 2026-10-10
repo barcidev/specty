@@ -76,10 +76,24 @@ describe("ui/server", () => {
       expect(detailData.id).toBe(changeId);
       expect(detailData.proposalSections.length).toBeGreaterThan(0);
 
-      // 4. POST /api/changes/:id/reviews
-      const addReviewRes = await fetch(`${serverInstance.url}/api/changes/${changeId}/reviews`, {
+      // 4. CSRF Protection: Rejects mutations without X-Specty-Token
+      const unauthorizedRes = await fetch(`${serverInstance.url}/api/changes/${changeId}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sectionId: "why",
+          comment: "Unauthenticated comment",
+        }),
+      });
+      expect(unauthorizedRes.status).toBe(403);
+
+      // 4b. Authorized POST /api/changes/:id/reviews with X-Specty-Token
+      const addReviewRes = await fetch(`${serverInstance.url}/api/changes/${changeId}/reviews`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Specty-Token": serverInstance.sessionToken,
+        },
         body: JSON.stringify({
           sectionId: "why",
           comment: "Favor verificar el puerto por defecto.",
@@ -95,10 +109,13 @@ describe("ui/server", () => {
       expect(reviewJson.success).toBe(true);
       expect(reviewJson.review.id).toMatch(/^rev-/);
 
-      // 5. POST /api/changes/:id/tasks/toggle
+      // 5. POST /api/changes/:id/tasks/toggle with X-Specty-Token
       const toggleRes = await fetch(`${serverInstance.url}/api/changes/${changeId}/tasks/toggle`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Specty-Token": serverInstance.sessionToken,
+        },
         body: JSON.stringify({
           lineIndex: 2, // line "- [ ] 1.1 Start server"
           completed: true,
@@ -110,12 +127,14 @@ describe("ui/server", () => {
       };
       expect(toggleData.tasksData.completed).toBe(2);
 
-      // 6. POST /api/changes/:id/approve
+      // 6. POST /api/changes/:id/approve with X-Specty-Token
       const approveRes = await fetch(`${serverInstance.url}/api/changes/${changeId}/approve`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Specty-Token": serverInstance.sessionToken,
+        },
         body: JSON.stringify({
-          user: "lead-reviewer",
           notes: "Approved from local dashboard",
         }),
       });
@@ -126,14 +145,15 @@ describe("ui/server", () => {
       };
       expect(approveData.success).toBe(true);
       expect(approveData.approval.changeId).toBe(changeId);
-      expect(approveData.approval.approvedBy).toBe("lead-reviewer");
+      expect(approveData.approval.approvedBy).toBeDefined();
       expect(approveData.approval.contentHash).toBeDefined();
 
-      // 7. GET / (Static index.html)
+      // 7. GET / (Static index.html with injected session token)
       const indexRes = await fetch(`${serverInstance.url}/`);
       expect(indexRes.status).toBe(200);
       const htmlText = await indexRes.text();
       expect(htmlText).toContain("Specty UI");
+      expect(htmlText).toContain("window.__SPECTY_TOKEN__");
 
       // 8. Test Path Traversal prevention
       const badPathRes = await fetch(`${serverInstance.url}/../../../../etc/passwd`);

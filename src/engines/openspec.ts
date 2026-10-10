@@ -6,6 +6,16 @@ import { BuiltinSpecEngine } from "./builtin.js";
 import { readChangeState, writeChangeState } from "./change-state.js";
 import type { ChangeMetadata, CreateChangeOptions, SpecEngine, ValidationResult } from "./types.js";
 
+async function getOpenSpecCmd(repoRoot: string): Promise<string> {
+  const localBin = path.join(repoRoot, "node_modules", ".bin", "openspec");
+  try {
+    await fs.access(localBin);
+    return localBin;
+  } catch {
+    return "npx --no-install @fission-ai/openspec";
+  }
+}
+
 export class OpenSpecEngine implements SpecEngine {
   readonly id = "openspec" as const;
   private builtin = new BuiltinSpecEngine();
@@ -20,7 +30,8 @@ export class OpenSpecEngine implements SpecEngine {
 
     // Run openspec init if available in project
     try {
-      await executeCommand("npx openspec init --no-animation --force", {
+      const openspecBin = await getOpenSpecCmd(repoRoot);
+      await executeCommand(`${openspecBin} init --no-animation --force`, {
         cwd: repoRoot,
         env: { OPENSPEC_TELEMETRY: "0" },
         silent: true,
@@ -48,7 +59,8 @@ export class OpenSpecEngine implements SpecEngine {
     }
 
     try {
-      const res = await executeCommand(`npx openspec change "${changeId}"`, {
+      const openspecBin = await getOpenSpecCmd(repoRoot);
+      const res = await executeCommand(`${openspecBin} change "${changeId}"`, {
         cwd: repoRoot,
         env: { OPENSPEC_TELEMETRY: "0" },
         silent: true,
@@ -87,9 +99,10 @@ export class OpenSpecEngine implements SpecEngine {
 
     // Run openspec validate CLI if available in environment
     try {
+      const openspecBin = await getOpenSpecCmd(repoRoot);
       const cmd = changeId
-        ? `npx openspec validate "${changeId}" --strict`
-        : "npx openspec validate --strict";
+        ? `${openspecBin} validate "${changeId}" --strict`
+        : `${openspecBin} validate --strict`;
 
       const res = await executeCommand(cmd, {
         cwd: repoRoot,
@@ -132,7 +145,8 @@ export class OpenSpecEngine implements SpecEngine {
     const preArchiveState = await readChangeState(changeDir);
 
     try {
-      const res = await executeCommand(`npx openspec archive "${changeId}" -y`, {
+      const openspecBin = await getOpenSpecCmd(repoRoot);
+      const res = await executeCommand(`${openspecBin} archive "${changeId}" -y`, {
         cwd: repoRoot,
         env: { OPENSPEC_TELEMETRY: "0" },
         silent: true,

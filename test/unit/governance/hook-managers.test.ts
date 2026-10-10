@@ -11,6 +11,7 @@ import {
   installHookWithManager,
   uninstallGitHooks,
 } from "../../../src/governance/git-hooks.js";
+import { SPECTY_HOOK_CMD } from "../../../src/governance/hook-managers/constants.js";
 import {
   installHuskyHook,
   isHuskyConfigured,
@@ -66,7 +67,7 @@ describe("Git Hook Managers Coexistence", () => {
       expect(res.action).toBe("created");
 
       const hookContent = await fs.readFile(path.join(tmpDir, ".husky/pre-commit"), "utf8");
-      expect(hookContent).toContain("npx specty check-approval --staged");
+      expect(hookContent).toContain(SPECTY_HOOK_CMD);
     });
 
     it("injects into existing .husky/pre-commit preserving existing user commands", async () => {
@@ -81,7 +82,7 @@ describe("Git Hook Managers Coexistence", () => {
       const hookContent = await fs.readFile(path.join(huskyDir, "pre-commit"), "utf8");
       expect(hookContent).toContain("npm run test");
       expect(hookContent).toContain("npx lint-staged");
-      expect(hookContent).toContain("npx specty check-approval --staged");
+      expect(hookContent).toContain(SPECTY_HOOK_CMD);
 
       // Idempotency: second install should not duplicate
       const secondRes = await installHuskyHook(tmpDir);
@@ -93,7 +94,7 @@ describe("Git Hook Managers Coexistence", () => {
       await fs.mkdir(huskyDir, { recursive: true });
       await fs.writeFile(
         path.join(huskyDir, "pre-commit"),
-        "#!/usr/bin/env sh\nnpm test\n# Managed by specty (AI assistant governance)\nnpx specty check-approval --staged\n",
+        `#!/usr/bin/env sh\nnpm test\n# Managed by specty (AI assistant governance)\n${SPECTY_HOOK_CMD}\n`,
       );
 
       const uninstRes = await uninstallHuskyHook(tmpDir);
@@ -135,7 +136,7 @@ describe("Git Hook Managers Coexistence", () => {
 
       const content = await fs.readFile(path.join(tmpDir, "lefthook.yml"), "utf8");
       expect(content).toContain("specty:");
-      expect(content).toContain("npx specty check-approval --staged");
+      expect(content).toContain(SPECTY_HOOK_CMD);
     });
 
     it("updates existing lefthook.yml preserving other commands", async () => {
@@ -153,7 +154,7 @@ describe("Git Hook Managers Coexistence", () => {
       const content = await fs.readFile(path.join(tmpDir, "lefthook.yml"), "utf8");
       expect(content).toContain("linter:");
       expect(content).toContain("specty:");
-      expect(content).toContain("npx specty check-approval --staged");
+      expect(content).toContain(SPECTY_HOOK_CMD);
 
       // Idempotency
       const secondRes = await installLefthookHook(tmpDir);
@@ -166,7 +167,7 @@ describe("Git Hook Managers Coexistence", () => {
     linter:
       run: npm run lint
     specty:
-      run: npx specty check-approval --staged
+      run: ${SPECTY_HOOK_CMD}
 `;
       await fs.writeFile(path.join(tmpDir, "lefthook.yml"), existingYaml, "utf8");
 
@@ -197,9 +198,7 @@ describe("Git Hook Managers Coexistence", () => {
 
       const updated = JSON.parse(await fs.readFile(path.join(tmpDir, "package.json"), "utf8"));
       expect(updated["simple-git-hooks"]["pre-commit"]).toContain("npm run test");
-      expect(updated["simple-git-hooks"]["pre-commit"]).toContain(
-        "npx specty check-approval --staged",
-      );
+      expect(updated["simple-git-hooks"]["pre-commit"]).toContain(SPECTY_HOOK_CMD);
 
       const uninst = await uninstallSimpleGitHooks(tmpDir);
       expect(uninst.success).toBe(true);
@@ -218,7 +217,7 @@ describe("Git Hook Managers Coexistence", () => {
       const content = await fs.readFile(path.join(tmpDir, ".git/hooks/pre-commit"), "utf8");
       expect(content).toContain("# >>> specty-hook >>>");
       expect(content).toContain("# <<< specty-hook <<<");
-      expect(content).toContain("npx specty check-approval --staged");
+      expect(content).toContain(SPECTY_HOOK_CMD);
     });
 
     it("appends delimited block to existing pre-commit without destroying user commands", async () => {
@@ -239,7 +238,7 @@ exit_on_fail=1
       const content = await fs.readFile(path.join(hooksDir, "pre-commit"), "utf8");
       expect(content).toContain('echo "Custom team linting"');
       expect(content).toContain("# >>> specty-hook >>>");
-      expect(content).toContain("npx specty check-approval --staged");
+      expect(content).toContain(SPECTY_HOOK_CMD);
 
       // Uninstall removes only the delimited block
       const uninst = await uninstallNativeHook(tmpDir);
@@ -265,7 +264,7 @@ exit_on_fail=1
       expect(success).toBe(true);
 
       const huskyHook = await fs.readFile(path.join(tmpDir, ".husky/pre-commit"), "utf8");
-      expect(huskyHook).toContain("npx specty check-approval --staged");
+      expect(huskyHook).toContain(SPECTY_HOOK_CMD);
 
       const status = await checkGitHooksStatus(tmpDir);
       expect(status.active).toBe(true);
@@ -283,7 +282,7 @@ exit_on_fail=1
       expect(res.manager).toBe("native");
 
       const nativeHook = await fs.readFile(path.join(tmpDir, ".git/hooks/pre-commit"), "utf8");
-      expect(nativeHook).toContain("npx specty check-approval --staged");
+      expect(nativeHook).toContain(SPECTY_HOOK_CMD);
     });
   });
 });
