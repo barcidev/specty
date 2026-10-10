@@ -9,6 +9,8 @@
 [![Versión Node.js](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](package.json)
 [![Idioma: Inglés](https://img.shields.io/badge/docs-English-blue.svg)](README.md)
 [![Idioma: Español](https://img.shields.io/badge/docs-Espa%C3%B1ol-orange.svg)](README.es.md)
+[![Guía de Inicio (ES)](https://img.shields.io/badge/gu%C3%ADa-Espa%C3%B1ol-green.svg)](GUIDE.es.md)
+[![Guide (EN)](https://img.shields.io/badge/guide-English-blue.svg)](GUIDE.md)
 
 ---
 
@@ -57,6 +59,8 @@ specty init
 # Inicialización desatendida con configuración rápida
 specty init -y --tool antigravity,claude,cursor --lang es
 ```
+
+> 📖 **Guía completa paso a paso:** Para aprender a configurar cada opción y ver casos de uso para proyectos en blanco, recién iniciados o de años de desarrollo, consulta la [Guía en Español](GUIDE.es.md) o la versión en inglés en [GUIDE.md](GUIDE.md).
 
 ### 3. El Flujo de Trabajo Gobernado
 
