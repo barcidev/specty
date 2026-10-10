@@ -91,6 +91,77 @@ export class JavaScriptDetector implements StackDetector {
       evidence.push("fastify");
     }
 
+    // Expo & React Native check
+    let hasExpo = "expo" in deps;
+    try {
+      const appJsonRaw = await fs.readFile(path.join(dir, "app.json"), "utf8");
+      const appJson = JSON.parse(appJsonRaw) as Record<string, unknown>;
+      if (appJson.expo || hasExpo) {
+        hasExpo = true;
+        evidence.push("app.json");
+      }
+    } catch {
+      // not app.json
+    }
+
+    if (hasExpo) {
+      frameworks.push("expo");
+      if ("expo" in deps) evidence.push("expo");
+    }
+
+    if ("react-native" in deps) {
+      frameworks.push("react-native");
+      evidence.push("react-native");
+    }
+
+    // Svelte / SvelteKit check
+    let hasSvelte = "svelte" in deps || "@sveltejs/kit" in deps;
+    for (const svelteConfig of [
+      "svelte.config.js",
+      "svelte.config.ts",
+      "svelte.config.cjs",
+      "svelte.config.mjs",
+    ]) {
+      try {
+        await fs.access(path.join(dir, svelteConfig));
+        hasSvelte = true;
+        evidence.push(svelteConfig);
+        break;
+      } catch {
+        // continue
+      }
+    }
+    if (hasSvelte) {
+      if ("@sveltejs/kit" in deps) {
+        frameworks.push("sveltekit");
+      } else {
+        frameworks.push("svelte");
+      }
+    }
+
+    // Astro check
+    let hasAstro = "astro" in deps;
+    for (const astroConfig of ["astro.config.mjs", "astro.config.js", "astro.config.ts"]) {
+      try {
+        await fs.access(path.join(dir, astroConfig));
+        hasAstro = true;
+        evidence.push(astroConfig);
+        break;
+      } catch {
+        // continue
+      }
+    }
+    if (hasAstro) {
+      frameworks.push("astro");
+      if ("astro" in deps) evidence.push("astro");
+    }
+
+    // Hono check
+    if ("hono" in deps) {
+      frameworks.push("hono");
+      evidence.push("hono");
+    }
+
     if ("prisma" in deps || "@prisma/client" in deps) {
       frameworks.push("prisma");
       evidence.push("prisma");

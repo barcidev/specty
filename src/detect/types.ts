@@ -8,7 +8,12 @@ export type SupportedLanguageId =
   | "python"
   | "go"
   | "ruby"
-  | "php";
+  | "php"
+  | "rust"
+  | "swift"
+  | "c"
+  | "cpp"
+  | "elixir";
 
 export interface StackDetection {
   language: SupportedLanguageId;
@@ -41,7 +46,8 @@ export type MonorepoKind =
   | "turbo"
   | "lerna"
   | "melos"
-  | "dotnet-sln";
+  | "dotnet-sln"
+  | "cargo";
 
 export interface MonorepoDetection {
   isMonorepo: boolean;

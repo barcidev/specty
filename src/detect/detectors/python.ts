@@ -8,7 +8,16 @@ export class PythonDetector implements StackDetector {
   name = "Python";
 
   async detect(dir: string): Promise<StackDetection | null> {
-    const indicators = ["pyproject.toml", "requirements.txt", "manage.py", "Pipfile", "setup.py"];
+    const indicators = [
+      "uv.lock",
+      "poetry.lock",
+      "pdm.lock",
+      "pyproject.toml",
+      "requirements.txt",
+      "manage.py",
+      "Pipfile",
+      "setup.py",
+    ];
 
     const evidence: string[] = [];
     for (const item of indicators) {
@@ -26,6 +35,17 @@ export class PythonDetector implements StackDetector {
 
     const frameworks: string[] = [];
 
+    // Modern package managers
+    if (evidence.includes("uv.lock")) {
+      frameworks.push("uv");
+    }
+    if (evidence.includes("poetry.lock")) {
+      frameworks.push("poetry");
+    }
+    if (evidence.includes("pdm.lock")) {
+      frameworks.push("pdm");
+    }
+
     if (evidence.includes("manage.py")) {
       frameworks.push("django");
     }
@@ -37,6 +57,13 @@ export class PythonDetector implements StackDetector {
           if (content.toLowerCase().includes("django")) frameworks.push("django");
           if (content.toLowerCase().includes("fastapi")) frameworks.push("fastapi");
           if (content.toLowerCase().includes("flask")) frameworks.push("flask");
+          if (f === "pyproject.toml") {
+            if (content.includes("[tool.uv]") && !frameworks.includes("uv")) frameworks.push("uv");
+            if (content.includes("[tool.poetry]") && !frameworks.includes("poetry"))
+              frameworks.push("poetry");
+            if (content.includes("[tool.pdm]") && !frameworks.includes("pdm"))
+              frameworks.push("pdm");
+          }
         } catch {
           // ignore
         }

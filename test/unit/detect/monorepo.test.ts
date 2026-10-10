@@ -69,4 +69,21 @@ describe("detect/monorepo", () => {
     expect(monorepo.kind).toBe("melos");
     expect(monorepo.packagePaths).toContain("packages/core");
   });
+
+  it("detects Cargo workspace monorepo", async () => {
+    await fs.writeFile(
+      path.join(tempDir, "Cargo.toml"),
+      '[workspace]\nmembers = [\n    "crates/*",\n]\n',
+    );
+    await fs.mkdir(path.join(tempDir, "crates", "engine"), { recursive: true });
+    await fs.writeFile(
+      path.join(tempDir, "crates", "engine", "Cargo.toml"),
+      '[package]\nname = "engine"\nversion = "0.1.0"\n',
+    );
+
+    const monorepo = await detectMonorepo(tempDir);
+    expect(monorepo.isMonorepo).toBe(true);
+    expect(monorepo.kind).toBe("cargo");
+    expect(monorepo.packagePaths).toContain("crates/engine");
+  });
 });

@@ -25,6 +25,11 @@ describe("detect/exclusions", () => {
     expect(isExcludedPath("dist/index.js", filter)).toBe(true);
     expect(isExcludedPath("build/main.js", filter)).toBe(true);
     expect(isExcludedPath("target/classes/App.class", filter)).toBe(true);
+    expect(isExcludedPath("_build/dev/lib/app.beam", filter)).toBe(true);
+    expect(isExcludedPath(".build/debug/App", filter)).toBe(true);
+    expect(isExcludedPath(".expo/devices.json", filter)).toBe(true);
+    expect(isExcludedPath(".svelte-kit/output/server.js", filter)).toBe(true);
+    expect(isExcludedPath(".astro/types.d.ts", filter)).toBe(true);
     expect(isExcludedPath("lib/models/user.g.dart", filter)).toBe(true);
     expect(isExcludedPath("lib/models/user.freezed.dart", filter)).toBe(true);
     expect(isExcludedPath(".env", filter)).toBe(true);

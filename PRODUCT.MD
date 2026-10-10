@@ -194,16 +194,21 @@ Lenguajes y frameworks soportados, con sus indicadores de detección y los coman
 
 | Lenguaje | Frameworks populares | Indicadores | Verificación por defecto |
 | --- | --- | --- | --- |
-| TypeScript / JavaScript (web) | Angular, React, Next.js, Vue, Nuxt | `angular.json`; dependencias en `package.json` | `npm run lint`, `ng test --watch=false` (Angular) o `npm test`, `npm run build` |
-| TypeScript / JavaScript (backend) | NestJS, Express, Fastify | `nest-cli.json`, `@nestjs/core`, `express` o `fastify` en `package.json` | `npm run lint`, `npm test`, `npm run build`, `npx prisma validate` si usa Prisma |
+| TypeScript / JavaScript (web) | Angular, React, Next.js, Vue, Nuxt, Svelte, Astro | `angular.json`, `svelte.config.js`, `astro.config.mjs`; dependencias en `package.json` | `npm run lint`, `ng test --watch=false` (Angular), `npx svelte-check` (Svelte), `npx astro check` (Astro) o `npm test`, `npm run build` |
+| TypeScript / JavaScript (backend & edge) | NestJS, Express, Fastify, Hono | `nest-cli.json`, `@nestjs/core`, `express`, `fastify`, `hono` en `package.json` | `npm run lint`, `npm test`, `npm run build`, `npx prisma validate` si usa Prisma |
+| TypeScript / JavaScript (mobile) | React Native, Expo | `app.json`, dependencias `expo` o `react-native` en `package.json` | `npx expo-doctor`, `npm test` |
 | Dart | Flutter | `pubspec.yaml` | `dart format --set-exit-if-changed .`, `flutter analyze`, `flutter test` |
 | C# / .NET | ASP.NET Core (Web API, MVC, Minimal APIs), Blazor, .NET MAUI | `.csproj`, `.sln` | `dotnet build`, `dotnet test`, `dotnet format --verify-no-changes` |
 | Java | Spring Boot, Quarkus, Micronaut | `pom.xml`, `build.gradle` | Maven: `mvn verify`; Gradle: `./gradlew check` |
-| Kotlin | Spring Boot, Ktor, Android con Jetpack Compose | `build.gradle.kts` con el plugin de Kotlin, `AndroidManifest.xml` | `./gradlew check` (incluye ktlint o detekt si están configurados) |
-| Python | Django, FastAPI, Flask | `pyproject.toml`, `requirements.txt`, `manage.py` | `ruff check`, `pytest` (o `python manage.py test` en Django) |
+| Kotlin | Spring Boot, Ktor, Android con Jetpack Compose, Kotlin Multiplatform (KMP) | `build.gradle.kts` con el plugin de Kotlin, `commonMain`, `AndroidManifest.xml` | `./gradlew check` (incluye ktlint o detekt si están configurados) |
+| Python | Django, FastAPI, Flask (con gestores `uv`, `poetry`, `pdm` o `pip`) | `pyproject.toml`, `uv.lock`, `poetry.lock`, `pdm.lock`, `requirements.txt`, `manage.py` | `uv run ruff check` / `poetry run ruff check` / `ruff check`, `uv run pytest` / `poetry run pytest` / `pytest` (o `manage.py test` en Django) |
 | Go | Gin, Echo, Fiber | `go.mod` | `go vet ./...`, `go test ./...` |
 | Ruby | Rails, Sinatra | `Gemfile`, `config/application.rb` | `bundle exec rubocop`, `bundle exec rspec` (o `bin/rails test`) |
 | PHP | Laravel, Symfony | `composer.json`, `artisan`, `symfony.lock` | `composer validate`, `vendor/bin/phpunit` o `php artisan test`, y `vendor/bin/pint --test` o `vendor/bin/phpstan` si están instalados |
+| Rust | Actix-web, Axum, Rocket, Tauri | `Cargo.toml`, `Cargo.lock` | `cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test` |
+| Swift | SwiftUI, Vapor, Hummingbird | `Package.swift`, `*.xcodeproj`, `*.xcworkspace` | `swift-format lint -s`, `swift test` |
+| C / C++ | CMake, Make | `CMakeLists.txt`, `Makefile`, `compile_commands.json` | `cmake --build build`, `ctest --test-dir build`, `clang-format --dry-run` |
+| Elixir | Phoenix, Ecto | `mix.exs`, `mix.lock` | `mix format --check-formatted`, `mix test`, `mix credo` |
 
 ## 16. Reanudación y estado
 

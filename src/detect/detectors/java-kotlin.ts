@@ -39,9 +39,28 @@ export class JavaKotlinDetector implements StackDetector {
       hasGradleKts ? path.join(dir, "build.gradle.kts") : null,
     ].filter(Boolean) as string[];
 
+    // KMP check
+    const hasCommonMain =
+      (await this.fileExists(path.join(dir, "src", "commonMain"))) ||
+      (await this.fileExists(path.join(dir, "commonMain")));
+    if (hasCommonMain) {
+      isKotlin = true;
+      frameworks.push("kmp");
+      evidence.push("commonMain");
+    }
+
     for (const f of manifestFiles) {
       try {
         const content = await fs.readFile(f, "utf8");
+        if (
+          content.includes('kotlin("multiplatform")') ||
+          content.includes("kotlin-multiplatform") ||
+          content.includes("org.jetbrains.kotlin.multiplatform")
+        ) {
+          isKotlin = true;
+          frameworks.push("kmp");
+          evidence.push("kotlin-multiplatform");
+        }
         if (content.includes("spring-boot") || content.includes("org.springframework.boot")) {
           frameworks.push("spring-boot");
         }
