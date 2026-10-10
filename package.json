@@ -25,6 +25,9 @@
     "format": "biome format --write src test",
     "test": "vitest run",
     "test:watch": "vitest",
+    "fixtures:generate": "node scripts/generate-fixtures.js",
+    "playground": "node dist/cli/index.js playground",
+    "docker:testbed": "bash docker/testbed/run.sh",
     "prepublishOnly": "npm run build && npm run test"
   },
   "keywords": [

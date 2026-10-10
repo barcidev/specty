@@ -636,6 +636,54 @@ program
     }
   });
 
+const playgroundCmd = program
+  .command("playground")
+  .description("manage and scaffold local playground environments across supported stacks");
+
+playgroundCmd
+  .command("list")
+  .description("list all available stack fixtures for playgrounds")
+  .action(async () => {
+    try {
+      const { executePlaygroundList } = await import("./commands/playground.js");
+      await executePlaygroundList();
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+playgroundCmd
+  .command("init [stack]")
+  .description("scaffold an isolated playground project for interactive testing")
+  .option("--dir <path>", "custom directory path for the playground")
+  .option("--lang <language>", "configuration and spec language (en or es)")
+  .option("--tool <tools...>", "comma-separated or listed AI assistant tools")
+  .option("--spec-engine <engine>", "spec engine (openspec or builtin)")
+  .action(async (stack: string | undefined, options) => {
+    try {
+      const { executePlaygroundInit } = await import("./commands/playground.js");
+      await executePlaygroundInit(stack, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+playgroundCmd
+  .command("clean")
+  .description("clean local playgrounds directory")
+  .option("--dir <path>", "custom directory path to clean")
+  .action(async (options) => {
+    try {
+      const { executePlaygroundClean } = await import("./commands/playground.js");
+      await executePlaygroundClean(options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 export function getRegisteredCommands(): string[] {
   const commands: string[] = [];
   for (const cmd of program.commands) {
