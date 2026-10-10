@@ -12,7 +12,10 @@
     "dist",
     "templates",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "README.es.md",
+    "GUIDE.md",
+    "GUIDE.es.md"
   ],
   "engines": {
     "node": ">=22.13.0"

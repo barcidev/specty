@@ -9,6 +9,8 @@
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.13.0-brightgreen.svg)](package.json)
 [![Language: English](https://img.shields.io/badge/docs-English-blue.svg)](README.md)
 [![Language: Spanish](https://img.shields.io/badge/docs-Espa%C3%B1ol-orange.svg)](README.es.md)
+[![Guide (EN)](https://img.shields.io/badge/guide-English-green.svg)](GUIDE.md)
+[![Guide (ES)](https://img.shields.io/badge/guide-Espa%C3%B1ol-orange.svg)](GUIDE.es.md)
 
 ---
 
@@ -59,6 +61,9 @@ specty init
 # Automated setup with defaults
 specty init -y --tool antigravity,claude,cursor --lang en
 ```
+
+> 📖 **Comprehensive Step-by-Step Guide:** For detailed scenarios covering blank, newly started, and legacy codebases, plus full configuration options, see the [Onboarding & Configuration Guide](GUIDE.md) (also available in Spanish: [GUIDE.es.md](GUIDE.es.md)).
+
 
 ### 3. The Governed Workflow
 
