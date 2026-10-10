@@ -38,13 +38,14 @@ The single source of truth for directives, workflows, roles, and boundaries is *
 
 export function buildMcpServersConfig(
   ctx: AdapterContext,
-): Record<string, { command: string; args: string[] }> {
-  const servers: Record<string, { command: string; args: string[] }> = {
-    specty: {
-      command: "specty",
-      args: ["mcp"],
-    },
-  };
+): Record<string, { command: string; args: string[]; env?: Record<string, string> }> {
+  const servers: Record<string, { command: string; args: string[]; env?: Record<string, string> }> =
+    {
+      specty: {
+        command: "specty",
+        args: ["mcp"],
+      },
+    };
 
   if (ctx.config.mcp.graph_provider === "codebase-memory") {
     const cbmConfig = ctx.config.mcp.codebase_memory;
@@ -52,6 +53,16 @@ export function buildMcpServersConfig(
       command: cbmConfig.command,
       args: cbmConfig.args,
     };
+  }
+
+  if (ctx.config.mcp.custom_servers) {
+    for (const [name, serverDef] of Object.entries(ctx.config.mcp.custom_servers)) {
+      servers[name] = {
+        command: serverDef.command,
+        args: serverDef.args,
+        ...(serverDef.env && Object.keys(serverDef.env).length > 0 ? { env: serverDef.env } : {}),
+      };
+    }
   }
 
   return servers;

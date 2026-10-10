@@ -301,13 +301,74 @@ handoffCmd
     }
   });
 
-program
+const mcpCmd = program
   .command("mcp")
-  .description("start the local Model Context Protocol (MCP) server over stdio")
+  .description("manage and start Model Context Protocol (MCP) servers")
   .action(async () => {
     try {
       const { executeMcp } = await import("./commands/mcp.js");
       await executeMcp();
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+mcpCmd
+  .command("start")
+  .description("start the local MCP server over stdio")
+  .action(async () => {
+    try {
+      const { executeMcp } = await import("./commands/mcp.js");
+      await executeMcp();
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+mcpCmd
+  .command("list")
+  .description("list configured and available MCP servers and presets")
+  .action(async () => {
+    try {
+      const { executeMcpList } = await import("./commands/mcp.js");
+      await executeMcpList();
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+mcpCmd
+  .command("add <name>")
+  .description("add a custom or preset MCP server and propagate to all editor configs")
+  .option(
+    "-p, --preset <preset>",
+    "use a preset configuration (jira, azure-devops, postgres, figma, github)",
+  )
+  .option("-c, --command <cmd>", "server executable command")
+  .option("-a, --args <args>", "command arguments")
+  .option("-e, --env <env...>", "environment variables KEY=VALUE")
+  .option("-r, --roles <roles>", "comma-separated authorized roles")
+  .option("-d, --description <desc>", "server description")
+  .action(async (name: string, options) => {
+    try {
+      const { executeMcpAdd } = await import("./commands/mcp.js");
+      await executeMcpAdd(name, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+mcpCmd
+  .command("remove <name>")
+  .description("remove a custom MCP server and clean from all editor configs")
+  .action(async (name: string) => {
+    try {
+      const { executeMcpRemove } = await import("./commands/mcp.js");
+      await executeMcpRemove(name);
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exit(1);

@@ -101,6 +101,17 @@ export const McpGraphSchema = z.object({
   exclude: z.array(z.string()).default([]),
 });
 
+export const McpServerDefinitionSchema = z.object({
+  command: z.string().min(1, "Command cannot be empty"),
+  args: z.array(z.string()).default([]),
+  env: z.record(z.string(), z.string()).optional(),
+  transport: z.enum(["stdio", "sse", "http"]).default("stdio"),
+  description: z.string().optional(),
+  roles: z.array(z.string()).optional(),
+});
+
+export type McpServerDefinition = z.infer<typeof McpServerDefinitionSchema>;
+
 export const McpConfigSchema = z.object({
   enabled: z.boolean().default(true),
   graph_provider: McpGraphProviderSchema.default("codebase-memory"),
@@ -109,6 +120,7 @@ export const McpConfigSchema = z.object({
     max_file_kb: 512,
     exclude: [],
   }),
+  custom_servers: z.record(z.string(), McpServerDefinitionSchema).default({}),
 });
 
 export const GIT_WORKFLOWS = [

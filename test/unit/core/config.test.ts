@@ -102,4 +102,28 @@ describe("core/config", () => {
     expect(config.git.workflow).toBe("gitflow");
     expect(config.git.commit_convention).toBe("gitmoji-conventional-ticket");
   });
+
+  it("supports configuring custom MCP servers with commands, args, env, and roles", () => {
+    const config = createDefaultConfig({
+      mcp: {
+        custom_servers: {
+          jira: {
+            command: "npx",
+            args: ["-y", "@modelcontextprotocol/server-jira"],
+            env: { JIRA_URL: "https://org.atlassian.net" },
+            roles: ["orchestrator"],
+          },
+          postgres: {
+            command: "npx",
+            args: ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost:5432/db"],
+            roles: ["data", "backend"],
+          },
+        },
+      },
+    });
+
+    expect(config.mcp.custom_servers.jira?.command).toBe("npx");
+    expect(config.mcp.custom_servers.jira?.env?.JIRA_URL).toBe("https://org.atlassian.net");
+    expect(config.mcp.custom_servers.postgres?.roles).toContain("data");
+  });
 });

@@ -3,6 +3,7 @@ import fsPromises from "node:fs/promises";
 import path from "node:path";
 import type { SupportedLanguage } from "../core/i18n.js";
 import type { GeneratedFile } from "../generate/types.js";
+import { buildMcpServersConfig } from "./common.js";
 import { parseJsonc } from "./jsonc.js";
 import type { AdapterContext, ToolAdapter } from "./types.js";
 
@@ -54,24 +55,27 @@ export const zedAdapter: ToolAdapter = {
       }
 
       const servers = baseConfig.context_servers as Record<string, unknown>;
-      servers.specty = {
-        command: "specty",
-        args: ["mcp"],
-      };
-
-      if (ctx.config.mcp.graph_provider === "codebase-memory") {
-        const cbm = ctx.config.mcp.codebase_memory;
-        servers["codebase-memory"] = {
-          command: cbm.command,
-          args: cbm.args,
+      const mcpConfigs = buildMcpServersConfig(ctx);
+      for (const [name, serverDef] of Object.entries(mcpConfigs)) {
+        servers[name] = {
+          command: serverDef.command,
+          args: serverDef.args,
+          ...(serverDef.env ? { env: serverDef.env } : {}),
         };
-      } else {
+      }
+
+      if (ctx.config.mcp.graph_provider !== "codebase-memory") {
         delete servers["codebase-memory"];
       }
     } else if (baseConfig.context_servers && typeof baseConfig.context_servers === "object") {
       const servers = baseConfig.context_servers as Record<string, unknown>;
       delete servers.specty;
       delete servers["codebase-memory"];
+      if (ctx.config.mcp.custom_servers) {
+        for (const name of Object.keys(ctx.config.mcp.custom_servers)) {
+          delete servers[name];
+        }
+      }
       if (Object.keys(servers).length === 0) {
         delete baseConfig.context_servers;
       }
