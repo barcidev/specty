@@ -69,9 +69,27 @@ export const opencodeAdapter: ToolAdapter = {
       } else {
         delete (baseConfig.mcp as Record<string, unknown>)["codebase-memory"];
       }
+
+      if (ctx.config.mcp.custom_servers) {
+        for (const [name, serverDef] of Object.entries(ctx.config.mcp.custom_servers)) {
+          (baseConfig.mcp as Record<string, unknown>)[name] = {
+            type: "local",
+            command: [serverDef.command, ...serverDef.args],
+            ...(serverDef.env && Object.keys(serverDef.env).length > 0
+              ? { env: serverDef.env }
+              : {}),
+            enabled: true,
+          };
+        }
+      }
     } else if (baseConfig.mcp && typeof baseConfig.mcp === "object") {
       delete (baseConfig.mcp as Record<string, unknown>).specty;
       delete (baseConfig.mcp as Record<string, unknown>)["codebase-memory"];
+      if (ctx.config.mcp.custom_servers) {
+        for (const name of Object.keys(ctx.config.mcp.custom_servers)) {
+          delete (baseConfig.mcp as Record<string, unknown>)[name];
+        }
+      }
       if (Object.keys(baseConfig.mcp).length === 0) {
         delete baseConfig.mcp;
       }
