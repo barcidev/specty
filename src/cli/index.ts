@@ -80,10 +80,30 @@ program
   .option("-y, --yes", "approve without interactive confirmation prompt")
   .option("--dry-run", "preview approval without writing metadata")
   .option("--user <name>", "approver name (defaults to current user)")
+  .option("-f, --force", "bypass semantic specification validation errors")
+  .option("--strict", "treat validation warnings as errors")
   .action(async (change: string | undefined, options) => {
     try {
       const { executeApprove } = await import("./commands/approve.js");
       await executeApprove(change, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("validate [change]")
+  .description("validate markdown specification schema and semantics for active changes")
+  .option("--strict", "treat validation warnings as errors")
+  .option("--json", "output validation report as JSON")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeValidate } = await import("./commands/validate.js");
+      const passed = await executeValidate(change, options);
+      if (!passed) {
+        process.exit(1);
+      }
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exit(1);
@@ -158,10 +178,17 @@ const hooksCmd = program.command("hooks").description("manage Git pre-commit gov
 hooksCmd
   .command("install")
   .description("install pre-commit hook enforcing specification approval")
-  .action(async () => {
+  .option("-m, --manager <type>", "hook manager (husky, lefthook, simple-git-hooks, native)")
+  .option("-y, --yes", "skip interactive prompts and accept recommended manager")
+  .option("-f, --force", "force installation")
+  .action(async (options) => {
     try {
       const { executeHooksInstall } = await import("./commands/hooks.js");
-      const success = await executeHooksInstall();
+      const success = await executeHooksInstall({
+        manager: options.manager,
+        yes: options.yes,
+        force: options.force,
+      });
       if (!success) {
         process.exit(1);
       }
@@ -174,10 +201,13 @@ hooksCmd
 hooksCmd
   .command("uninstall")
   .description("uninstall pre-commit hook")
-  .action(async () => {
+  .option("-m, --manager <type>", "hook manager (husky, lefthook, simple-git-hooks, native)")
+  .action(async (options) => {
     try {
       const { executeHooksUninstall } = await import("./commands/hooks.js");
-      await executeHooksUninstall();
+      await executeHooksUninstall({
+        manager: options.manager,
+      });
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exit(1);

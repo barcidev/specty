@@ -232,6 +232,48 @@ describe("individual tool adapter generation", () => {
     }
   });
 
+  it("performs safe merge on existing opencode.json containing comments and trailing commas (JSONC)", async () => {
+    const testDir = await fs.mkdtemp(path.join(os.tmpdir(), "specty-opencode-jsonc-"));
+    try {
+      const existingJsonc = `
+      {
+        // Custom model for OpenCode
+        "model": "anthropic/claude-3-7-sonnet",
+        "provider": "anthropic",
+        /* Custom prompt instructions */
+        "instructions": [
+          "CUSTOM_RULE.md",
+        ],
+        "mcp": {
+          "userCustomMcp": {
+            "type": "remote",
+            "url": "https://mcp.example.com",
+          },
+        },
+      }
+      `;
+      await fs.writeFile(path.join(testDir, "opencode.json"), existingJsonc, "utf8");
+
+      const adapter = getAdapter("opencode");
+      const files = await adapter.generateFiles({
+        ...dummyCtx,
+        repoRoot: testDir,
+        enableMcp: true,
+      });
+
+      expect(files).toHaveLength(1);
+      const merged = JSON.parse(files[0]?.content ?? "{}");
+      expect(merged.model).toBe("anthropic/claude-3-7-sonnet");
+      expect(merged.provider).toBe("anthropic");
+      expect(merged.instructions).toContain("CUSTOM_RULE.md");
+      expect(merged.instructions).toContain("AGENTS.md");
+      expect(merged.mcp.userCustomMcp).toBeDefined();
+      expect(merged.mcp.specty).toBeDefined();
+    } finally {
+      await fs.rm(testDir, { recursive: true, force: true });
+    }
+  });
+
   it("omits codebase-memory from MCP scaffolding when graph_provider is builtin", async () => {
     const builtinCtx: AdapterContext = {
       ...dummyCtx,

@@ -8,6 +8,8 @@ import { logger } from "../../core/logger.js";
 import { loadManifest } from "../../core/manifest.js";
 import { getSpecEngine } from "../../engines/factory.js";
 import { checkApprovalStatus } from "../../governance/approvals.js";
+import { checkGitHooksStatus, installHookWithManager } from "../../governance/git-hooks.js";
+import { validateChangeSpecification } from "../../governance/spec-validator.js";
 import { executeSync } from "./sync.js";
 
 export interface DoctorCommandOptions {
@@ -180,6 +182,42 @@ export async function executeDoctor(options: DoctorCommandOptions = {}): Promise
           message: `${driftCount} change(s) have drift and require re-approval.`,
         });
       }
+
+      // 6b. Check Specification Semantic Validity
+      let semanticErrorCount = 0;
+      let semanticWarningCount = 0;
+      const invalidChanges: string[] = [];
+
+      for (const c of changes) {
+        const val = await validateChangeSpecification(c.path);
+        if (!val.valid) {
+          semanticErrorCount += val.errorsCount ?? 1;
+          invalidChanges.push(c.id);
+        }
+        if (val.warningsCount) {
+          semanticWarningCount += val.warningsCount;
+        }
+      }
+
+      if (semanticErrorCount === 0) {
+        const warnDetail = semanticWarningCount > 0 ? ` (${semanticWarningCount} warning(s))` : "";
+        checks.push({
+          id: "spec-semantics",
+          title: "Specification Semantics",
+          status: semanticWarningCount > 0 ? "warn" : "pass",
+          message:
+            changes.length === 0
+              ? "No active changes to validate."
+              : `All ${changes.length} active change(s) conform to markdown specification schemas${warnDetail}.`,
+        });
+      } else {
+        checks.push({
+          id: "spec-semantics",
+          title: "Specification Semantics",
+          status: "fail",
+          message: `${semanticErrorCount} semantic error(s) in change(s): ${invalidChanges.join(", ")}. Run 'specty validate' to inspect.`,
+        });
+      }
     } catch {
       // ignore
     }
@@ -218,6 +256,35 @@ export async function executeDoctor(options: DoctorCommandOptions = {}): Promise
     }
   }
 
+  // 8. Check Git Governance Hooks
+  if (config?.governance.hooks !== false) {
+    if (isGit) {
+      const hooksStatus = await checkGitHooksStatus(repoRoot);
+      if (hooksStatus.active && hooksStatus.manager) {
+        checks.push({
+          id: "git-hooks",
+          title: "Git Governance Hooks",
+          status: "pass",
+          message: `Governance hooks are active via ${hooksStatus.manager.name} (${hooksStatus.manager.configPath}).`,
+        });
+      } else {
+        checks.push({
+          id: "git-hooks",
+          title: "Git Governance Hooks",
+          status: "warn",
+          message: "Git governance hooks are missing or not active. Run 'specty hooks install'.",
+        });
+      }
+    } else {
+      checks.push({
+        id: "git-hooks",
+        title: "Git Governance Hooks",
+        status: "warn",
+        message: "Git governance hooks cannot be verified outside a Git repository.",
+      });
+    }
+  }
+
   // Print results
   for (const c of checks) {
     const symbol = c.status === "pass" ? "✓" : c.status === "warn" ? "⚠" : "✖";
@@ -231,6 +298,9 @@ export async function executeDoctor(options: DoctorCommandOptions = {}): Promise
   if (options.fix && (!healthy || warnings.length > 0)) {
     logger.info("\nAttempting automatic repairs with 'specty sync'...");
     await executeSync({ cwd: repoRoot });
+    if (isGit && config?.governance.hooks !== false) {
+      await installHookWithManager(repoRoot);
+    }
     logger.success("Repairs completed. Re-run 'specty doctor' to verify.");
   }
 

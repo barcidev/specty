@@ -1,8 +1,62 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-import { isInsideGitRepo } from "../core/git.js";
+import {
+  type DetectedHookManager,
+  detectHookManagers,
+  detectPrimaryHookManager,
+  findActiveHookManager,
+  type HookInstallOptions,
+  type HookInstallResult,
+  type HookManagerType,
+  type HookUninstallResult,
+  hasCustomNativeHook,
+  installHuskyHook,
+  installLefthookHook,
+  installNativeHook,
+  installSimpleGitHooks,
+  isHuskyConfigured,
+  isHuskyHookInstalled,
+  isLefthookConfigured,
+  isLefthookHookInstalled,
+  isNativeHookInstalled,
+  isSimpleGitHooksConfigured,
+  isSimpleGitHooksInstalled,
+  NATIVE_HOOK_BLOCK,
+  PRE_COMMIT_HOOK_NAME,
+  SPECTY_HOOK_CMD,
+  uninstallHuskyHook,
+  uninstallLefthookHook,
+  uninstallNativeHook,
+  uninstallSimpleGitHooks,
+} from "./hook-managers/index.js";
 
-export const PRE_COMMIT_HOOK_NAME = "pre-commit";
+export {
+  type DetectedHookManager,
+  detectHookManagers,
+  detectPrimaryHookManager,
+  findActiveHookManager,
+  type HookInstallOptions,
+  type HookInstallResult,
+  type HookManagerType,
+  type HookUninstallResult,
+  hasCustomNativeHook,
+  installHuskyHook,
+  installLefthookHook,
+  installNativeHook,
+  installSimpleGitHooks,
+  isHuskyConfigured,
+  isHuskyHookInstalled,
+  isLefthookConfigured,
+  isLefthookHookInstalled,
+  isNativeHookInstalled,
+  isSimpleGitHooksConfigured,
+  isSimpleGitHooksInstalled,
+  NATIVE_HOOK_BLOCK,
+  PRE_COMMIT_HOOK_NAME,
+  SPECTY_HOOK_CMD,
+  uninstallHuskyHook,
+  uninstallLefthookHook,
+  uninstallNativeHook,
+  uninstallSimpleGitHooks,
+};
 
 export const HOOK_SCRIPT = `#!/usr/bin/env sh
 # Managed by specty (AI assistant governance)
@@ -10,39 +64,108 @@ if [ "$SPECTY_HOOK_DISABLED" = "1" ] || [ "$SPECTY_BYPASS" = "1" ]; then
   exit 0
 fi
 
-npx specty check-approval --staged
+${SPECTY_HOOK_CMD}
 `;
 
-export async function installGitHooks(repoRoot: string): Promise<boolean> {
-  const isGit = await isInsideGitRepo(repoRoot);
-  if (!isGit) {
-    return false;
+export async function installHookWithManager(
+  repoRoot: string,
+  options: HookInstallOptions = {},
+): Promise<HookInstallResult> {
+  const targetManager = options.manager;
+
+  if (targetManager) {
+    switch (targetManager) {
+      case "husky":
+        return installHuskyHook(repoRoot);
+      case "lefthook":
+        return installLefthookHook(repoRoot);
+      case "simple-git-hooks":
+        return installSimpleGitHooks(repoRoot);
+      case "native":
+        return installNativeHook(repoRoot);
+    }
   }
 
-  const hooksDir = path.join(repoRoot, ".git", "hooks");
-  await fs.mkdir(hooksDir, { recursive: true });
-
-  const hookFile = path.join(hooksDir, PRE_COMMIT_HOOK_NAME);
-  await fs.writeFile(hookFile, HOOK_SCRIPT, { mode: 0o755 });
-  try {
-    await fs.chmod(hookFile, 0o755);
-  } catch {
-    // fs.chmod may fail on Windows NTFS filesystems, ignore
+  const primary = await detectPrimaryHookManager(repoRoot);
+  if (!primary) {
+    return {
+      success: false,
+      manager: "native",
+      targetPath: ".git/hooks/pre-commit",
+      action: "skipped",
+      message: "Not inside a Git repository",
+    };
   }
 
-  return true;
+  switch (primary.type) {
+    case "husky":
+      return installHuskyHook(repoRoot);
+    case "lefthook":
+      return installLefthookHook(repoRoot);
+    case "simple-git-hooks":
+      return installSimpleGitHooks(repoRoot);
+    default:
+      return installNativeHook(repoRoot);
+  }
 }
 
-export async function uninstallGitHooks(repoRoot: string): Promise<boolean> {
-  const hookFile = path.join(repoRoot, ".git", "hooks", PRE_COMMIT_HOOK_NAME);
-  try {
-    const content = await fs.readFile(hookFile, "utf8");
-    if (content.includes("Managed by specty")) {
-      await fs.rm(hookFile, { force: true });
-      return true;
+export async function uninstallHookWithManager(
+  repoRoot: string,
+  options: { manager?: HookManagerType } = {},
+): Promise<HookUninstallResult> {
+  if (options.manager) {
+    switch (options.manager) {
+      case "husky":
+        return uninstallHuskyHook(repoRoot);
+      case "lefthook":
+        return uninstallLefthookHook(repoRoot);
+      case "simple-git-hooks":
+        return uninstallSimpleGitHooks(repoRoot);
+      case "native":
+        return uninstallNativeHook(repoRoot);
     }
-  } catch {
-    // not found
   }
-  return false;
+
+  const active = await findActiveHookManager(repoRoot);
+  if (active) {
+    switch (active.type) {
+      case "husky":
+        return uninstallHuskyHook(repoRoot);
+      case "lefthook":
+        return uninstallLefthookHook(repoRoot);
+      case "simple-git-hooks":
+        return uninstallSimpleGitHooks(repoRoot);
+      case "native":
+        return uninstallNativeHook(repoRoot);
+    }
+  }
+
+  // Fallback: try native
+  return uninstallNativeHook(repoRoot);
+}
+
+export async function installGitHooks(
+  repoRoot: string,
+  options: HookInstallOptions = {},
+): Promise<boolean> {
+  const result = await installHookWithManager(repoRoot, options);
+  return result.success;
+}
+
+export async function uninstallGitHooks(
+  repoRoot: string,
+  options: { manager?: HookManagerType } = {},
+): Promise<boolean> {
+  const result = await uninstallHookWithManager(repoRoot, options);
+  return result.success;
+}
+
+export async function checkGitHooksStatus(
+  repoRoot: string,
+): Promise<{ active: boolean; manager?: DetectedHookManager }> {
+  const activeManager = await findActiveHookManager(repoRoot);
+  if (activeManager) {
+    return { active: true, manager: activeManager };
+  }
+  return { active: false };
 }

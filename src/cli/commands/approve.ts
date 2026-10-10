@@ -4,6 +4,7 @@ import { loadConfig } from "../../core/config.js";
 import { logger } from "../../core/logger.js";
 import { getSpecEngine } from "../../engines/factory.js";
 import { approveChange, checkApprovalStatus } from "../../governance/approvals.js";
+import { validateChangeSpecification } from "../../governance/spec-validator.js";
 import { recordMetricEvent } from "../../metrics/index.js";
 
 export interface ApproveCommandOptions {
@@ -11,6 +12,8 @@ export interface ApproveCommandOptions {
   yes?: boolean;
   dryRun?: boolean;
   user?: string;
+  force?: boolean;
+  strict?: boolean;
 }
 
 export async function executeApprove(
@@ -64,6 +67,41 @@ export async function executeApprove(
   if (!change) {
     logger.error(`Change "${targetChangeId}" not found in openspec/changes/`);
     return false;
+  }
+
+  // 1. Validate specification semantics before approving
+  const validation = await validateChangeSpecification(change.path, {
+    strict: options.strict,
+  });
+
+  if (validation.issues.length > 0) {
+    logger.info(`\nSpecification Validation Diagnostics (${change.id}):`);
+    for (const issue of validation.issues) {
+      const relFile = path.relative(repoRoot, issue.file);
+      const loc = issue.line ? `:${issue.line}` : "";
+      const ruleTag = issue.rule ? ` [${issue.rule}]` : "";
+      if (issue.severity === "error") {
+        logger.error(`  ✖ ${relFile}${loc}${ruleTag}: ${issue.message}`);
+      } else {
+        logger.warn(`  ⚠ ${relFile}${loc}${ruleTag}: ${issue.message}`);
+      }
+    }
+  }
+
+  if (!validation.valid) {
+    const issuesDesc =
+      validation.errorsCount && validation.errorsCount > 0
+        ? `${validation.errorsCount} semantic specification error(s)`
+        : `${validation.warningsCount ?? 1} semantic specification warning(s) in strict mode`;
+
+    if (options.force) {
+      logger.warn(`\nBypassing ${issuesDesc} due to --force flag.`);
+    } else {
+      logger.error(
+        `\nCannot approve change "${targetChangeId}": found ${issuesDesc}.\nFix the markdown structure or pass --force to bypass.`,
+      );
+      return false;
+    }
   }
 
   const status = await checkApprovalStatus(repoRoot, targetChangeId);

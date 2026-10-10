@@ -4,19 +4,14 @@ import { loadConfig } from "../core/config.js";
 import { executeCommand } from "../core/exec.js";
 import { getSpecEngine } from "../engines/factory.js";
 import { checkApprovalStatus } from "../governance/approvals.js";
+import { validateChangeSpecification } from "../governance/spec-validator.js";
 import { createHandoff, getLatestHandoff } from "../handoff/manager.js";
 import { recordMetricEvent } from "../metrics/index.js";
 import type { CodeGraph } from "./graph.js";
 
-export interface McpToolDefinition {
-  name: string;
-  description: string;
-  inputSchema: {
-    type: "object";
-    properties: Record<string, unknown>;
-    required?: string[];
-  };
-}
+export * from "./types.js";
+
+import type { McpToolDefinition, McpToolResultMap } from "./types.js";
 
 export function getMcpToolDefinitions(): McpToolDefinition[] {
   return [
@@ -134,9 +129,40 @@ export function getMcpToolDefinitions(): McpToolDefinition[] {
         },
       },
     },
+    {
+      name: "specty_validate_change",
+      description:
+        "Validate markdown specification schema and semantics for a change (proposal.md, tasks.md, deltas).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          changeId: {
+            type: "string",
+            description:
+              "Optional change identifier. If omitted, validates the first active change.",
+          },
+          strict: {
+            type: "boolean",
+            description: "If true, treats formatting warnings as errors.",
+          },
+        },
+      },
+    },
   ];
 }
 
+export async function handleMcpToolCall<K extends keyof McpToolResultMap>(
+  name: K,
+  args: Record<string, unknown>,
+  repoRoot: string,
+  graph?: CodeGraph,
+): Promise<McpToolResultMap[K]>;
+export async function handleMcpToolCall<T = unknown>(
+  name: string,
+  args: Record<string, unknown>,
+  repoRoot: string,
+  graph?: CodeGraph,
+): Promise<T>;
 export async function handleMcpToolCall(
   name: string,
   args: Record<string, unknown>,
@@ -147,6 +173,32 @@ export async function handleMcpToolCall(
   const engine = getSpecEngine(config.spec_engine);
 
   switch (name) {
+    case "specty_validate_change": {
+      const changeId = typeof args.changeId === "string" ? args.changeId : undefined;
+      const strict = Boolean(args.strict);
+      const changes = await engine.listChanges(repoRoot);
+      const target = changeId ? changes.find((c) => c.id === changeId) : changes[0];
+
+      if (!target) {
+        return { valid: false, message: "No active changes found in repository to validate." };
+      }
+
+      const val = await validateChangeSpecification(target.path, { strict });
+      return {
+        changeId: target.id,
+        valid: val.valid,
+        errorsCount: val.errorsCount ?? 0,
+        warningsCount: val.warningsCount ?? 0,
+        issues: val.issues.map((i) => ({
+          file: path.relative(repoRoot, i.file),
+          line: i.line,
+          rule: i.rule,
+          severity: i.severity,
+          message: i.message,
+        })),
+      };
+    }
+
     case "specty_get_active_change": {
       const changeId = typeof args.changeId === "string" ? args.changeId : undefined;
       const changes = await engine.listChanges(repoRoot);

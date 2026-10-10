@@ -72,7 +72,12 @@ export class OpenSpecEngine implements SpecEngine {
   }
 
   async validate(repoRoot: string, changeId?: string): Promise<ValidationResult> {
-    // 1. Run openspec validate CLI if available
+    const builtinResult = await this.builtin.validate(repoRoot, changeId);
+    if (!builtinResult.valid) {
+      return builtinResult;
+    }
+
+    // Run openspec validate CLI if available in environment
     try {
       const cmd = changeId
         ? `npx openspec validate "${changeId}" --strict`
@@ -88,19 +93,22 @@ export class OpenSpecEngine implements SpecEngine {
         return {
           valid: false,
           issues: [
+            ...builtinResult.issues,
             {
               file: changeId ? `openspec/changes/${changeId}` : "openspec",
               message: res.stderr || res.stdout || "OpenSpec validation failed",
               severity: "error",
             },
           ],
+          errorsCount: (builtinResult.errorsCount ?? 0) + 1,
+          warningsCount: builtinResult.warningsCount ?? 0,
         };
       }
     } catch {
-      // Fallback to internal validation if openspec CLI unavailable
+      // Non-fatal if offline or npx not in path; builtin validation was already executed
     }
 
-    return await this.builtin.validate(repoRoot, changeId);
+    return builtinResult;
   }
 
   async archive(

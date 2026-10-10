@@ -3,6 +3,7 @@ import fsPromises from "node:fs/promises";
 import path from "node:path";
 import type { SupportedLanguage } from "../core/i18n.js";
 import type { GeneratedFile } from "../generate/types.js";
+import { parseJsonc } from "./jsonc.js";
 import type { AdapterContext, ToolAdapter } from "./types.js";
 
 function resolveConfigPath(repoRoot: string): string {
@@ -28,7 +29,7 @@ export const opencodeAdapter: ToolAdapter = {
 
     try {
       const existing = await fsPromises.readFile(fullPath, "utf8");
-      const parsed = JSON.parse(existing);
+      const parsed = parseJsonc<Record<string, unknown>>(existing);
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         baseConfig = parsed;
       }
