@@ -8,6 +8,8 @@ export interface InitCommandOptions {
   lang?: string;
   tool?: string | string[];
   stack?: string;
+  framework?: string;
+  projectKind?: "new" | "existing";
   specEngine?: "openspec" | "builtin";
   hooks?: boolean;
   ci?: boolean;

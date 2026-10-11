@@ -27,6 +27,8 @@ export interface TranslationDictionary {
     projectKindPrompt: string;
     projectKindNew: string;
     projectKindExisting: string;
+    newProjectLanguagePrompt: string;
+    newProjectFrameworkPrompt: string;
     toolsPrompt: string;
     enginePrompt: string;
     mcpPrompt: string;
@@ -91,6 +93,8 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       projectKindPrompt: "Is this a new or existing project?",
       projectKindNew: "New project (guided architecture setup)",
       projectKindExisting: "Existing project (brownfield analysis and incremental specs)",
+      newProjectLanguagePrompt: "Select the programming language for the new project:",
+      newProjectFrameworkPrompt: "Select the primary framework or runtime environment:",
       toolsPrompt: "Select AI assistant tools to configure:",
       enginePrompt: "Select spec engine:",
       mcpPrompt: "Enable MCP code graph server and metrics?",
@@ -155,6 +159,8 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       projectKindPrompt: "¿El proyecto es nuevo o existente?",
       projectKindNew: "Proyecto nuevo (seleccion guiada de arquitectura)",
       projectKindExisting: "Proyecto existente (analisis brownfield y specs incrementales)",
+      newProjectLanguagePrompt: "Selecciona el lenguaje de programación del nuevo proyecto:",
+      newProjectFrameworkPrompt: "Selecciona el framework o entorno principal:",
       toolsPrompt: "Selecciona las herramientas de IA a configurar:",
       enginePrompt: "Selecciona el motor de specs:",
       mcpPrompt: "¿Activar servidor MCP de grafo de codigo y metricas?",

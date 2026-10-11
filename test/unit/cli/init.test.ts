@@ -147,4 +147,61 @@ describe("cli/commands/init", () => {
     expect(ruleFile).toContain("Híbrido: Gitmoji + Conventional Commits + Tickets");
     expect(ruleFile).toContain("✨ feat(auth): [PROJ-123] add google oauth2 login");
   });
+
+  it("initializes new project with specified language and framework", async () => {
+    const res = await executeInit({
+      yes: true,
+      projectKind: "new",
+      stack: "python",
+      framework: "fastapi",
+      cwd: tempDir,
+    });
+
+    expect(res.inferredStack).toBe("python");
+    const savedConfig = await loadConfig(tempDir);
+    expect(savedConfig.project.kind).toBe("new");
+    expect(savedConfig.scopes[0]?.stack.language).toBe("python");
+    expect(savedConfig.scopes[0]?.stack.frameworks).toContain("fastapi");
+  });
+
+  it("initializes new project with flutter stack and generates framework rules", async () => {
+    await executeInit({
+      yes: true,
+      projectKind: "new",
+      stack: "dart",
+      framework: "flutter",
+      cwd: tempDir,
+    });
+
+    const savedConfig = await loadConfig(tempDir);
+    expect(savedConfig.project.kind).toBe("new");
+    expect(savedConfig.scopes[0]?.stack.language).toBe("dart");
+    expect(savedConfig.scopes[0]?.stack.frameworks).toContain("flutter");
+
+    const fwRuleExists = await fs
+      .access(path.join(tempDir, ".specty/rules/framework/flutter.md"))
+      .then(() => true)
+      .catch(() => false);
+    expect(fwRuleExists).toBe(true);
+  });
+
+  it("initializes new project with nestjs framework and recommends modular architecture", async () => {
+    await executeInit({
+      yes: true,
+      projectKind: "new",
+      stack: "typescript",
+      framework: "nest",
+      cwd: tempDir,
+    });
+
+    const savedConfig = await loadConfig(tempDir);
+    expect(savedConfig.project.kind).toBe("new");
+    expect(savedConfig.project.architecture).toBe("modular");
+
+    const fwRuleExists = await fs
+      .access(path.join(tempDir, ".specty/rules/framework/nestjs.md"))
+      .then(() => true)
+      .catch(() => false);
+    expect(fwRuleExists).toBe(true);
+  });
 });

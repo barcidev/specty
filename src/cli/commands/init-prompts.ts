@@ -12,10 +12,15 @@ import {
 import { getDictionary, normalizeLanguage, type SupportedLanguage } from "../../core/i18n.js";
 import { defaultDetectorRegistry } from "../../detect/detector-registry.js";
 import { resolveDefaultSourcePaths } from "../../detect/source-paths-resolver.js";
-import type { RepositoryDetectionResult } from "../../detect/types.js";
+import type {
+  RepositoryDetectionResult,
+  StackDetection,
+  SupportedLanguageId,
+} from "../../detect/types.js";
 import { getRecommendedArchitectures } from "./architectures.js";
 import { getCommitConventionOptions, getGitWorkflowOptions } from "./git-options.js";
 import type { InitCommandOptions, InitFlowResult } from "./init-types.js";
+import { getFrameworkOptions, getLanguageOptions } from "./stack-options.js";
 
 const TOOL_CONFIG_EXAMPLES: Record<SupportedTool, string> = {
   antigravity: ".gemini/config/rules, GEMINI.md",
@@ -123,8 +128,73 @@ export async function runInteractiveInit(
   const projectKind = kindRes as "new" | "existing";
 
   let architecture = "clean";
+  let chosenStack: StackDetection | undefined;
+
   if (projectKind === "new") {
-    const archData = getRecommendedArchitectures(primaryScope?.stack);
+    // Step 3.1: Language Selection for new project
+    const defaultLanguage: SupportedLanguageId =
+      (options.stack as SupportedLanguageId) ?? primaryScope?.stack.language ?? "typescript";
+
+    const langRes = await p.select({
+      message: dict.init.newProjectLanguagePrompt,
+      options: getLanguageOptions(selectedLang).map((opt) => ({
+        value: opt.value,
+        label: opt.label,
+        hint: opt.hint,
+      })),
+      initialValue: defaultLanguage,
+    });
+
+    if (p.isCancel(langRes)) {
+      p.cancel(dict.init.canceled);
+      return null;
+    }
+    const chosenLanguage = langRes as SupportedLanguageId;
+
+    // Step 3.2: Framework Selection for new project
+    const fwOptions = getFrameworkOptions(chosenLanguage, selectedLang);
+    let chosenFrameworks: string[] = [];
+
+    if (fwOptions.length > 0) {
+      const defaultFw =
+        options.framework && fwOptions.some((f) => f.value === options.framework)
+          ? options.framework
+          : primaryScope?.stack.language === chosenLanguage &&
+              primaryScope?.stack.frameworks[0] &&
+              fwOptions.some((f) => f.value === primaryScope.stack.frameworks[0])
+            ? primaryScope.stack.frameworks[0]
+            : fwOptions[0]?.value;
+
+      const fwRes = await p.select({
+        message: dict.init.newProjectFrameworkPrompt,
+        options: fwOptions.map((opt) => ({
+          value: opt.value,
+          label: opt.label,
+          hint: opt.hint,
+        })),
+        initialValue: defaultFw,
+      });
+
+      if (p.isCancel(fwRes)) {
+        p.cancel(dict.init.canceled);
+        return null;
+      }
+
+      if (fwRes && fwRes !== "none") {
+        chosenFrameworks = [fwRes as string];
+      }
+    }
+
+    chosenStack = {
+      language: chosenLanguage,
+      frameworks: chosenFrameworks,
+      confidence: 1.0,
+      evidence: ["user-selection"],
+      hasCustomTemplates: ["typescript", "javascript", "dart", "csharp"].includes(chosenLanguage),
+    };
+
+    // Step 3.3: Architectural Pattern Selection
+    const archData = getRecommendedArchitectures(chosenStack);
     const archRes = await p.select({
       message:
         selectedLang === "es"
@@ -307,9 +377,14 @@ export async function runInteractiveInit(
   const selectedCi = ciRes as "github" | "gitlab" | "azure" | "bitbucket" | "none";
 
   // Step 10: Summary and Confirmation (Section 8.0 #8)
+  const effectiveStackInfo =
+    projectKind === "new" && chosenStack
+      ? `${chosenStack.language} (${chosenStack.frameworks.join(", ") || "core"})`
+      : detectedStackInfo;
+
   const summaryLines = [
     `Language: ${selectedLang.toUpperCase()}`,
-    `Stack: ${detectedStackInfo}`,
+    `Stack: ${effectiveStackInfo}`,
     `Project: ${projectKind} (${architecture})`,
     `Spec engine: ${specEngine}`,
     `AI Tools: ${selectedTools.join(", ")}`,
@@ -333,25 +408,36 @@ export async function runInteractiveInit(
   }
 
   const scopes =
-    detection.scopes.length > 0
-      ? detection.scopes.map((s) => ({
-          path: s.path,
-          stack: {
-            language: s.stack.language,
-            frameworks: s.stack.frameworks,
-          },
-          verify: s.verify,
-        }))
-      : [
+    projectKind === "new" && chosenStack
+      ? [
           {
             path: ".",
             stack: {
-              language: primaryScope?.stack.language ?? "typescript",
-              frameworks: primaryScope?.stack.frameworks ?? [],
+              language: chosenStack.language,
+              frameworks: chosenStack.frameworks,
             },
             verify: {},
           },
-        ];
+        ]
+      : detection.scopes.length > 0
+        ? detection.scopes.map((s) => ({
+            path: s.path,
+            stack: {
+              language: s.stack.language,
+              frameworks: s.stack.frameworks,
+            },
+            verify: s.verify,
+          }))
+        : [
+            {
+              path: ".",
+              stack: {
+                language: primaryScope?.stack.language ?? "typescript",
+                frameworks: primaryScope?.stack.frameworks ?? [],
+              },
+              verify: {},
+            },
+          ];
 
   const config: SpectyConfig = createDefaultConfig({
     language: selectedLang,
@@ -390,6 +476,7 @@ export async function runInteractiveInit(
     canceled: false,
     dryRun: Boolean(options.dryRun),
     language: selectedLang,
-    inferredStack: primaryScope?.stack.language,
+    inferredStack:
+      projectKind === "new" && chosenStack ? chosenStack.language : primaryScope?.stack.language,
   };
 }

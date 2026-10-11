@@ -62,6 +62,7 @@ npx @barcidev/specty init
 #### Recommended Choices in the Interactive Wizard:
 - **Language:** Select `English (en)` or `Español (es)`. All AI directives and rule templates will be generated in this language.
 - **Project Kind:** Select `new` (Clean scaffold from scratch).
+- **Language and Framework:** Select the primary programming language (TypeScript, JavaScript, Python, Dart, C#, Go, Rust, Java, Kotlin, PHP, Ruby, Swift, C++, Elixir) and then the corresponding framework or runtime (e.g., React, Next.js, NestJS, FastAPI, Flutter, ASP.NET Core, Gin, or Core without framework). Specty will dynamically adapt recommended architectures, coding rules, and templates to match your choice.
 - **Architectural Pattern:**
   - *Clean Architecture:* Recommended for robust backend APIs or Flutter mobile applications.
   - *Modular / Feature-Based:* Recommended for web applications (React, Next.js, Angular, NestJS).

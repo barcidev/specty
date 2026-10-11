@@ -62,7 +62,7 @@ export function getRecommendedArchitectures(stack?: StackDetection): {
     };
   }
 
-  if (stack.frameworks.includes("nest")) {
+  if (stack.frameworks.includes("nest") || stack.frameworks.includes("nestjs")) {
     return {
       recommended: "modular",
       options: [
@@ -86,6 +86,26 @@ export function getRecommendedArchitectures(stack?: StackDetection): {
           label: "Feature-Based Architecture (Angular Standalone)",
           description:
             "Feature-sliced routes, smart/dumb components, and signals/stores (Ej: src/app/features/dashboard, src/app/shared)",
+        },
+        ...commonOptions.filter((o) => o.value !== "modular"),
+      ],
+    };
+  }
+
+  if (
+    stack.frameworks.includes("react") ||
+    stack.frameworks.includes("next") ||
+    stack.frameworks.includes("nextjs") ||
+    stack.frameworks.includes("vue")
+  ) {
+    return {
+      recommended: "modular",
+      options: [
+        {
+          value: "modular",
+          label: "Feature-Based Architecture (Frontend Components / Modules)",
+          description:
+            "Feature-sliced structure with components, hooks, stores and pages (Ej: src/features/auth, src/components, src/pages)",
         },
         ...commonOptions.filter((o) => o.value !== "modular"),
       ],
