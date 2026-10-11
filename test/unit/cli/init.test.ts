@@ -334,4 +334,86 @@ describe("cli/commands/init", () => {
     expect(fastapiRule).toBe(true);
     expect(flutterRule).toBe(true);
   });
+
+  it("initializes project with customized graphical UI and generates ui-style.md and tokens protocol", async () => {
+    await executeInit({
+      yes: true,
+      projectKind: "new",
+      hasGui: true,
+      uiCustomize: true,
+      uiPurpose: "ecommerce",
+      uiTargetAudience: "general-public",
+      uiBorderRadius: "rounded",
+      uiVisualEffects: "subtle-elevation",
+      uiColorMode: "both",
+      cwd: tempDir,
+    });
+
+    const savedConfig = await loadConfig(tempDir);
+    expect(savedConfig.ui?.has_gui).toBe(true);
+    expect(savedConfig.ui?.is_customized).toBe(true);
+    expect(savedConfig.ui?.purpose).toBe("ecommerce");
+    expect(savedConfig.ui?.border_radius).toBe("rounded");
+
+    const uiRuleExists = await fs
+      .access(path.join(tempDir, ".specty/rules/core/ui-style.md"))
+      .then(() => true)
+      .catch(() => false);
+    expect(uiRuleExists).toBe(true);
+
+    const uiRuleContent = await fs.readFile(
+      path.join(tempDir, ".specty/rules/core/ui-style.md"),
+      "utf8",
+    );
+    expect(uiRuleContent).toContain("E-Commerce / Tienda Online");
+    expect(uiRuleContent).toContain("Regla del Primer Toque");
+    expect(uiRuleContent).toContain("<!-- USER_LIBRARIES_START -->");
+
+    const agentsMd = await fs.readFile(path.join(tempDir, "AGENTS.md"), "utf8");
+    expect(agentsMd).toContain(".specty/rules/core/ui-style.md");
+  });
+
+  it("initializes project with default neutral UI when customization is false", async () => {
+    await executeInit({
+      yes: true,
+      projectKind: "new",
+      hasGui: true,
+      uiCustomize: false,
+      cwd: tempDir,
+    });
+
+    const savedConfig = await loadConfig(tempDir);
+    expect(savedConfig.ui?.has_gui).toBe(true);
+    expect(savedConfig.ui?.is_customized).toBe(false);
+    expect(savedConfig.ui?.purpose).toBe("general-purpose");
+    expect(savedConfig.ui?.border_radius).toBe("semi-rounded");
+    expect(savedConfig.ui?.visual_effects).toBe("subtle-elevation");
+
+    const uiRuleContent = await fs.readFile(
+      path.join(tempDir, ".specty/rules/core/ui-style.md"),
+      "utf8",
+    );
+    expect(uiRuleContent).toContain("Proposito General / Neutro");
+  });
+
+  it("does not generate ui-style.md when project has no graphical interface", async () => {
+    await executeInit({
+      yes: true,
+      projectKind: "new",
+      hasGui: false,
+      cwd: tempDir,
+    });
+
+    const savedConfig = await loadConfig(tempDir);
+    expect(savedConfig.ui).toBeUndefined();
+
+    const uiRuleExists = await fs
+      .access(path.join(tempDir, ".specty/rules/core/ui-style.md"))
+      .then(() => true)
+      .catch(() => false);
+    expect(uiRuleExists).toBe(false);
+
+    const agentsMd = await fs.readFile(path.join(tempDir, "AGENTS.md"), "utf8");
+    expect(agentsMd).not.toContain(".specty/rules/core/ui-style.md");
+  });
 });

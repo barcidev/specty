@@ -6,8 +6,14 @@ import {
   GIT_WORKFLOWS,
   type GitWorkflow,
   type SpectyConfig,
+  type SpectyUiConfig,
   SUPPORTED_TOOLS,
   type SupportedTool,
+  type UiBorderRadius,
+  type UiColorMode,
+  type UiPurpose,
+  type UiTargetAudience,
+  type UiVisualEffects,
 } from "../../core/config.js";
 import { getDictionary, normalizeLanguage, type SupportedLanguage } from "../../core/i18n.js";
 import { defaultDetectorRegistry } from "../../detect/detector-registry.js";
@@ -30,6 +36,14 @@ import {
   getWorkspaceComponentOptions,
   type StructureType,
 } from "./structure-options.js";
+import {
+  DEFAULT_NEUTRAL_UI_CONFIG,
+  getUiAudienceOptions,
+  getUiBorderRadiusOptions,
+  getUiColorModeOptions,
+  getUiPurposeOptions,
+  getUiVisualEffectsOptions,
+} from "./ui-style-options.js";
 
 const TOOL_CONFIG_EXAMPLES: Record<SupportedTool, string> = {
   antigravity: ".gemini/config/rules, GEMINI.md",
@@ -400,6 +414,145 @@ export async function runInteractiveInit(
     }
   }
 
+  // Step 3.5: Graphical User Interface & Visual Style
+  let hasGui = options.hasGui;
+  let uiPurpose: UiPurpose = (options.uiPurpose as UiPurpose) ?? DEFAULT_NEUTRAL_UI_CONFIG.purpose;
+  let uiAudience: UiTargetAudience =
+    (options.uiTargetAudience as UiTargetAudience) ?? DEFAULT_NEUTRAL_UI_CONFIG.targetAudience;
+  let uiBorderRadius: UiBorderRadius =
+    (options.uiBorderRadius as UiBorderRadius) ?? DEFAULT_NEUTRAL_UI_CONFIG.borderRadius;
+  let uiVisualEffects: UiVisualEffects =
+    (options.uiVisualEffects as UiVisualEffects) ?? DEFAULT_NEUTRAL_UI_CONFIG.visualEffects;
+  let uiColorMode: UiColorMode =
+    (options.uiColorMode as UiColorMode) ?? DEFAULT_NEUTRAL_UI_CONFIG.colorMode;
+  let isCustomizedUi = Boolean(options.uiCustomize);
+
+  if (hasGui === undefined) {
+    const guiRes = await p.confirm({
+      message: dict.init.hasGuiPrompt,
+      initialValue: true,
+    });
+    if (p.isCancel(guiRes)) {
+      p.cancel(dict.init.canceled);
+      return null;
+    }
+    hasGui = Boolean(guiRes);
+  }
+
+  if (hasGui) {
+    let wantsCustomize = options.uiCustomize;
+    if (wantsCustomize === undefined) {
+      const custRes = await p.select({
+        message: dict.init.uiCustomizePrompt,
+        options: [
+          {
+            value: false,
+            label: dict.init.uiCustomizeOptionDefault,
+          },
+          {
+            value: true,
+            label: dict.init.uiCustomizeOptionCustom,
+          },
+        ],
+        initialValue: false,
+      });
+      if (p.isCancel(custRes)) {
+        p.cancel(dict.init.canceled);
+        return null;
+      }
+      wantsCustomize = Boolean(custRes);
+    }
+
+    isCustomizedUi = wantsCustomize;
+
+    if (wantsCustomize) {
+      // 1. Purpose
+      if (!options.uiPurpose) {
+        const purpRes = await p.select({
+          message: dict.init.uiPurposePrompt,
+          options: getUiPurposeOptions(selectedLang).map((o) => ({
+            value: o.value,
+            label: o.name,
+          })),
+          initialValue: "general-purpose",
+        });
+        if (p.isCancel(purpRes)) {
+          p.cancel(dict.init.canceled);
+          return null;
+        }
+        uiPurpose = purpRes as UiPurpose;
+      }
+
+      // 2. Target Audience
+      if (!options.uiTargetAudience) {
+        const audRes = await p.select({
+          message: dict.init.uiAudiencePrompt,
+          options: getUiAudienceOptions(selectedLang).map((o) => ({
+            value: o.value,
+            label: o.name,
+          })),
+          initialValue: "general-public",
+        });
+        if (p.isCancel(audRes)) {
+          p.cancel(dict.init.canceled);
+          return null;
+        }
+        uiAudience = audRes as UiTargetAudience;
+      }
+
+      // 3. Border Radius
+      if (!options.uiBorderRadius) {
+        const radRes = await p.select({
+          message: dict.init.uiBorderRadiusPrompt,
+          options: getUiBorderRadiusOptions(selectedLang).map((o) => ({
+            value: o.value,
+            label: o.name,
+          })),
+          initialValue: "semi-rounded",
+        });
+        if (p.isCancel(radRes)) {
+          p.cancel(dict.init.canceled);
+          return null;
+        }
+        uiBorderRadius = radRes as UiBorderRadius;
+      }
+
+      // 4. Visual Effects & Surfaces
+      if (!options.uiVisualEffects) {
+        const effRes = await p.select({
+          message: dict.init.uiVisualEffectsPrompt,
+          options: getUiVisualEffectsOptions(selectedLang).map((o) => ({
+            value: o.value,
+            label: o.name,
+          })),
+          initialValue: "subtle-elevation",
+        });
+        if (p.isCancel(effRes)) {
+          p.cancel(dict.init.canceled);
+          return null;
+        }
+        uiVisualEffects = effRes as UiVisualEffects;
+      }
+
+      // 5. Color Mode
+      if (!options.uiColorMode) {
+        const colRes = await p.select({
+          message: dict.init.uiColorModePrompt,
+          options: getUiColorModeOptions(selectedLang).map((o) => ({
+            value: o.value,
+            label: o.name,
+          })),
+          initialValue: "both",
+        });
+        if (p.isCancel(colRes)) {
+          p.cancel(dict.init.canceled);
+          return null;
+        }
+        uiColorMode = colRes as UiColorMode;
+      }
+    }
+  }
+
   // Step 4: AI Tools (Section 8.0 #4 - All preselected by default)
   const toolOptions = SUPPORTED_TOOLS.map((toolId) => ({
     value: toolId,
@@ -583,6 +736,9 @@ export async function runInteractiveInit(
     `MCP & Metrics: ${enableMcp ? "Enabled" : "Disabled"}`,
     `Hooks: ${enableHooks ? "Enabled" : "Disabled"}`,
     `CI: ${selectedCi}`,
+    hasGui
+      ? `UI Style: ${isCustomizedUi ? "Customized" : "Neutral Default"} (${uiPurpose}, ${uiAudience}, ${uiBorderRadius}, ${uiVisualEffects}, ${uiColorMode})`
+      : "GUI: None",
   ];
 
   p.note(summaryLines.join("\n"), dict.init.summaryTitle);
@@ -631,6 +787,18 @@ export async function runInteractiveInit(
               },
             ];
 
+  const uiConfig: SpectyUiConfig | undefined = hasGui
+    ? {
+        has_gui: true,
+        is_customized: isCustomizedUi,
+        purpose: uiPurpose,
+        target_audience: uiAudience,
+        border_radius: uiBorderRadius,
+        visual_effects: uiVisualEffects,
+        color_mode: uiColorMode,
+      }
+    : undefined;
+
   const config: SpectyConfig = createDefaultConfig({
     language: selectedLang,
     spec_engine: specEngine,
@@ -645,6 +813,7 @@ export async function runInteractiveInit(
       workflow: selectedGitWorkflow,
       commit_convention: selectedCommitConvention,
     },
+    ui: uiConfig,
     governance: {
       hooks: enableHooks,
       ci: selectedCi,
@@ -675,6 +844,10 @@ export async function runInteractiveInit(
   });
 
   p.outro(dict.init.success);
+
+  if (hasGui) {
+    p.note(dict.init.uiStyleNotice, "UI Style & Tokens");
+  }
 
   return {
     config,

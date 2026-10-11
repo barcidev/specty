@@ -73,6 +73,21 @@ npx @barcidev/specty init
   - *Layered (N-Capas):* Recomendado para APIs tradicionales con controladores, servicios y repositorios.
   - *Hexagonal (Puertos y Adaptadores):* Recomendado cuando el dominio de negocio debe estar completamente aislado de frameworks externos.
   - *Vertical Slices:* Recomendado cuando prefieres agrupar por funcionalidades completas en lugar de capas tecnicas.
+- **Interfaz Gráfica y Estilo Visual (GUI & Tokens):**
+  - *Detección de Interfaz:* Specty te preguntará si el proyecto contará con interfaz gráfica (web, móvil o escritorio). Si respondes que no, se omite esta capa.
+  - *Personalización vs. Estilo Neutral:* Si cuenta con interfaz, puedes usar el estilo neutral por defecto (limpio, profesional, adaptable, con soporte claro/oscuro y bordes semi-redondeados de 8px) o personalizar las 5 dimensiones del producto:
+    1. *Propósito:* SaaS/Dashboard, E-commerce, Landing/Marketing, Social/Móvil, Docs/Blog, Fintech, Salud, Educación o Propósito General.
+    2. *Audiencia objetivo:* Público general B2C, Profesionales B2B, Desarrolladores, Jóvenes/Estudiantes, Adultos mayores / Accesibilidad reforzada.
+    3. *Geometría de bordes:* Redondos pronunciados (12-20px), Semi-redondeados (6-8px) o Rectos (0px / esquinas vivas).
+    4. *Superficies y efectos:* Sombras suaves difusas, Glassmorphism con transparencias, Sombras duras proyectadas o Plano minimalista sin sombras.
+    5. *Modo de color:* Ambos (claro y oscuro con selector), Solo modo oscuro o Solo modo claro.
+  - *Protocolo Obligatorio de Tokens para Agentes de IA:*
+    - Si es la primera vez que un agente toca o escribe interfaz, tiene la **obligación estricta de crear y centralizar el archivo de tokens visuales** antes de codificar componentes.
+    - Si el proyecto ya estaba iniciado, el agente debe **priorizar y preservar los colores existentes** de la marca. Si es nuevo, deduce la paleta armónica óptima según el propósito y audiencia.
+    - Queda prohibido hardcodear colores o estilos arbitrarios en componentes.
+  - *Dónde y cómo declarar bibliotecas específicas:*
+    - Specty genera el archivo `.specty/rules/core/ui-style.md`. En su interior encontrarás el bloque reservado `<!-- USER_LIBRARIES_START -->`.
+    - Escribe allí las librerías o sistemas de componentes que deseas que los agentes usen obligatoriamente (ej: `shadcn/ui`, `Tailwind CSS`, `Radix UI`, `Lucide Icons`, `Framer Motion`, `Taiga UI`, `Ant Design`). Los agentes respetarán tanto tus librerías como los tokens del estilo visual.
 - **Motor de especificaciones:** Selecciona el motor que gestionara las propuestas, tareas y el archivado de especificaciones segun las necesidades de tu proyecto:
   - *openspec (Recomendado por defecto):* Utiliza el estandar oficial OpenSpec 1.14.1. Almacena las propuestas activas en `openspec/changes/<id>/` y las especificaciones consolidadas vigentes en `openspec/specs/`.
     - *Ventajas:* Total compatibilidad con el ecosistema OpenSpec, soporte de comandos rapidos en asistentes de IA (slash commands como `/opsx:propose`), formato estandarizado interoperable y base de conocimiento documental persistente que evoluciona con cada cambio archivado.

@@ -150,6 +150,58 @@ export const CommitConventionSchema = z.enum(COMMIT_CONVENTIONS).default("conven
 
 export type CommitConvention = z.infer<typeof CommitConventionSchema>;
 
+export const UI_PURPOSES = [
+  "general-purpose",
+  "saas-dashboard",
+  "ecommerce",
+  "landing-marketing",
+  "mobile-social",
+  "content-docs",
+  "fintech",
+  "health-wellness",
+  "education",
+] as const;
+export const UiPurposeSchema = z.enum(UI_PURPOSES).default("general-purpose");
+export type UiPurpose = z.infer<typeof UiPurposeSchema>;
+
+export const UI_TARGET_AUDIENCES = [
+  "general-public",
+  "professionals",
+  "developers",
+  "youth-students",
+  "elderly-accessible",
+] as const;
+export const UiTargetAudienceSchema = z.enum(UI_TARGET_AUDIENCES).default("general-public");
+export type UiTargetAudience = z.infer<typeof UiTargetAudienceSchema>;
+
+export const UI_BORDER_RADII = ["rounded", "semi-rounded", "sharp"] as const;
+export const UiBorderRadiusSchema = z.enum(UI_BORDER_RADII).default("semi-rounded");
+export type UiBorderRadius = z.infer<typeof UiBorderRadiusSchema>;
+
+export const UI_VISUAL_EFFECTS = [
+  "subtle-elevation",
+  "glassmorphism",
+  "hard-contrast",
+  "minimal-flat",
+] as const;
+export const UiVisualEffectsSchema = z.enum(UI_VISUAL_EFFECTS).default("subtle-elevation");
+export type UiVisualEffects = z.infer<typeof UiVisualEffectsSchema>;
+
+export const UI_COLOR_MODES = ["both", "dark", "light"] as const;
+export const UiColorModeSchema = z.enum(UI_COLOR_MODES).default("both");
+export type UiColorMode = z.infer<typeof UiColorModeSchema>;
+
+export const SpectyUiConfigSchema = z.object({
+  has_gui: z.boolean().default(false),
+  is_customized: z.boolean().default(false),
+  purpose: UiPurposeSchema.default("general-purpose"),
+  target_audience: UiTargetAudienceSchema.default("general-public"),
+  border_radius: UiBorderRadiusSchema.default("semi-rounded"),
+  visual_effects: UiVisualEffectsSchema.default("subtle-elevation"),
+  color_mode: UiColorModeSchema.default("both"),
+});
+export type SpectyUiConfig = z.infer<typeof SpectyUiConfigSchema>;
+
 export const GitConfigSchema = z.object({
   workflow: GitWorkflowSchema.default("feature-branch"),
   commit_convention: CommitConventionSchema.default("conventional"),
@@ -172,6 +224,7 @@ export const SpectyConfigSchema = z.object({
   git: GitConfigSchema.default(() => GitConfigSchema.parse({})),
   mcp: McpConfigSchema.default(() => McpConfigSchema.parse({})),
   metrics: z.object({ enabled: z.boolean().default(true) }).default({ enabled: true }),
+  ui: SpectyUiConfigSchema.optional(),
 });
 
 export type SpectyConfig = z.infer<typeof SpectyConfigSchema>;
@@ -206,6 +259,7 @@ export function createDefaultConfig(options?: DeepPartial<SpectyConfig>): Specty
     git: options?.git ?? {},
     mcp: options?.mcp ?? {},
     metrics: options?.metrics ?? { enabled: true },
+    ui: options?.ui ? SpectyUiConfigSchema.parse(options.ui) : undefined,
   });
 }
 

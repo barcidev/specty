@@ -19,6 +19,13 @@ export interface InitCommandOptions {
   mcp?: boolean;
   gitWorkflow?: string;
   commitConvention?: string;
+  hasGui?: boolean;
+  uiPurpose?: string;
+  uiTargetAudience?: string;
+  uiBorderRadius?: string;
+  uiVisualEffects?: string;
+  uiColorMode?: string;
+  uiCustomize?: boolean;
   verbose?: boolean;
   cwd?: string;
 }

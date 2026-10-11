@@ -42,6 +42,16 @@ export interface TranslationDictionary {
     ciPrompt: string;
     gitWorkflowPrompt: string;
     commitConventionPrompt: string;
+    hasGuiPrompt: string;
+    uiCustomizePrompt: string;
+    uiCustomizeOptionCustom: string;
+    uiCustomizeOptionDefault: string;
+    uiPurposePrompt: string;
+    uiAudiencePrompt: string;
+    uiBorderRadiusPrompt: string;
+    uiVisualEffectsPrompt: string;
+    uiColorModePrompt: string;
+    uiStyleNotice: string;
     summaryTitle: string;
     confirmPrompt: string;
     canceled: string;
@@ -114,6 +124,20 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       ciPrompt: "Generate CI workflow template?",
       gitWorkflowPrompt: "Select Git branching workflow:",
       commitConventionPrompt: "Select commit message convention:",
+      hasGuiPrompt: "Will the project have a graphical user interface (web, mobile, or desktop)?",
+      uiCustomizePrompt:
+        "Do you want to customize the interface visual style now or use the default neutral style?",
+      uiCustomizeOptionCustom:
+        "Customize now (purpose, audience, borders, effects, and color mode)",
+      uiCustomizeOptionDefault:
+        "Use recommended general-purpose neutral style by default (clean, adaptable)",
+      uiPurposePrompt: "What is the primary focus / purpose of the application?",
+      uiAudiencePrompt: "Who is the primary target audience for the interface?",
+      uiBorderRadiusPrompt: "Select corner / border radius geometry for components and cards:",
+      uiVisualEffectsPrompt: "Select surface treatment, shadows, and transparency effects:",
+      uiColorModePrompt: "Select color scheme mode (dark, light, or both):",
+      uiStyleNotice:
+        "UI style directives and token rules generated at .specty/rules/core/ui-style.md. You can declare specific component libraries in that file.",
       summaryTitle: "Setup configuration summary",
       confirmPrompt: "Apply this configuration to the repository?",
       canceled: "Setup canceled by user.",
@@ -187,6 +211,20 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       ciPrompt: "¿Generar plantilla de CI para integracion continua?",
       gitWorkflowPrompt: "Selecciona el flujo de trabajo de Git (branching workflow):",
       commitConventionPrompt: "Selecciona la convención para los mensajes de commit:",
+      hasGuiPrompt: "¿El proyecto contará con interfaz gráfica (web, móvil o escritorio)?",
+      uiCustomizePrompt:
+        "¿Deseas personalizar el estilo visual de la interfaz ahora o usar el estilo neutral por defecto?",
+      uiCustomizeOptionCustom:
+        "Personalizar ahora (propósito, audiencia, bordes, efectos y colores)",
+      uiCustomizeOptionDefault:
+        "Usar estilo neutral de propósito general por defecto (limpio, profesional, adaptable)",
+      uiPurposePrompt: "¿Hacia dónde está enfocada la aplicación / qué propósito tiene?",
+      uiAudiencePrompt: "¿Qué tipo de usuarios utilizarán principalmente la interfaz?",
+      uiBorderRadiusPrompt: "Selecciona la geometría de bordes para componentes y tarjetas:",
+      uiVisualEffectsPrompt: "Selecciona el tratamiento de superficies, sombras y transparencias:",
+      uiColorModePrompt: "Selecciona el esquema de color (oscuro, claro o ambos):",
+      uiStyleNotice:
+        "Directivas de estilo de interfaz y reglas de tokens generadas en .specty/rules/core/ui-style.md. Puedes declarar bibliotecas de componentes en dicho archivo.",
       summaryTitle: "Resumen de configuracion",
       confirmPrompt: "¿Aplicar esta configuracion al repositorio?",
       canceled: "Configuracion cancelada por el usuario.",
