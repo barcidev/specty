@@ -70,4 +70,33 @@ describe("generate/ui-style-rules-formatter", () => {
     expect(output).toContain("--radius: 0.5rem;");
     expect(output).toContain("--shadow-card: 0 4px 16px -2px rgba(0,0,0,0.08);");
   });
+
+  it("formats detected libraries and extracted CSS tokens into rules file", () => {
+    const config: SpectyUiConfig = {
+      has_gui: true,
+      is_customized: false,
+      purpose: "general-purpose",
+      target_audience: "general-public",
+      border_radius: "semi-rounded",
+      visual_effects: "subtle-elevation",
+      color_mode: "both",
+      detected_libraries: ["Tailwind CSS", "shadcn/ui", "Lucide Icons"],
+      tokens: [
+        { name: "--primary", value: "hsl(221.2 83.2% 53.3%)" },
+        { name: "--radius", value: "0.5rem" },
+      ],
+    };
+
+    const outputEs = formatUiStyleRule(config, "es");
+    expect(outputEs).toContain("- **Tailwind CSS** (activa en el proyecto)");
+    expect(outputEs).toContain("- **shadcn/ui** (activa en el proyecto)");
+    expect(outputEs).toContain("- **Lucide Icons** (activa en el proyecto)");
+    expect(outputEs).toContain("Tokens Semanticos Extraidos del Proyecto:");
+    expect(outputEs).toContain("--primary: hsl(221.2 83.2% 53.3%);");
+
+    const outputEn = formatUiStyleRule(config, "en");
+    expect(outputEn).toContain("- **Tailwind CSS** (active in repository)");
+    expect(outputEn).toContain("Semantic Tokens Extracted from Project:");
+    expect(outputEn).toContain("--primary: hsl(221.2 83.2% 53.3%);");
+  });
 });

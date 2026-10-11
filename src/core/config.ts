@@ -191,6 +191,12 @@ export const UI_COLOR_MODES = ["both", "dark", "light"] as const;
 export const UiColorModeSchema = z.enum(UI_COLOR_MODES).default("both");
 export type UiColorMode = z.infer<typeof UiColorModeSchema>;
 
+export const UiTokenSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+});
+export type UiToken = z.infer<typeof UiTokenSchema>;
+
 export const SpectyUiConfigSchema = z.object({
   has_gui: z.boolean().default(false),
   is_customized: z.boolean().default(false),
@@ -199,6 +205,8 @@ export const SpectyUiConfigSchema = z.object({
   border_radius: UiBorderRadiusSchema.default("semi-rounded"),
   visual_effects: UiVisualEffectsSchema.default("subtle-elevation"),
   color_mode: UiColorModeSchema.default("both"),
+  detected_libraries: z.array(z.string()).default([]),
+  tokens: z.array(UiTokenSchema).default([]),
 });
 export type SpectyUiConfig = z.infer<typeof SpectyUiConfigSchema>;
 

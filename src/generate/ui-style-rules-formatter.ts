@@ -156,6 +156,26 @@ export function formatUiStyleRule(ui: SpectyUiConfig, lang: "es" | "en" = "es"):
           ? "Ambos (Modo Claro y Modo Oscuro con soporte completo y selector)"
           : "Both (Full Light & Dark mode support with theme toggle)";
 
+  const detectedLibrariesEs =
+    ui.detected_libraries && ui.detected_libraries.length > 0
+      ? ui.detected_libraries.map((lib) => `- **${lib}** (activa en el proyecto)`).join("\n")
+      : "- Bibliotecas declaradas: (Ninguna especificada aun. Los agentes utilizaran estilos nativos y utilidades base consumiendo los tokens).";
+
+  const detectedLibrariesEn =
+    ui.detected_libraries && ui.detected_libraries.length > 0
+      ? ui.detected_libraries.map((lib) => `- **${lib}** (active in repository)`).join("\n")
+      : "- Declared Libraries: (None specified yet. Agents will use native styling and tokens).";
+
+  const tokensBlockEs =
+    ui.tokens && ui.tokens.length > 0
+      ? `\n- **Tokens Semanticos Extraidos del Proyecto:**\n  \`\`\`css\n  :root {\n${ui.tokens.map((t) => `    ${t.name}: ${t.value};`).join("\n")}\n  }\n  \`\`\`\n`
+      : "";
+
+  const tokensBlockEn =
+    ui.tokens && ui.tokens.length > 0
+      ? `\n- **Semantic Tokens Extracted from Project:**\n  \`\`\`css\n  :root {\n${ui.tokens.map((t) => `    ${t.name}: ${t.value};`).join("\n")}\n  }\n  \`\`\`\n`
+      : "";
+
   if (isEs) {
     return `# Directivas de Estilo Visual y Diseno de Interfaces
 
@@ -198,7 +218,7 @@ Cualquier agente de IA que genere o modifique codigo de interfaz debe acatar est
   \`\`\`css
   ${effectsMeta.css}
   \`\`\`
-
+${tokensBlockEs}
 - **Tokens Semanticos Minimos Obligatorios:**
   - \`--bg-canvas\`: Color del lienzo principal.
   - \`--bg-surface\`: Fondo de tarjetas, paneles y contenedores.
@@ -218,7 +238,7 @@ Cualquier agente de IA que genere o modifique codigo de interfaz debe acatar est
 <!-- USER_LIBRARIES_START -->
 ## 5. Bibliotecas y Componentes Especificos del Proyecto
 <!-- Si deseas que los agentes utilicen librerias especificas de UI (ej: shadcn/ui, Tailwind CSS v4, Lucide Icons, Radix UI, Framer Motion, Taiga UI, Ant Design, Material UI), declaralas aqui -->
-- Bibliotecas declaradas: (Ninguna especificada aun. Los agentes utilizaran estilos nativos y utilidades base consumiendo los tokens).
+${detectedLibrariesEs}
 <!-- USER_LIBRARIES_END -->
 `;
   }
@@ -264,7 +284,7 @@ Any AI assistant implementing or modifying user interface code must strictly adh
   \`\`\`css
   ${effectsMeta.css}
   \`\`\`
-
+${tokensBlockEn}
 - **Mandatory Semantic Tokens:**
   - \`--bg-canvas\`: Base canvas background.
   - \`--bg-surface\`: Card, panel, and dialog surface background.
@@ -284,7 +304,7 @@ Any AI assistant implementing or modifying user interface code must strictly adh
 <!-- USER_LIBRARIES_START -->
 ## 5. Specific Component Libraries & Design Systems
 <!-- If you wish AI agents to use specific UI libraries (e.g., shadcn/ui, Tailwind CSS v4, Lucide Icons, Radix UI, Framer Motion, Taiga UI, Ant Design, Material UI), declare them here -->
-- Declared Libraries: (None specified yet. Agents will use native styling and tokens).
+${detectedLibrariesEn}
 <!-- USER_LIBRARIES_END -->
 `;
 }
