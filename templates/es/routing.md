@@ -5,9 +5,9 @@ Carga progresiva de contexto: Cada tarea activa debe cargar únicamente el rol y
 | Tipo de Tarea | Rol Responsable | Reglas a Cargar | Alcance Típico de Archivos |
 | --- | --- | --- | --- |
 | **Planificación** | `orchestrator` | `rules/core/*` | `openspec/**`, `AGENTS.md` |
-| **Datos / BD** | `data` | `rules/task/data.md` | `prisma/**`, `src/database/**`, `migrations/**` |
-| **Lógica / API** | `backend` | `rules/task/api.md`, `rules/lang/*` | `src/modules/**`, `src/services/**`, `lib/domain/**` |
-| **Interfaz / UI** | `frontend` | `rules/task/ui.md`, `rules/framework/*` | `src/components/**`, `src/app/**`, `lib/presentation/**` |
+| **Datos / BD** | `data` | `rules/task/data.md`, `rules/core/coding-standards.md` | `prisma/**`, `src/database/**`, `migrations/**` |
+| **Lógica / API** | `backend` | `rules/task/api.md`, `rules/lang/*`, `rules/core/coding-standards.md` | `src/modules/**`, `src/services/**`, `lib/domain/**` |
+| **Interfaz / UI** | `frontend` | `rules/task/ui.md`, `rules/framework/*`, `rules/core/coding-standards.md` | `src/components/**`, `src/app/**`, `lib/presentation/**` |
 | **Aseguramiento** | `testing` | `rules/task/testing.md` | `test/**`, `tests/**`, `**/*.spec.*` |
 | **Auditoría** | `security-review`| `rules/task/security.md` | `openspec/changes/<change>/verification/**` |
 

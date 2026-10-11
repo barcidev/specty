@@ -14,6 +14,8 @@
 4. **Reanudación de sesión:** Al iniciar cualquier interacción, lee `specty.yaml` y `tasks.md` del change activo y reanuda desde la primera tarea sin marcar (`- [ ]`).
 5. **Orientación mediante `specty next`:** Al inicio de cada turno, invoca `specty next --card` o lee la tarjeta de estado para anclar tu contexto de ejecución (`[change: <id> | status: ... | task: ... | next: ...]`).
 6. **Intercepción dura de herramientas (`specty guard`):** Todas las modificaciones de archivos y llamadas a bash son interceptadas por `specty guard`. Cualquier edición fuera del alcance `[files: ...]` de la tarea activa o sin una especificación aprobada será bloqueada de inmediato.
+7. **Scaffolding oficial con CLI (`@latest`):** Para proyectos o módulos nuevos, la configuración y boilerplate base DEBE generarse mediante el CLI oficial del framework respectivo (`npm create vite@latest`, `npx create-next-app@latest`, `ng new`, `nest new`, etc.) con flags no interactivos y garantizando la versión más actual. NUNCA crees el boilerplate archivo por archivo manualmente.
+8. **Estándares de calidad y límite de 300 líneas:** Ningún archivo debe exceder las 300 líneas de código en la medida de lo posible (descomponer aplicando SRP). Prefiere constantes (`const`, `readonly`, inmutabilidad) sobre variables mutables y aplica rigurosamente principios SOLID tanto en código nuevo como existente. Consulta `.specty/rules/core/coding-standards.md`.
 <!-- specty:end id=orchestrator -->
 
 <!-- specty:begin id=project -->
@@ -49,5 +51,6 @@ El desarrollo se rige por un flujo de 5 fases estrictas:
 - **Catálogo de Roles:** Consulta `.specty/agents/<rol>.md` para conocer responsabilidades y archivos permitidos.
 - **Matriz de Enrutamiento:** Consulta `.specty/routing.md` para determinar el rol y las reglas a cargar por tarea.
 - **Reglas Modulares:** Consulta `.specty/rules/` para directrices específicas de tecnología y arquitectura.
+- **Estándares de Código y Scaffolding:** Consulta `.specty/rules/core/coding-standards.md` para directrices obligatorias de scaffolding con CLI oficial, modularidad (<= 300 líneas), inmutabilidad y SOLID.
 {{uiDirectives}}- **Herramientas del CLI:** Puedes invocar comandos de specty vía `specty status`, `specty next`, `specty guard`, `specty verify <change>` o `specty validate [change]`. Si usas OpenSpec, puedes invocar comandos directos con `specty openspec [args...]`.
 <!-- specty:end id=links -->

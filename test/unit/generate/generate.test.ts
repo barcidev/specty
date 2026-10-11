@@ -140,6 +140,15 @@ describe("generator: generateProjectInfrastructure", () => {
     const workflow = await fs.readFile(path.join(tmpDir, ".specty/rules/core/workflow.md"), "utf8");
     expect(workflow.length).toBeGreaterThan(0);
 
+    const codingStandards = await fs.readFile(
+      path.join(tmpDir, ".specty/rules/core/coding-standards.md"),
+      "utf8",
+    );
+    expect(codingStandards).toContain("Scaffolding");
+    expect(codingStandards).toContain("@latest");
+    expect(codingStandards).toContain("300");
+    expect(codingStandards).toContain("SOLID");
+
     // Verify language & framework rules
     const tsRule = await fs.readFile(path.join(tmpDir, ".specty/rules/lang/typescript.md"), "utf8");
     expect(tsRule.length).toBeGreaterThan(0);

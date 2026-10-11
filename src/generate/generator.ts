@@ -136,7 +136,7 @@ export async function generateProjectInfrastructure(
   });
 
   // 4. Core rules in .specty/rules/core/
-  const coreRules = ["workflow", "spec-format", "tasks-format", "verification"];
+  const coreRules = ["workflow", "spec-format", "tasks-format", "verification", "coding-standards"];
 
   for (const rule of coreRules) {
     const rawRule = await loadTemplate(lang, `rules/core/${rule}.md`);
