@@ -12,6 +12,8 @@ describe("generate/ui-style-rules-formatter", () => {
       border_radius: "rounded",
       visual_effects: "subtle-elevation",
       color_mode: "both",
+      detected_libraries: [],
+      tokens: [],
     };
 
     const output = formatUiStyleRule(config, "es");
@@ -37,6 +39,8 @@ describe("generate/ui-style-rules-formatter", () => {
       border_radius: "sharp",
       visual_effects: "glassmorphism",
       color_mode: "dark",
+      detected_libraries: [],
+      tokens: [],
     };
 
     const output = formatUiStyleRule(config, "en");
@@ -61,6 +65,8 @@ describe("generate/ui-style-rules-formatter", () => {
       border_radius: "semi-rounded",
       visual_effects: "subtle-elevation",
       color_mode: "both",
+      detected_libraries: [],
+      tokens: [],
     };
 
     const output = formatUiStyleRule(config, "es");
