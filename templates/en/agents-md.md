@@ -19,10 +19,17 @@
 <!-- specty:begin id=project -->
 ## 3. Technical Project Context
 - **Project:** {{projectName}}
+- **Repository Structure:** {{layoutTitle}}
 - **Primary Stack:** {{primaryLanguage}}
 - **Frameworks:** {{frameworks}}
 - **Architecture Pattern:** {{architecture}}
 - **Spec Engine:** {{specEngine}}
+
+### Governed Scopes and Modules:
+{{scopesSummary}}
+
+### Architectural Directives:
+{{structureDirectives}}
 <!-- specty:end id=project -->
 
 <!-- specty:begin id=workflow -->

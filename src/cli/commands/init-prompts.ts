@@ -13,7 +13,10 @@ import { getDictionary, normalizeLanguage, type SupportedLanguage } from "../../
 import { defaultDetectorRegistry } from "../../detect/detector-registry.js";
 import { resolveDefaultSourcePaths } from "../../detect/source-paths-resolver.js";
 import type {
+  MonorepoDetection,
+  MonorepoKind,
   RepositoryDetectionResult,
+  RepositoryLayout,
   StackDetection,
   SupportedLanguageId,
 } from "../../detect/types.js";
@@ -21,6 +24,12 @@ import { getRecommendedArchitectures } from "./architectures.js";
 import { getCommitConventionOptions, getGitWorkflowOptions } from "./git-options.js";
 import type { InitCommandOptions, InitFlowResult } from "./init-types.js";
 import { getFrameworkOptions, getLanguageOptions } from "./stack-options.js";
+import {
+  getMonorepoToolOptions,
+  getStructureOptions,
+  getWorkspaceComponentOptions,
+  type StructureType,
+} from "./structure-options.js";
 
 const TOOL_CONFIG_EXAMPLES: Record<SupportedTool, string> = {
   antigravity: ".gemini/config/rules, GEMINI.md",
@@ -129,90 +138,266 @@ export async function runInteractiveInit(
 
   let architecture = "clean";
   let chosenStack: StackDetection | undefined;
+  let chosenLayout: RepositoryLayout = detection.layout;
+  let chosenMonorepo: MonorepoDetection | undefined = detection.monorepo;
+  let chosenScopes: Array<{
+    path: string;
+    stack: { language: SupportedLanguageId; frameworks: string[] };
+    verify: Record<string, string>;
+  }> = [];
 
   if (projectKind === "new") {
-    // Step 3.1: Language Selection for new project
-    const defaultLanguage: SupportedLanguageId =
-      (options.stack as SupportedLanguageId) ?? primaryScope?.stack.language ?? "typescript";
-
-    const langRes = await p.select({
-      message: dict.init.newProjectLanguagePrompt,
-      options: getLanguageOptions(selectedLang).map((opt) => ({
+    // Step 3.0: Estructura del repositorio (Monolito, Monorepo o Workspace)
+    const structRes = await p.select({
+      message: dict.init.structurePrompt,
+      options: getStructureOptions(selectedLang).map((opt) => ({
         value: opt.value,
         label: opt.label,
         hint: opt.hint,
       })),
-      initialValue: defaultLanguage,
+      initialValue: (options.structure as StructureType) ?? "single",
     });
 
-    if (p.isCancel(langRes)) {
+    if (p.isCancel(structRes)) {
       p.cancel(dict.init.canceled);
       return null;
     }
-    const chosenLanguage = langRes as SupportedLanguageId;
+    const chosenStructure = structRes as StructureType;
+    chosenLayout = chosenStructure;
 
-    // Step 3.2: Framework Selection for new project
-    const fwOptions = getFrameworkOptions(chosenLanguage, selectedLang);
-    let chosenFrameworks: string[] = [];
+    if (chosenStructure === "single") {
+      // Caso 1: Monolito -> Seleccionar exactamente 1 lenguaje y 1 framework
+      const defaultLanguage: SupportedLanguageId =
+        (options.stack as SupportedLanguageId) ?? primaryScope?.stack.language ?? "typescript";
 
-    if (fwOptions.length > 0) {
-      const defaultFw =
-        options.framework && fwOptions.some((f) => f.value === options.framework)
-          ? options.framework
-          : primaryScope?.stack.language === chosenLanguage &&
-              primaryScope?.stack.frameworks[0] &&
-              fwOptions.some((f) => f.value === primaryScope.stack.frameworks[0])
-            ? primaryScope.stack.frameworks[0]
-            : fwOptions[0]?.value;
-
-      const fwRes = await p.select({
-        message: dict.init.newProjectFrameworkPrompt,
-        options: fwOptions.map((opt) => ({
+      const langRes = await p.select({
+        message: dict.init.newProjectLanguagePrompt,
+        options: getLanguageOptions(selectedLang).map((opt) => ({
           value: opt.value,
           label: opt.label,
           hint: opt.hint,
         })),
-        initialValue: defaultFw,
+        initialValue: defaultLanguage,
       });
 
-      if (p.isCancel(fwRes)) {
+      if (p.isCancel(langRes)) {
+        p.cancel(dict.init.canceled);
+        return null;
+      }
+      const chosenLanguage = langRes as SupportedLanguageId;
+
+      const fwOptions = getFrameworkOptions(chosenLanguage, selectedLang);
+      let chosenFrameworks: string[] = [];
+
+      if (fwOptions.length > 0) {
+        const defaultFw =
+          options.framework && fwOptions.some((f) => f.value === options.framework)
+            ? options.framework
+            : primaryScope?.stack.language === chosenLanguage &&
+                primaryScope?.stack.frameworks[0] &&
+                fwOptions.some((f) => f.value === primaryScope.stack.frameworks[0])
+              ? primaryScope.stack.frameworks[0]
+              : fwOptions[0]?.value;
+
+        const fwRes = await p.select({
+          message: dict.init.newProjectFrameworkPrompt,
+          options: fwOptions.map((opt) => ({
+            value: opt.value,
+            label: opt.label,
+            hint: opt.hint,
+          })),
+          initialValue: defaultFw,
+        });
+
+        if (p.isCancel(fwRes)) {
+          p.cancel(dict.init.canceled);
+          return null;
+        }
+
+        if (fwRes && fwRes !== "none") {
+          chosenFrameworks = [fwRes as string];
+        }
+      }
+
+      chosenStack = {
+        language: chosenLanguage,
+        frameworks: chosenFrameworks,
+        confidence: 1.0,
+        evidence: ["user-selection:monolith"],
+        hasCustomTemplates: ["typescript", "javascript", "dart", "csharp"].includes(chosenLanguage),
+      };
+
+      chosenScopes = [
+        {
+          path: ".",
+          stack: {
+            language: chosenLanguage,
+            frameworks: chosenFrameworks,
+          },
+          verify: {},
+        },
+      ];
+
+      const archData = getRecommendedArchitectures(chosenStack);
+      const archRes = await p.select({
+        message:
+          selectedLang === "es"
+            ? "Selecciona el patrón arquitectural del proyecto:"
+            : "Select project architectural pattern:",
+        options: archData.options.map((opt) => ({
+          value: opt.value,
+          label: opt.label,
+          hint: opt.description,
+        })),
+        initialValue: archData.recommended,
+      });
+
+      if (p.isCancel(archRes)) {
+        p.cancel(dict.init.canceled);
+        return null;
+      }
+      architecture = archRes as string;
+    } else if (chosenStructure === "monorepo") {
+      // Caso 2: Monorepo -> Lista de monorepos disponibles y solo se selecciona 1
+      const monorepoOptions = getMonorepoToolOptions(selectedLang);
+      const defaultMonorepoTool = (options.monorepoKind as MonorepoKind) ?? "turbo";
+
+      const monoRes = await p.select({
+        message: dict.init.monorepoToolPrompt,
+        options: monorepoOptions.map((opt) => ({
+          value: opt.value,
+          label: opt.label,
+          hint: opt.hint,
+        })),
+        initialValue: defaultMonorepoTool,
+      });
+
+      if (p.isCancel(monoRes)) {
+        p.cancel(dict.init.canceled);
+        return null;
+      }
+      const chosenMonoKind = monoRes as MonorepoKind;
+      const selectedMonoDef =
+        monorepoOptions.find((m) => m.value === chosenMonoKind) ?? monorepoOptions[0];
+      if (!selectedMonoDef) {
         p.cancel(dict.init.canceled);
         return null;
       }
 
-      if (fwRes && fwRes !== "none") {
-        chosenFrameworks = [fwRes as string];
+      const chosenLanguage = selectedMonoDef.defaultLanguage;
+      let chosenFrameworks = [...selectedMonoDef.defaultFrameworks];
+
+      if (["turbo", "nx", "pnpm", "npm", "yarn", "lerna"].includes(chosenMonoKind)) {
+        const fwOptions = getFrameworkOptions("typescript", selectedLang);
+        const fwRes = await p.select({
+          message: dict.init.newProjectFrameworkPrompt,
+          options: fwOptions.map((opt) => ({
+            value: opt.value,
+            label: opt.label,
+            hint: opt.hint,
+          })),
+          initialValue: selectedMonoDef.defaultFrameworks[0] ?? fwOptions[0]?.value,
+        });
+
+        if (p.isCancel(fwRes)) {
+          p.cancel(dict.init.canceled);
+          return null;
+        }
+        if (fwRes && fwRes !== "none") {
+          chosenFrameworks = [fwRes as string];
+        }
       }
+
+      chosenStack = {
+        language: chosenLanguage,
+        frameworks: chosenFrameworks,
+        confidence: 1.0,
+        evidence: [`user-selection:monorepo:${chosenMonoKind}`],
+        hasCustomTemplates: true,
+      };
+
+      chosenMonorepo = {
+        isMonorepo: true,
+        kind: chosenMonoKind,
+        packageGlobs: selectedMonoDef.packageGlobs,
+        packagePaths: selectedMonoDef.scopes.map((s) => s.path),
+      };
+
+      chosenScopes = selectedMonoDef.scopes.map((s) => ({
+        path: s.path,
+        stack: {
+          language: s.language,
+          frameworks: s.frameworks.length > 0 ? chosenFrameworks : [],
+        },
+        verify: {},
+      }));
+
+      const archData = getRecommendedArchitectures(chosenStack);
+      const archRes = await p.select({
+        message:
+          selectedLang === "es"
+            ? "Selecciona el patrón arquitectural del monorepo:"
+            : "Select monorepo architectural pattern:",
+        options: archData.options.map((opt) => ({
+          value: opt.value,
+          label: opt.label,
+          hint: opt.description,
+        })),
+        initialValue: "modular",
+      });
+
+      if (p.isCancel(archRes)) {
+        p.cancel(dict.init.canceled);
+        return null;
+      }
+      architecture = archRes as string;
+    } else if (chosenStructure === "workspace") {
+      // Caso 3: Workspace -> Poder elegir multiples frameworks y/o lenguajes o monorepos
+      const compOptions = getWorkspaceComponentOptions(selectedLang);
+      const defaultComps = options.components ?? ["web-react", "api-fastapi"];
+
+      const compsRes = await p.multiselect({
+        message: dict.init.workspaceComponentsPrompt,
+        options: compOptions.map((opt) => ({
+          value: opt.value,
+          label: opt.label,
+          hint: opt.hint,
+        })),
+        initialValues: defaultComps,
+        required: true,
+      });
+
+      if (p.isCancel(compsRes)) {
+        p.cancel(dict.init.canceled);
+        return null;
+      }
+      const selectedComponentValues = compsRes as string[];
+      const selectedComponents = compOptions.filter((c) =>
+        selectedComponentValues.includes(c.value),
+      );
+
+      const allLangs = Array.from(new Set(selectedComponents.map((c) => c.language)));
+      const allFws = Array.from(new Set(selectedComponents.flatMap((c) => c.frameworks)));
+
+      chosenStack = {
+        language: allLangs[0] ?? "typescript",
+        frameworks: allFws,
+        confidence: 1.0,
+        evidence: ["user-selection:workspace:polyglot"],
+        hasCustomTemplates: true,
+      };
+
+      chosenScopes = selectedComponents.map((c) => ({
+        path: c.path,
+        stack: {
+          language: c.language,
+          frameworks: c.frameworks,
+        },
+        verify: {},
+      }));
+
+      architecture = "modular";
     }
-
-    chosenStack = {
-      language: chosenLanguage,
-      frameworks: chosenFrameworks,
-      confidence: 1.0,
-      evidence: ["user-selection"],
-      hasCustomTemplates: ["typescript", "javascript", "dart", "csharp"].includes(chosenLanguage),
-    };
-
-    // Step 3.3: Architectural Pattern Selection
-    const archData = getRecommendedArchitectures(chosenStack);
-    const archRes = await p.select({
-      message:
-        selectedLang === "es"
-          ? "Selecciona el patrón arquitectural del proyecto:"
-          : "Select project architectural pattern:",
-      options: archData.options.map((opt) => ({
-        value: opt.value,
-        label: opt.label,
-        hint: opt.description,
-      })),
-      initialValue: archData.recommended,
-    });
-
-    if (p.isCancel(archRes)) {
-      p.cancel(dict.init.canceled);
-      return null;
-    }
-    architecture = archRes as string;
   }
 
   // Step 4: AI Tools (Section 8.0 #4 - All preselected by default)
@@ -378,12 +563,17 @@ export async function runInteractiveInit(
 
   // Step 10: Summary and Confirmation (Section 8.0 #8)
   const effectiveStackInfo =
-    projectKind === "new" && chosenStack
-      ? `${chosenStack.language} (${chosenStack.frameworks.join(", ") || "core"})`
+    projectKind === "new"
+      ? chosenLayout === "single"
+        ? `${chosenStack?.language ?? "generic"} (${chosenStack?.frameworks.join(", ") || "core"})`
+        : chosenLayout === "monorepo"
+          ? `${chosenMonorepo?.kind?.toUpperCase() ?? "MONOREPO"} [${chosenStack?.language ?? "typescript"}]`
+          : `Workspace (${chosenScopes.map((s) => `${s.path}:${s.stack.language}`).join(", ")})`
       : detectedStackInfo;
 
   const summaryLines = [
     `Language: ${selectedLang.toUpperCase()}`,
+    `Structure: ${chosenLayout}`,
     `Stack: ${effectiveStackInfo}`,
     `Project: ${projectKind} (${architecture})`,
     `Spec engine: ${specEngine}`,
@@ -408,43 +598,45 @@ export async function runInteractiveInit(
   }
 
   const scopes =
-    projectKind === "new" && chosenStack
-      ? [
-          {
-            path: ".",
-            stack: {
-              language: chosenStack.language,
-              frameworks: chosenStack.frameworks,
-            },
-            verify: {},
-          },
-        ]
-      : detection.scopes.length > 0
-        ? detection.scopes.map((s) => ({
-            path: s.path,
-            stack: {
-              language: s.stack.language,
-              frameworks: s.stack.frameworks,
-            },
-            verify: s.verify,
-          }))
-        : [
+    projectKind === "new" && chosenScopes.length > 0
+      ? chosenScopes
+      : projectKind === "new" && chosenStack
+        ? [
             {
               path: ".",
               stack: {
-                language: primaryScope?.stack.language ?? "typescript",
-                frameworks: primaryScope?.stack.frameworks ?? [],
+                language: chosenStack.language,
+                frameworks: chosenStack.frameworks,
               },
               verify: {},
             },
-          ];
+          ]
+        : detection.scopes.length > 0
+          ? detection.scopes.map((s) => ({
+              path: s.path,
+              stack: {
+                language: s.stack.language,
+                frameworks: s.stack.frameworks,
+              },
+              verify: s.verify,
+            }))
+          : [
+              {
+                path: ".",
+                stack: {
+                  language: primaryScope?.stack.language ?? "typescript",
+                  frameworks: primaryScope?.stack.frameworks ?? [],
+                },
+                verify: {},
+              },
+            ];
 
   const config: SpectyConfig = createDefaultConfig({
     language: selectedLang,
     spec_engine: specEngine,
     project: {
       kind: projectKind,
-      layout: detection.layout,
+      layout: chosenLayout,
       architecture,
     },
     scopes,
@@ -456,7 +648,21 @@ export async function runInteractiveInit(
     governance: {
       hooks: enableHooks,
       ci: selectedCi,
-      source_paths: resolveDefaultSourcePaths(detection),
+      source_paths: resolveDefaultSourcePaths({
+        ...detection,
+        layout: chosenLayout,
+        scopes: scopes.map((s) => ({
+          path: s.path,
+          stack: {
+            language: s.stack.language,
+            frameworks: s.stack.frameworks,
+            confidence: 1.0,
+            evidence: [],
+            hasCustomTemplates: true,
+          },
+          verify: s.verify,
+        })),
+      }),
       exempt_paths: ["**/*.md", "openspec/**", "docs/**"],
       bypass: { env: "SPECTY_BYPASS", trailer: "Specty-Bypass" },
       quality_gates: { lint: true, test: true, static: true, coverage_min: 0 },

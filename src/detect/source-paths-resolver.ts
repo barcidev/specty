@@ -27,8 +27,13 @@ export function resolveDefaultSourcePaths(detection?: RepositoryDetectionResult 
     return ["src/**"];
   }
 
-  // Monorepo: include all package / scope directories
-  if (detection.layout === "monorepo" && detection.scopes.length > 0) {
+  // Monorepo / Workspace: include all package / scope directories
+  if (
+    (detection.layout === "monorepo" ||
+      detection.layout === "multi-repo" ||
+      detection.layout === "workspace") &&
+    detection.scopes.length > 0
+  ) {
     const paths = new Set<string>();
     for (const scope of detection.scopes) {
       const relPath = scope.path.replace(/\\/g, "/").replace(/^\.\//, "");

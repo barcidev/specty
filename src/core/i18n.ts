@@ -27,6 +27,12 @@ export interface TranslationDictionary {
     projectKindPrompt: string;
     projectKindNew: string;
     projectKindExisting: string;
+    structurePrompt: string;
+    structureMonolith: string;
+    structureMonorepo: string;
+    structureWorkspace: string;
+    monorepoToolPrompt: string;
+    workspaceComponentsPrompt: string;
     newProjectLanguagePrompt: string;
     newProjectFrameworkPrompt: string;
     toolsPrompt: string;
@@ -93,6 +99,12 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       projectKindPrompt: "Is this a new or existing project?",
       projectKindNew: "New project (guided architecture setup)",
       projectKindExisting: "Existing project (brownfield analysis and incremental specs)",
+      structurePrompt: "What repository structure will this project use?",
+      structureMonolith: "Monolith (Single Project)",
+      structureMonorepo: "Monorepo (Multi-package / Orchestrated)",
+      structureWorkspace: "Workspace (Polyglot / Multi-stack)",
+      monorepoToolPrompt: "Select the monorepo orchestration tool:",
+      workspaceComponentsPrompt: "Select workspace components, frameworks, and languages:",
       newProjectLanguagePrompt: "Select the programming language for the new project:",
       newProjectFrameworkPrompt: "Select the primary framework or runtime environment:",
       toolsPrompt: "Select AI assistant tools to configure:",
@@ -159,6 +171,13 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       projectKindPrompt: "¿El proyecto es nuevo o existente?",
       projectKindNew: "Proyecto nuevo (seleccion guiada de arquitectura)",
       projectKindExisting: "Proyecto existente (analisis brownfield y specs incrementales)",
+      structurePrompt: "¿Qué estructura tendrá el repositorio?",
+      structureMonolith: "Monolito (Single Project)",
+      structureMonorepo: "Monorepo (Multi-paquete / Orquestado)",
+      structureWorkspace: "Workspace (Políglota / Multi-stack)",
+      monorepoToolPrompt: "Selecciona la herramienta orquestadora del monorepo:",
+      workspaceComponentsPrompt:
+        "Selecciona los componentes, frameworks y lenguajes del workspace:",
       newProjectLanguagePrompt: "Selecciona el lenguaje de programación del nuevo proyecto:",
       newProjectFrameworkPrompt: "Selecciona el framework o entorno principal:",
       toolsPrompt: "Selecciona las herramientas de IA a configurar:",

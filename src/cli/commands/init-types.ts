@@ -10,6 +10,9 @@ export interface InitCommandOptions {
   stack?: string;
   framework?: string;
   projectKind?: "new" | "existing";
+  structure?: "single" | "monorepo" | "workspace";
+  monorepoKind?: string;
+  components?: string[];
   specEngine?: "openspec" | "builtin";
   hooks?: boolean;
   ci?: boolean;

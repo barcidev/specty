@@ -56,8 +56,10 @@ export interface MonorepoDetection {
   packagePaths: string[];
 }
 
+export type RepositoryLayout = "single" | "monorepo" | "multi-repo" | "workspace";
+
 export interface RepositoryDetectionResult {
-  layout: "single" | "monorepo" | "multi-repo";
+  layout: RepositoryLayout;
   monorepo?: MonorepoDetection;
   scopes: DetectedScope[];
   primaryLanguage?: SupportedLanguageId;
