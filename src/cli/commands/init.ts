@@ -151,16 +151,38 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
           }).recommended
         : "clean";
 
-    const hasGui = options.hasGui;
+    const detectedUi = detection.ui;
+    const hasGui = options.hasGui ?? Boolean(detectedUi?.hasGui);
+
+    const resolvedLibraries: string[] = [];
+    if (detectedUi?.libraries) {
+      resolvedLibraries.push(...detectedUi.libraries);
+    }
+    if (options.uiLibraries) {
+      const extra = Array.isArray(options.uiLibraries)
+        ? options.uiLibraries
+        : options.uiLibraries.split(",").map((s) => s.trim());
+      for (const lib of extra) {
+        if (lib.length > 0 && !resolvedLibraries.includes(lib)) {
+          resolvedLibraries.push(lib);
+        }
+      }
+    }
+
     const uiConfig: SpectyUiConfig | undefined = hasGui
       ? {
           has_gui: true,
           is_customized: Boolean(options.uiCustomize),
           purpose: (options.uiPurpose as UiPurpose) ?? "general-purpose",
           target_audience: (options.uiTargetAudience as UiTargetAudience) ?? "general-public",
-          border_radius: (options.uiBorderRadius as UiBorderRadius) ?? "semi-rounded",
+          border_radius:
+            (options.uiBorderRadius as UiBorderRadius) ??
+            detectedUi?.borderRadius ??
+            "semi-rounded",
           visual_effects: (options.uiVisualEffects as UiVisualEffects) ?? "subtle-elevation",
-          color_mode: (options.uiColorMode as UiColorMode) ?? "both",
+          color_mode: (options.uiColorMode as UiColorMode) ?? detectedUi?.colorMode ?? "both",
+          detected_libraries: resolvedLibraries,
+          tokens: detectedUi?.tokens ?? [],
         }
       : undefined;
 

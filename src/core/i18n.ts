@@ -51,6 +51,9 @@ export interface TranslationDictionary {
     uiBorderRadiusPrompt: string;
     uiVisualEffectsPrompt: string;
     uiColorModePrompt: string;
+    uiDetectedLibraries: string;
+    uiMissingLibrariesPrompt: string;
+    uiMissingLibrariesPlaceholder: string;
     uiStyleNotice: string;
     summaryTitle: string;
     confirmPrompt: string;
@@ -136,6 +139,10 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       uiBorderRadiusPrompt: "Select corner / border radius geometry for components and cards:",
       uiVisualEffectsPrompt: "Select surface treatment, shadows, and transparency effects:",
       uiColorModePrompt: "Select color scheme mode (dark, light, or both):",
+      uiDetectedLibraries: "Detected UI libraries and styling:",
+      uiMissingLibrariesPrompt:
+        "Are any UI libraries or frameworks missing? (enter comma-separated names, or press Enter to skip):",
+      uiMissingLibrariesPlaceholder: "e.g. lucide-react, framer-motion, @tanstack/react-query",
       uiStyleNotice:
         "UI style directives and token rules generated at .specty/rules/core/ui-style.md. You can declare specific component libraries in that file.",
       summaryTitle: "Setup configuration summary",
@@ -223,6 +230,10 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       uiBorderRadiusPrompt: "Selecciona la geometría de bordes para componentes y tarjetas:",
       uiVisualEffectsPrompt: "Selecciona el tratamiento de superficies, sombras y transparencias:",
       uiColorModePrompt: "Selecciona el esquema de color (oscuro, claro o ambos):",
+      uiDetectedLibraries: "Librerías y estilos de interfaz detectados:",
+      uiMissingLibrariesPrompt:
+        "¿Falta alguna librería de interfaz gráfica por registrar? (escribe nombres separados por comas, o Enter para omitir):",
+      uiMissingLibrariesPlaceholder: "ej: lucide-react, framer-motion, @tanstack/react-query",
       uiStyleNotice:
         "Directivas de estilo de interfaz y reglas de tokens generadas en .specty/rules/core/ui-style.md. Puedes declarar bibliotecas de componentes en dicho archivo.",
       summaryTitle: "Resumen de configuracion",

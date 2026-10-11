@@ -26,6 +26,7 @@ export interface InitCommandOptions {
   uiVisualEffects?: string;
   uiColorMode?: string;
   uiCustomize?: boolean;
+  uiLibraries?: string | string[];
   verbose?: boolean;
   cwd?: string;
 }

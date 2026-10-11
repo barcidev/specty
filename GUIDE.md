@@ -86,8 +86,9 @@ npx @barcidev/specty init
     - In existing projects, the agent must **inspect and prioritize existing brand colors**. In greenfield projects, it infers an optimal, accessible palette based on purpose and audience.
     - Hardcoded colors or arbitrary styling in component files are strictly prohibited.
   - *Where and how to declare specific libraries:*
-    - Specty generates `.specty/rules/core/ui-style.md`. Inside, you will find the reserved block `<!-- USER_LIBRARIES_START -->`.
-    - Declare your preferred component libraries or design systems there (e.g., `shadcn/ui`, `Tailwind CSS`, `Radix UI`, `Lucide Icons`, `Framer Motion`, `Taiga UI`, `Ant Design`). Agents will respect your declared libraries while consuming the visual style tokens.
+    - **Automated Brownfield Detection:** Specty automatically scans manifests (`package.json`, `pubspec.yaml`, `components.json`, `tailwind.config.*`) and stylesheets (`globals.css`, `index.css`, etc.) detecting active UI libraries (Tailwind CSS, shadcn/ui, Radix UI, Lucide Icons, Framer Motion, Taiga UI, etc.) and extracting color variables and corner radius tokens.
+    - **Missing Libraries Prompt:** Following detection, Specty interactively asks whether any libraries are missing and lets you enter comma-separated names (e.g. `lucide-react, framer-motion, @tanstack/react-query`). You can also supply them non-interactively via `--ui-libraries "lib1, lib2"`.
+    - **Reserved Block:** Specty generates `.specty/rules/core/ui-style.md` pre-filling the reserved block `<!-- USER_LIBRARIES_START -->` with detected and user-specified libraries, embedding extracted CSS tokens directly into Section 3. Agents will respect your declared libraries while consuming the visual style tokens.
 - **AI Tools:** Keep all tools checked that your team uses (or pick specific ones like `antigravity`, `cursor`, `claude`).
 - **Spec Engine:** Select the specification engine tailored to your team's needs:
   - *openspec (Default & Recommended):* Uses the official OpenSpec 1.14.1 standard. Active proposals are stored in `openspec/changes/<id>/`, and finalized specs are archived into `openspec/specs/`.

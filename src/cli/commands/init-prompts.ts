@@ -415,16 +415,31 @@ export async function runInteractiveInit(
   }
 
   // Step 3.5: Graphical User Interface & Visual Style
+  const detectedUi = detection.ui;
+  const initialLibraries = new Set<string>(detectedUi?.libraries ?? []);
+
+  if (detectedUi?.hasGui && detectedUi.libraries.length > 0) {
+    p.log.info(
+      selectedLang === "es"
+        ? `${dict.init.uiDetectedLibraries} ${detectedUi.libraries.join(", ")}`
+        : `${dict.init.uiDetectedLibraries} ${detectedUi.libraries.join(", ")}`,
+    );
+  }
+
   let hasGui = options.hasGui;
   let uiPurpose: UiPurpose = (options.uiPurpose as UiPurpose) ?? DEFAULT_NEUTRAL_UI_CONFIG.purpose;
   let uiAudience: UiTargetAudience =
     (options.uiTargetAudience as UiTargetAudience) ?? DEFAULT_NEUTRAL_UI_CONFIG.targetAudience;
   let uiBorderRadius: UiBorderRadius =
-    (options.uiBorderRadius as UiBorderRadius) ?? DEFAULT_NEUTRAL_UI_CONFIG.borderRadius;
+    (options.uiBorderRadius as UiBorderRadius) ??
+    detectedUi?.borderRadius ??
+    DEFAULT_NEUTRAL_UI_CONFIG.borderRadius;
   let uiVisualEffects: UiVisualEffects =
     (options.uiVisualEffects as UiVisualEffects) ?? DEFAULT_NEUTRAL_UI_CONFIG.visualEffects;
   let uiColorMode: UiColorMode =
-    (options.uiColorMode as UiColorMode) ?? DEFAULT_NEUTRAL_UI_CONFIG.colorMode;
+    (options.uiColorMode as UiColorMode) ??
+    detectedUi?.colorMode ??
+    DEFAULT_NEUTRAL_UI_CONFIG.colorMode;
   let isCustomizedUi = Boolean(options.uiCustomize);
 
   if (hasGui === undefined) {
@@ -508,7 +523,7 @@ export async function runInteractiveInit(
             value: o.value,
             label: o.name,
           })),
-          initialValue: "semi-rounded",
+          initialValue: detectedUi?.borderRadius ?? "semi-rounded",
         });
         if (p.isCancel(radRes)) {
           p.cancel(dict.init.canceled);
@@ -542,13 +557,46 @@ export async function runInteractiveInit(
             value: o.value,
             label: o.name,
           })),
-          initialValue: "both",
+          initialValue: detectedUi?.colorMode ?? "both",
         });
         if (p.isCancel(colRes)) {
           p.cancel(dict.init.canceled);
           return null;
         }
         uiColorMode = colRes as UiColorMode;
+      }
+    }
+
+    // Prompt for missing libraries (comma-separated)
+    if (!options.uiLibraries) {
+      const missingLibsRes = await p.text({
+        message: dict.init.uiMissingLibrariesPrompt,
+        placeholder: dict.init.uiMissingLibrariesPlaceholder,
+        initialValue: "",
+      });
+
+      if (p.isCancel(missingLibsRes)) {
+        p.cancel(dict.init.canceled);
+        return null;
+      }
+
+      if (typeof missingLibsRes === "string" && missingLibsRes.trim().length > 0) {
+        const extraLibs = missingLibsRes
+          .split(",")
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0);
+        for (const lib of extraLibs) {
+          initialLibraries.add(lib);
+        }
+      }
+    } else {
+      const extra = Array.isArray(options.uiLibraries)
+        ? options.uiLibraries
+        : options.uiLibraries.split(",").map((s) => s.trim());
+      for (const lib of extra) {
+        if (lib.length > 0) {
+          initialLibraries.add(lib);
+        }
       }
     }
   }
@@ -737,7 +785,7 @@ export async function runInteractiveInit(
     `Hooks: ${enableHooks ? "Enabled" : "Disabled"}`,
     `CI: ${selectedCi}`,
     hasGui
-      ? `UI Style: ${isCustomizedUi ? "Customized" : "Neutral Default"} (${uiPurpose}, ${uiAudience}, ${uiBorderRadius}, ${uiVisualEffects}, ${uiColorMode})`
+      ? `UI Style: ${isCustomizedUi ? "Customized" : "Neutral Default"} (${uiPurpose}, ${uiAudience}, ${uiBorderRadius}, ${uiVisualEffects}, ${uiColorMode})${initialLibraries.size > 0 ? ` [Libs: ${Array.from(initialLibraries).join(", ")}]` : ""}`
       : "GUI: None",
   ];
 
@@ -796,6 +844,8 @@ export async function runInteractiveInit(
         border_radius: uiBorderRadius,
         visual_effects: uiVisualEffects,
         color_mode: uiColorMode,
+        detected_libraries: Array.from(initialLibraries),
+        tokens: detectedUi?.tokens ?? [],
       }
     : undefined;
 

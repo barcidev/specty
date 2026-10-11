@@ -58,9 +58,24 @@ export interface MonorepoDetection {
 
 export type RepositoryLayout = "single" | "monorepo" | "multi-repo" | "workspace";
 
+export interface DetectedUiToken {
+  name: string;
+  value: string;
+}
+
+export interface DetectedUiStyle {
+  hasGui: boolean;
+  libraries: string[];
+  colorMode?: "both" | "dark" | "light";
+  borderRadius?: "rounded" | "semi-rounded" | "sharp";
+  tokens: DetectedUiToken[];
+  evidence: string[];
+}
+
 export interface RepositoryDetectionResult {
   layout: RepositoryLayout;
   monorepo?: MonorepoDetection;
   scopes: DetectedScope[];
   primaryLanguage?: SupportedLanguageId;
+  ui?: DetectedUiStyle;
 }

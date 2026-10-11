@@ -14,6 +14,7 @@ import { RustDetector } from "./detectors/rust.js";
 import { SwiftDetector } from "./detectors/swift.js";
 import { detectMonorepo } from "./monorepo.js";
 import type { DetectedScope, RepositoryDetectionResult, StackDetection } from "./types.js";
+import { detectProjectUiStyle } from "./ui-detector.js";
 import { resolveVerificationCommands } from "./verify-resolver.js";
 
 export class DetectorRegistry {
@@ -75,7 +76,10 @@ export class DetectorRegistry {
    * Detects the entire repository layout, monorepo packages, and scopes.
    */
   async detectRepository(repoRoot: string): Promise<RepositoryDetectionResult> {
-    const monorepo = await detectMonorepo(repoRoot);
+    const [monorepo, ui] = await Promise.all([
+      detectMonorepo(repoRoot),
+      detectProjectUiStyle(repoRoot),
+    ]);
     const scopes: DetectedScope[] = [];
 
     if (monorepo.isMonorepo && monorepo.packagePaths.length > 0) {
@@ -112,6 +116,7 @@ export class DetectorRegistry {
       monorepo: monorepo.isMonorepo ? monorepo : undefined,
       scopes,
       primaryLanguage: scopes[0]?.stack.language,
+      ui,
     };
   }
 }

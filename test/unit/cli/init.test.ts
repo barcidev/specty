@@ -416,4 +416,47 @@ describe("cli/commands/init", () => {
     const agentsMd = await fs.readFile(path.join(tempDir, "AGENTS.md"), "utf8");
     expect(agentsMd).not.toContain(".specty/rules/core/ui-style.md");
   });
+
+  it("initializes brownfield project auto-detecting UI styling and merging custom libraries", async () => {
+    await fs.writeFile(
+      path.join(tempDir, "package.json"),
+      JSON.stringify({
+        dependencies: {
+          react: "^18.0.0",
+          tailwindcss: "^3.4.0",
+          "lucide-react": "^0.300.0",
+        },
+      }),
+    );
+    await fs.mkdir(path.join(tempDir, "src"), { recursive: true });
+    await fs.writeFile(
+      path.join(tempDir, "src", "globals.css"),
+      `:root {
+  --primary: hsl(221.2 83.2% 53.3%);
+  --radius: 0.5rem;
+}`,
+    );
+
+    await executeInit({
+      yes: true,
+      cwd: tempDir,
+      uiLibraries: "embla-carousel, @tanstack/react-table",
+    });
+
+    const savedConfig = await loadConfig(tempDir);
+    expect(savedConfig.ui?.has_gui).toBe(true);
+    expect(savedConfig.ui?.detected_libraries).toContain("Tailwind CSS");
+    expect(savedConfig.ui?.detected_libraries).toContain("Lucide Icons");
+    expect(savedConfig.ui?.detected_libraries).toContain("embla-carousel");
+    expect(savedConfig.ui?.detected_libraries).toContain("@tanstack/react-table");
+    expect(savedConfig.ui?.border_radius).toBe("semi-rounded");
+
+    const uiRuleContent = await fs.readFile(
+      path.join(tempDir, ".specty/rules/core/ui-style.md"),
+      "utf8",
+    );
+    expect(uiRuleContent).toContain("Tailwind CSS");
+    expect(uiRuleContent).toContain("embla-carousel");
+    expect(uiRuleContent).toContain("--primary: hsl(221.2 83.2% 53.3%);");
+  });
 });
