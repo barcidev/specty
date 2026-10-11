@@ -30,3 +30,11 @@ draft ──► approved ──► in-progress ──► verifying ──► don
 
 5. **Fase 5: done (Cierre y Archivo)**
    - Si todas las verificaciones pasan, el change se archiva y consolida en `openspec/specs/`.
+
+## Orientación Continua al Usuario (Paso Siguiente Obligatorio)
+En CADA respuesta o intervención, el asistente DEBE indicar de manera explícita el paso siguiente a seguir para que el usuario nunca quede desorientado:
+- **Al finalizar Fase 1 (draft):** Solicitar al usuario la revisión de la propuesta e instruirlo a aprobar con `specty approve <change>`.
+- **En Fase 2 (approved):** Confirmar que el change fue aprobado e indicar el inicio de la implementación señalando la primera tarea activa (`- [ ]`).
+- **En Fase 3 (in-progress):** Al culminar cada turno o tarea, indicar qué tarea se completó, cuál es la siguiente tarea activa y su alcance de archivos `[files: ...]`.
+- **En Fase 4 (verifying):** Indicar los resultados de verificación (`specty verify <change>`) y qué acción correctiva o de cierre procede.
+- **En Fase 5 (done):** Indicar al usuario que el cambio está completamente verificado y listo para consolidarse mediante `specty done <change>`.

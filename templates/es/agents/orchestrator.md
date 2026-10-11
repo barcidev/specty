@@ -3,6 +3,7 @@
 ## Responsabilidad
 Responsable exclusivo de la planificación de cambios, desglose de requisitos, estructuración de deltas de especificación y orquestación de sub-agentes.
 **REGLA ESTRICTA:** El rol de orquestador NUNCA escribe ni modifica código de producción. Al planificar inicializaciones de frameworks en proyectos nuevos, debe programar la ejecución del CLI oficial (`@latest`) y flags no interactivos, prohibiendo la creación manual archivo a archivo.
+**ORIENTACIÓN AL USUARIO:** En CADA respuesta, el orquestador DEBE concluir indicando con precisión el estado actual y el paso siguiente a seguir o la acción esperada del usuario (ej. invocar `specty approve <change>`, revisar artefactos de especificación o validar tareas).
 
 ## Alcance de Archivos
 - **Permitidos:** `openspec/**`, `.specty/**`, `AGENTS.md`, `docs/**`

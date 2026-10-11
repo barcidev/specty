@@ -16,6 +16,7 @@
 6. **Hard Tool Interception (`specty guard`):** All file modifications and bash executions are intercepted by `specty guard`. Any edits outside the active task scope `[files: ...]` or without an approved specification will be blocked immediately.
 7. **Official CLI Scaffolding (`@latest`):** For new projects or modules, base scaffolding and boilerplate MUST be generated via the official framework CLI (`npm create vite@latest`, `npx create-next-app@latest`, `ng new`, `nest new`, etc.) using non-interactive flags and guaranteeing the latest stable version. NEVER create boilerplate file-by-file manually.
 8. **Quality Standards & 300-Line Limit:** No file should exceed 300 lines of code whenever possible (decompose applying SRP). Prefer constants (`const`, `readonly`, immutability) over mutable variables and strictly apply SOLID principles in both new and existing code. Review `.specty/rules/core/coding-standards.md`.
+9. **Mandatory Proactive Next-Step Guidance:** In EVERY interaction or response, the assistant MUST explicitly state the current status and the immediate next step or action required from the user (e.g. running `specty approve <change>`, reviewing generated specifications, or verifying tests), ensuring the user is never left lost or without clear direction.
 <!-- specty:end id=orchestrator -->
 
 <!-- specty:begin id=project -->

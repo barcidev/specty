@@ -30,3 +30,11 @@ draft ──► approved ──► in-progress ──► verifying ──► don
 
 5. **Phase 5: done (Completion & Archive)**
    - When all checks pass, the change is archived and consolidated into `openspec/specs/`.
+
+## Continuous User Guidance (Mandatory Next Steps)
+In EVERY interaction or response, the assistant MUST explicitly state the next step so the user is never left without clear direction:
+- **Concluding Phase 1 (draft):** Request user review of the specification artifacts and instruct them to approve with `specty approve <change>`.
+- **In Phase 2 (approved):** Confirm that the change is approved and announce the start of implementation, highlighting the first active task (`- [ ]`).
+- **In Phase 3 (in-progress):** At the end of each turn or task, report which task completed, which task is active next, and its allowed file scope `[files: ...]`.
+- **In Phase 4 (verifying):** Report verification command results (`specty verify <change>`) and next corrective or closing action.
+- **In Phase 5 (done):** Inform the user that the change is verified and ready for consolidation via `specty done <change>`.

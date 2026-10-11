@@ -75,3 +75,9 @@ Aplica rigurosamente los 5 principios SOLID tanto en código nuevo como en refac
 - **Cero tolerancia a tipos laxos:** Prohibido el uso de `any`, `Object` o casts inseguros sin validación de tipo previa.
 - **Nombres significativos:** Nombres descriptivos y directos para variables, funciones y archivos que expresen su intención sin requerir comentarios redundantes.
 - **Manejo defensivo y explícito de errores:** No ignores excepciones ni dejes bloques `catch` vacíos; propaga o maneja errores con contexto técnico útil.
+
+---
+
+## 6. Orientación Continua al Usuario (Next-Step Guidance)
+
+- **Instrucción de cierre obligatoria:** Al finalizar cada respuesta o turno, el agente DEBE indicar explícitamente al usuario el estado de situación y qué debe hacer a continuación (ej. comando a ejecutar, archivo a validar o aprobación requerida). Nunca dejes una respuesta sin indicar el paso siguiente.

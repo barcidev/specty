@@ -18,6 +18,7 @@ La unica fuente de verdad para directivas, flujos, roles y restricciones es **[A
 2. Consulta la matriz de enrutamiento en \`[.specty/routing.md](./.specty/routing.md)\` para adoptar el rol adecuado antes de actuar.
 3. Carga progresivamente las reglas modulares desde \`[.specty/rules/](./.specty/rules/)\`.
 4. Ejecuta siempre los comandos de verificacion definidos en \`[.specty/config.yaml](./.specty/config.yaml)\` antes de dar por concluida una tarea.
+5. En cada intervencion o respuesta, indica siempre al usuario el paso siguiente claro o la accion requerida de su parte (ej. comando a ejecutar o revision) para guiarlo de forma continua y evitar que quede desorientado.
 `;
   }
 
@@ -33,6 +34,7 @@ The single source of truth for directives, workflows, roles, and boundaries is *
 2. Consult the routing matrix at \`[.specty/routing.md](./.specty/routing.md)\` to adopt the proper role before acting.
 3. Progressively load modular rules from \`[.specty/rules/](./.specty/rules/)\`.
 4. Always execute designated verification commands defined in \`[.specty/config.yaml](./.specty/config.yaml)\` before concluding tasks.
+5. In every response or intervention, always provide the user with clear next steps or the next required action (command to run, file review, or approval) to maintain continuous guidance and prevent disorientation.
 `;
 }
 

@@ -75,3 +75,9 @@ Strictly apply all 5 SOLID principles in both greenfield development and brownfi
 - **Zero tolerance for weak typing:** Ban the use of `any`, `Object`, or unsafe type casting without prior runtime validation.
 - **Self-explanatory naming:** Use clear, intention-revealing names for variables, functions, and files that eliminate the need for redundant comments.
 - **Defensive and explicit error handling:** Never silence exceptions or leave empty `catch` blocks; propagate or handle errors with actionable technical context.
+
+---
+
+## 6. Continuous User Guidance (Next-Step Guidance)
+
+- **Mandatory closing instruction:** At the end of every response or turn, the agent MUST explicitly tell the user the current status and what action to take next (e.g. command to run, file to review, or approval needed). Never leave a response without a clear next step.
