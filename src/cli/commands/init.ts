@@ -17,6 +17,7 @@ import {
   type UiVisualEffects,
 } from "../../core/config.js";
 import { initGitRepo, isInsideGitRepo } from "../../core/git.js";
+import { ensureGlobalDependencies } from "../../core/global-deps.js";
 import { getDictionary, normalizeLanguage, type SupportedLanguage } from "../../core/i18n.js";
 import { logger } from "../../core/logger.js";
 import { defaultDetectorRegistry } from "../../detect/detector-registry.js";
@@ -40,12 +41,13 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
   }
 
   // 1. Check Git repository
-  const isGit = await isInsideGitRepo(repoRoot);
+  let isGit = await isInsideGitRepo(repoRoot);
   if (!isGit) {
     logger.warn("Repository does not appear to be an initialized Git repository.");
-    if (options.yes) {
+    if (!options.dryRun) {
       await initGitRepo(repoRoot);
       logger.success("Initialized new Git repository.");
+      isGit = true;
     }
   }
 
@@ -244,6 +246,12 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
       architecture: effectiveArchitecture,
     });
 
+    if (!options.dryRun) {
+      await ensureGlobalDependencies(config, {
+        skipGlobalInstall: options.skipGlobalInstall,
+      });
+    }
+
     const dict = getDictionary(language);
     logger.success(dict.init.success);
 
@@ -279,6 +287,10 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
       primaryLanguage: result.inferredStack,
       frameworks: result.config.scopes[0]?.stack.frameworks,
       architecture: result.config.project.architecture,
+    });
+
+    await ensureGlobalDependencies(result.config, {
+      skipGlobalInstall: options.skipGlobalInstall,
     });
   }
 

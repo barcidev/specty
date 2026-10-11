@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { executeInit } from "../../../src/cli/commands/init.js";
 import { loadConfig } from "../../../src/core/config.js";
+import { isInsideGitRepo } from "../../../src/core/git.js";
 
 describe("cli/commands/init", () => {
   let tempDir: string;
@@ -33,6 +34,18 @@ describe("cli/commands/init", () => {
     expect(savedConfig.governance.hooks).toBe(true);
     expect(savedConfig.governance.ci).toBe("github");
     expect(savedConfig.mcp.enabled).toBe(true);
+    expect(await isInsideGitRepo(tempDir)).toBe(true);
+  });
+
+  it("automatically initializes a new git repository when repo is not a git repo", async () => {
+    expect(await isInsideGitRepo(tempDir)).toBe(false);
+
+    await executeInit({
+      yes: true,
+      cwd: tempDir,
+    });
+
+    expect(await isInsideGitRepo(tempDir)).toBe(true);
   });
 
   it("honors language flag --lang en", async () => {
