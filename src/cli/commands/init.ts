@@ -6,9 +6,15 @@ import {
   GIT_WORKFLOWS,
   type GitWorkflow,
   type SpectyConfig,
+  type SpectyUiConfig,
   SUPPORTED_TOOLS,
   type SupportedTool,
   saveConfig,
+  type UiBorderRadius,
+  type UiColorMode,
+  type UiPurpose,
+  type UiTargetAudience,
+  type UiVisualEffects,
 } from "../../core/config.js";
 import { initGitRepo, isInsideGitRepo } from "../../core/git.js";
 import { getDictionary, normalizeLanguage, type SupportedLanguage } from "../../core/i18n.js";
@@ -145,6 +151,19 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
           }).recommended
         : "clean";
 
+    const hasGui = options.hasGui;
+    const uiConfig: SpectyUiConfig | undefined = hasGui
+      ? {
+          has_gui: true,
+          is_customized: Boolean(options.uiCustomize),
+          purpose: (options.uiPurpose as UiPurpose) ?? "general-purpose",
+          target_audience: (options.uiTargetAudience as UiTargetAudience) ?? "general-public",
+          border_radius: (options.uiBorderRadius as UiBorderRadius) ?? "semi-rounded",
+          visual_effects: (options.uiVisualEffects as UiVisualEffects) ?? "subtle-elevation",
+          color_mode: (options.uiColorMode as UiColorMode) ?? "both",
+        }
+      : undefined;
+
     const config: SpectyConfig = createDefaultConfig({
       language,
       spec_engine: options.specEngine ?? "openspec",
@@ -159,6 +178,7 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
         workflow: gitWorkflow,
         commit_convention: commitConvention,
       },
+      ui: uiConfig,
       governance: {
         hooks: options.hooks !== false,
         ci: options.ci === false ? "none" : "github",

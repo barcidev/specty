@@ -7,6 +7,7 @@ import { formatArchitectureRuleContent } from "./architecture-rules-formatter.js
 import { formatGitRuleContent } from "./git-rules-formatter.js";
 import { loadTemplate, renderTemplateString } from "./renderer.js";
 import type { GenerateContext, GeneratedFile, GenerationResult } from "./types.js";
+import { formatUiStyleRule } from "./ui-style-rules-formatter.js";
 
 export async function generateProjectInfrastructure(
   ctx: GenerateContext,
@@ -85,6 +86,14 @@ export async function generateProjectInfrastructure(
   const activeDirectives = structureDirectivesMap[layout] ?? defaultDirectives;
   const structureDirectives = activeDirectives[lang] ?? activeDirectives.es;
 
+  let uiDirectives = "";
+  if (ctx.config.ui?.has_gui) {
+    uiDirectives =
+      lang === "es"
+        ? "- **Estilo Visual e Interfaces:** Si vas a crear o modificar pantallas o componentes, consulta obligatoriamente `.specty/rules/core/ui-style.md`. Al primer toque de interfaz, es MANDATORIO consolidar los tokens visuales, respetando colores existentes en proyectos iniciados o derivando una paleta armónica en proyectos nuevos.\n"
+        : "- **Visual Style & UI Design:** Before creating or modifying UI components, you MUST consult `.specty/rules/core/ui-style.md`. Upon first touching interface code, you MUST consolidate design tokens, respecting existing colors in brownfield projects or inferring a harmonic palette in greenfield projects.\n";
+  }
+
   const templateVars = {
     projectName,
     primaryLanguage,
@@ -94,6 +103,7 @@ export async function generateProjectInfrastructure(
     layoutTitle,
     scopesSummary,
     structureDirectives,
+    uiDirectives,
   };
 
   // 1. AGENTS.md
@@ -157,6 +167,15 @@ export async function generateProjectInfrastructure(
     content: architectureRuleContent,
     description: `Core rule: architecture (${ctx.config.project.layout}, ${architecture})`,
   });
+
+  if (ctx.config.ui?.has_gui) {
+    const uiStyleContent = formatUiStyleRule(ctx.config.ui, lang);
+    files.push({
+      relativePath: ".specty/rules/core/ui-style.md",
+      content: uiStyleContent,
+      description: `Core rule: ui-style (${ctx.config.ui.purpose}, ${ctx.config.ui.border_radius}, ${ctx.config.ui.color_mode})`,
+    });
+  }
 
   // 5. Task rules in .specty/rules/task/
   const taskRules = ["ui", "api", "data", "testing", "security"];

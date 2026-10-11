@@ -73,6 +73,21 @@ npx @barcidev/specty init
   - *Layered (N-Tier):* Recommended for traditional APIs with controllers, services, and repositories.
   - *Hexagonal (Ports & Adapters):* Recommended when core domain logic must remain completely decoupled from external infrastructure.
   - *Vertical Slices:* Recommended when structuring self-contained business features rather than technical layers.
+- **Graphical Interface & Visual Style (GUI & Tokens):**
+  - *Interface Detection:* Specty asks whether the project has a graphical user interface (web, mobile, or desktop). If you answer no, this layer is skipped.
+  - *Customization vs. Neutral Default:* If it has a GUI, you can use the default neutral style (clean, professional, adaptable, dual dark/light support, and 8px semi-rounded borders) or customize all 5 product dimensions:
+    1. *Purpose:* SaaS/Dashboard, E-commerce, Landing/Marketing, Social/Mobile, Docs/Blog, Fintech, Health, Education, or General Purpose.
+    2. *Target Audience:* General public (B2C), Professionals (B2B), Developers, Youth/Students, Enhanced Accessibility (Seniors / WCAG AAA).
+    3. *Border Radius:* Prominent rounded (12-20px), Semi-rounded (6-8px), or Sharp right angles (0px).
+    4. *Surfaces & Effects:* Subtle soft shadows, Translucent Glassmorphism, Hard offset block shadows, or Minimal flat without shadows.
+    5. *Color Scheme Mode:* Both (Light & Dark with theme toggle), Dark mode only, or Light mode only.
+  - *Mandatory Visual Token Protocol for AI Agents:*
+    - Upon first touching graphical interface code, the agent **MUST create and centralize design tokens** before creating any component.
+    - In existing projects, the agent must **inspect and prioritize existing brand colors**. In greenfield projects, it infers an optimal, accessible palette based on purpose and audience.
+    - Hardcoded colors or arbitrary styling in component files are strictly prohibited.
+  - *Where and how to declare specific libraries:*
+    - Specty generates `.specty/rules/core/ui-style.md`. Inside, you will find the reserved block `<!-- USER_LIBRARIES_START -->`.
+    - Declare your preferred component libraries or design systems there (e.g., `shadcn/ui`, `Tailwind CSS`, `Radix UI`, `Lucide Icons`, `Framer Motion`, `Taiga UI`, `Ant Design`). Agents will respect your declared libraries while consuming the visual style tokens.
 - **AI Tools:** Keep all tools checked that your team uses (or pick specific ones like `antigravity`, `cursor`, `claude`).
 - **Spec Engine:** Select the specification engine tailored to your team's needs:
   - *openspec (Default & Recommended):* Uses the official OpenSpec 1.14.1 standard. Active proposals are stored in `openspec/changes/<id>/`, and finalized specs are archived into `openspec/specs/`.
