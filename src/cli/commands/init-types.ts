@@ -28,6 +28,7 @@ export interface InitCommandOptions {
   uiCustomize?: boolean;
   uiLibraries?: string | string[];
   verbose?: boolean;
+  skipGlobalInstall?: boolean;
   cwd?: string;
 }
 

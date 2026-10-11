@@ -3,6 +3,7 @@ export * from "./diff.js";
 export * from "./exec.js";
 export * from "./fs-writer.js";
 export * from "./git.js";
+export * from "./global-deps.js";
 export * from "./i18n.js";
 export * from "./logger.js";
 export * from "./manifest.js";

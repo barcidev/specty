@@ -29,6 +29,10 @@ program
     "--commit-convention <convention>",
     "commit convention (conventional, classic, gitmoji, ticket, gitmoji-conventional, conventional-ticket, gitmoji-ticket, gitmoji-conventional-ticket)",
   )
+  .option(
+    "--skip-global-install",
+    "skip automatic global installation of openspec and codebase-memory",
+  )
   .option("--verbose", "enable verbose logging")
   .action(async (options) => {
     try {
