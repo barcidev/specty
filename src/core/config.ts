@@ -163,7 +163,7 @@ export const SpectyConfigSchema = z.object({
   spec_engine: z.enum(["openspec", "builtin"]).default("openspec"),
   project: z.object({
     kind: z.enum(["new", "existing"]).default("existing"),
-    layout: z.enum(["single", "monorepo", "multi-repo"]).default("single"),
+    layout: z.enum(["single", "monorepo", "multi-repo", "workspace"]).default("single"),
     architecture: z.string().optional(),
   }),
   scopes: z.array(ScopeSchema).default([]),

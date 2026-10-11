@@ -19,10 +19,17 @@
 <!-- specty:begin id=project -->
 ## 3. Contexto Técnico del Repositorio
 - **Proyecto:** {{projectName}}
+- **Estructura del Repositorio:** {{layoutTitle}}
 - **Stack Principal:** {{primaryLanguage}}
 - **Frameworks:** {{frameworks}}
 - **Patrón de Arquitectura:** {{architecture}}
 - **Motor de Especificaciones:** {{specEngine}}
+
+### Scopes y Módulos Gobernados:
+{{scopesSummary}}
+
+### Directrices de Arquitectura:
+{{structureDirectives}}
 <!-- specty:end id=project -->
 
 <!-- specty:begin id=workflow -->

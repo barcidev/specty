@@ -15,11 +15,16 @@ import { getDictionary, normalizeLanguage, type SupportedLanguage } from "../../
 import { logger } from "../../core/logger.js";
 import { defaultDetectorRegistry } from "../../detect/detector-registry.js";
 import { resolveDefaultSourcePaths } from "../../detect/source-paths-resolver.js";
-import type { RepositoryDetectionResult, SupportedLanguageId } from "../../detect/types.js";
+import type {
+  RepositoryDetectionResult,
+  RepositoryLayout,
+  SupportedLanguageId,
+} from "../../detect/types.js";
 import { generateProjectInfrastructure } from "../../generate/index.js";
 import { getRecommendedArchitectures } from "./architectures.js";
 import { runInteractiveInit } from "./init-prompts.js";
 import type { InitCommandOptions, InitFlowResult } from "./init-types.js";
+import { getMonorepoToolOptions, getWorkspaceComponentOptions } from "./structure-options.js";
 
 export async function executeInit(options: InitCommandOptions = {}): Promise<InitFlowResult> {
   const repoRoot = path.resolve(options.cwd ?? process.cwd());
@@ -93,6 +98,42 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
         ? (options.commitConvention as CommitConvention)
         : "conventional";
 
+    const effectiveLayout: RepositoryLayout =
+      options.structure ?? (detection.layout === "monorepo" ? "monorepo" : "single");
+
+    let resolvedScopes = scopes;
+    if (options.structure === "monorepo" && options.monorepoKind) {
+      const monoOptions = getMonorepoToolOptions(language);
+      const monoDef = monoOptions.find((m) => m.value === options.monorepoKind);
+      if (monoDef) {
+        resolvedScopes = monoDef.scopes.map((s) => ({
+          path: s.path,
+          stack: {
+            language: s.language,
+            frameworks: s.frameworks.length > 0 ? effectiveFrameworks : [],
+          },
+          verify: {},
+        }));
+      }
+    } else if (
+      options.structure === "workspace" &&
+      options.components &&
+      options.components.length > 0
+    ) {
+      const compOptions = getWorkspaceComponentOptions(language);
+      const selectedComps = compOptions.filter((c) => options.components?.includes(c.value));
+      if (selectedComps.length > 0) {
+        resolvedScopes = selectedComps.map((c) => ({
+          path: c.path,
+          stack: {
+            language: c.language,
+            frameworks: c.frameworks,
+          },
+          verify: {},
+        }));
+      }
+    }
+
     const effectiveArchitecture =
       options.projectKind === "new"
         ? getRecommendedArchitectures({
@@ -109,10 +150,10 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
       spec_engine: options.specEngine ?? "openspec",
       project: {
         kind: options.projectKind ?? "existing",
-        layout: detection.layout,
+        layout: effectiveLayout,
         architecture: effectiveArchitecture,
       },
-      scopes,
+      scopes: resolvedScopes,
       tools: selectedTools,
       git: {
         workflow: gitWorkflow,
@@ -121,7 +162,21 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
       governance: {
         hooks: options.hooks !== false,
         ci: options.ci === false ? "none" : "github",
-        source_paths: resolveDefaultSourcePaths(detection),
+        source_paths: resolveDefaultSourcePaths({
+          ...detection,
+          layout: effectiveLayout,
+          scopes: resolvedScopes.map((s) => ({
+            path: s.path,
+            stack: {
+              language: s.stack.language,
+              frameworks: s.stack.frameworks,
+              confidence: 1.0,
+              evidence: [],
+              hasCustomTemplates: true,
+            },
+            verify: s.verify,
+          })),
+        }),
         exempt_paths: ["**/*.md", "openspec/**", "docs/**"],
         bypass: { env: "SPECTY_BYPASS", trailer: "Specty-Bypass" },
         quality_gates: { lint: true, test: true, static: true, coverage_min: 0 },

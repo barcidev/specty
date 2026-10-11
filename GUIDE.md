@@ -62,7 +62,11 @@ npx @barcidev/specty init
 #### Recommended Choices in the Interactive Wizard:
 - **Language:** Select `English (en)` or `Español (es)`. All AI directives and rule templates will be generated in this language.
 - **Project Kind:** Select `new` (Clean scaffold from scratch).
-- **Language and Framework:** Select the primary programming language (TypeScript, JavaScript, Python, Dart, C#, Go, Rust, Java, Kotlin, PHP, Ruby, Swift, C++, Elixir) and then the corresponding framework or runtime (e.g., React, Next.js, NestJS, FastAPI, Flutter, ASP.NET Core, Gin, or Core without framework). Specty will dynamically adapt recommended architectures, coding rules, and templates to match your choice.
+- **Repository Structure (Monolith, Monorepo, or Workspace):**
+  - *Monolith:* Single application or service. Lets you select a single language and framework.
+  - *Monorepo:* Governed by a centralized package orchestrator. Displays the list of supported orchestrators (Turborepo, Nx, pnpm workspaces, npm workspaces, Yarn workspaces, Lerna, Melos, .NET Solution, Cargo) and allows picking exactly one alongside the primary application stack.
+  - *Workspace:* Polyglot workspace or multi-subsystem repository. Allows multi-selecting frameworks, languages, and/or internal monorepos.
+- **Language and Framework:** Based on the chosen structure, pick your stack. Specty automatically adapts directives in `AGENTS.md`, scaffolds `.specty/rules/core/architecture.md`, and generates scoped rules in `.specty/rules/lang/` and `.specty/rules/framework/` for all configured subsystems.
 - **Architectural Pattern:**
   - *Clean Architecture:* Recommended for robust backend APIs or Flutter mobile applications.
   - *Modular / Feature-Based:* Recommended for web applications (React, Next.js, Angular, NestJS).

@@ -204,4 +204,134 @@ describe("cli/commands/init", () => {
       .catch(() => false);
     expect(fwRuleExists).toBe(true);
   });
+
+  it("initializes new project as monolith and adapts core indications", async () => {
+    await executeInit({
+      yes: true,
+      projectKind: "new",
+      structure: "single",
+      stack: "python",
+      framework: "fastapi",
+      cwd: tempDir,
+    });
+
+    const savedConfig = await loadConfig(tempDir);
+    expect(savedConfig.project.kind).toBe("new");
+    expect(savedConfig.project.layout).toBe("single");
+    expect(savedConfig.scopes.length).toBe(1);
+    expect(savedConfig.scopes[0]?.path).toBe(".");
+
+    const agentsMd = await fs.readFile(path.join(tempDir, "AGENTS.md"), "utf8");
+    expect(agentsMd).toContain("Monolito (Single Project)");
+    expect(agentsMd).toContain("Directrices de Arquitectura");
+
+    const archRule = await fs.readFile(
+      path.join(tempDir, ".specty/rules/core/architecture.md"),
+      "utf8",
+    );
+    expect(archRule).toContain("Arquitectura de Monolito");
+
+    const pyRule = await fs
+      .access(path.join(tempDir, ".specty/rules/lang/python.md"))
+      .then(() => true)
+      .catch(() => false);
+    expect(pyRule).toBe(true);
+
+    const fwRule = await fs
+      .access(path.join(tempDir, ".specty/rules/framework/fastapi.md"))
+      .then(() => true)
+      .catch(() => false);
+    expect(fwRule).toBe(true);
+  });
+
+  it("initializes new project as monorepo and adapts core indications", async () => {
+    await executeInit({
+      yes: true,
+      projectKind: "new",
+      structure: "monorepo",
+      monorepoKind: "turbo",
+      framework: "next",
+      cwd: tempDir,
+    });
+
+    const savedConfig = await loadConfig(tempDir);
+    expect(savedConfig.project.kind).toBe("new");
+    expect(savedConfig.project.layout).toBe("monorepo");
+    expect(savedConfig.scopes.map((s) => s.path)).toEqual(
+      expect.arrayContaining(["apps/web", "packages/ui", "packages/core"]),
+    );
+
+    const agentsMd = await fs.readFile(path.join(tempDir, "AGENTS.md"), "utf8");
+    expect(agentsMd).toContain("Monorepo (Multi-paquete / Orquestado)");
+
+    const archRule = await fs.readFile(
+      path.join(tempDir, ".specty/rules/core/architecture.md"),
+      "utf8",
+    );
+    expect(archRule).toContain("Arquitectura de Monorepo");
+    expect(archRule).toContain("Flujo de Dependencias Unidireccional");
+  });
+
+  it("initializes new project as polyglot workspace and adapts multi-stack core indications", async () => {
+    await executeInit({
+      yes: true,
+      projectKind: "new",
+      structure: "workspace",
+      components: ["web-react", "api-fastapi", "mobile-flutter"],
+      cwd: tempDir,
+    });
+
+    const savedConfig = await loadConfig(tempDir);
+    expect(savedConfig.project.kind).toBe("new");
+    expect(savedConfig.project.layout).toBe("workspace");
+    expect(savedConfig.scopes.map((s) => s.path)).toEqual([
+      "apps/web",
+      "services/ai-service",
+      "apps/mobile",
+    ]);
+
+    const agentsMd = await fs.readFile(path.join(tempDir, "AGENTS.md"), "utf8");
+    expect(agentsMd).toContain("Workspace (Políglota / Multi-stack)");
+
+    const archRule = await fs.readFile(
+      path.join(tempDir, ".specty/rules/core/architecture.md"),
+      "utf8",
+    );
+    expect(archRule).toContain("Arquitectura de Workspace Políglota");
+    expect(archRule).toContain("Aislamiento Estricto de Dependencias");
+
+    // All language rules generated for polyglot workspace
+    const tsRule = await fs
+      .access(path.join(tempDir, ".specty/rules/lang/typescript.md"))
+      .then(() => true)
+      .catch(() => false);
+    const pyRule = await fs
+      .access(path.join(tempDir, ".specty/rules/lang/python.md"))
+      .then(() => true)
+      .catch(() => false);
+    const dartRule = await fs
+      .access(path.join(tempDir, ".specty/rules/lang/dart.md"))
+      .then(() => true)
+      .catch(() => false);
+    expect(tsRule).toBe(true);
+    expect(pyRule).toBe(true);
+    expect(dartRule).toBe(true);
+
+    // All framework rules generated
+    const reactRule = await fs
+      .access(path.join(tempDir, ".specty/rules/framework/react.md"))
+      .then(() => true)
+      .catch(() => false);
+    const fastapiRule = await fs
+      .access(path.join(tempDir, ".specty/rules/framework/fastapi.md"))
+      .then(() => true)
+      .catch(() => false);
+    const flutterRule = await fs
+      .access(path.join(tempDir, ".specty/rules/framework/flutter.md"))
+      .then(() => true)
+      .catch(() => false);
+    expect(reactRule).toBe(true);
+    expect(fastapiRule).toBe(true);
+    expect(flutterRule).toBe(true);
+  });
 });
