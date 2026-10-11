@@ -113,8 +113,13 @@ export async function generateProjectInfrastructure(
   }
 
   // 7. Framework rules in .specty/rules/framework/
+  const frameworkTemplateAlias: Record<string, string> = {
+    nest: "nestjs",
+    next: "nextjs",
+  };
   for (const fw of frameworks) {
-    const fwFileName = `${fw}.md`;
+    const fwNormalized = frameworkTemplateAlias[fw] ?? fw;
+    const fwFileName = `${fwNormalized}.md`;
     try {
       const rawFw = await loadTemplate(lang, `rules/framework/${fwFileName}`);
       files.push({

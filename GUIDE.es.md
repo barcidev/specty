@@ -62,7 +62,8 @@ npx @barcidev/specty init
 #### Respuestas recomendadas en el asistente interactivo:
 - **Idioma:** Selecciona `Español (es)`.
 - **Tipo de proyecto:** Selecciona `new` (Estructura limpia desde cero).
-- **Patron arquitectural:**
+- **Lenguaje y Framework:** Selecciona el lenguaje principal (TypeScript, JavaScript, Python, Dart, C#, Go, Rust, Java, Kotlin, PHP, Ruby, Swift, C++, Elixir) y a continuación el framework o entorno correspondiente (ej: React, Next.js, NestJS, FastAPI, Flutter, ASP.NET Core, Gin, etc., o Core sin framework). Specty adaptará automáticamente las recomendaciones de arquitectura, reglas de codificación y plantillas según el stack escogido.
+- **Patrón arquitectural:**
   - *Clean Architecture:* Recomendado para servicios backend robustos o aplicaciones moviles en Flutter.
   - *Modular / Feature-Based:* Recomendado para aplicaciones web en React, Next.js, Angular o NestJS.
   - *Layered (N-Capas):* Recomendado para APIs tradicionales con controladores, servicios y repositorios.

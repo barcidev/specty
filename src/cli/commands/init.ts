@@ -17,6 +17,7 @@ import { defaultDetectorRegistry } from "../../detect/detector-registry.js";
 import { resolveDefaultSourcePaths } from "../../detect/source-paths-resolver.js";
 import type { RepositoryDetectionResult, SupportedLanguageId } from "../../detect/types.js";
 import { generateProjectInfrastructure } from "../../generate/index.js";
+import { getRecommendedArchitectures } from "./architectures.js";
 import { runInteractiveInit } from "./init-prompts.js";
 import type { InitCommandOptions, InitFlowResult } from "./init-types.js";
 
@@ -45,6 +46,10 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
 
     const primaryScope = detection.scopes[0];
     const inferredLanguage = primaryScope?.stack.language;
+    const effectiveLanguage = (options.stack as SupportedLanguageId) ?? inferredLanguage;
+    const effectiveFrameworks = options.framework
+      ? [options.framework]
+      : (primaryScope?.stack.frameworks ?? []);
 
     let selectedTools: SupportedTool[] = [...SUPPORTED_TOOLS];
     if (options.tool) {
@@ -62,7 +67,7 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
             path: s.path,
             stack: {
               language: (options.stack as SupportedLanguageId) ?? s.stack.language,
-              frameworks: s.stack.frameworks,
+              frameworks: options.framework ? [options.framework] : s.stack.frameworks,
             },
             verify: s.verify,
           }))
@@ -71,7 +76,7 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
               path: ".",
               stack: {
                 language: (options.stack as SupportedLanguageId) ?? "typescript",
-                frameworks: [],
+                frameworks: options.framework ? [options.framework] : [],
               },
               verify: {},
             },
@@ -88,13 +93,24 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
         ? (options.commitConvention as CommitConvention)
         : "conventional";
 
+    const effectiveArchitecture =
+      options.projectKind === "new"
+        ? getRecommendedArchitectures({
+            language: effectiveLanguage ?? "typescript",
+            frameworks: effectiveFrameworks,
+            confidence: 1.0,
+            evidence: ["flags"],
+            hasCustomTemplates: true,
+          }).recommended
+        : "clean";
+
     const config: SpectyConfig = createDefaultConfig({
       language,
       spec_engine: options.specEngine ?? "openspec",
       project: {
-        kind: "existing",
+        kind: options.projectKind ?? "existing",
         layout: detection.layout,
-        architecture: "clean",
+        architecture: effectiveArchitecture,
       },
       scopes,
       tools: selectedTools,
@@ -126,8 +142,9 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
       config,
       language,
       dryRun: Boolean(options.dryRun),
-      primaryLanguage: inferredLanguage,
-      frameworks: primaryScope?.stack.frameworks,
+      primaryLanguage: effectiveLanguage,
+      frameworks: effectiveFrameworks,
+      architecture: effectiveArchitecture,
     });
 
     const dict = getDictionary(language);
@@ -139,7 +156,7 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
       canceled: false,
       dryRun: Boolean(options.dryRun),
       language,
-      inferredStack: inferredLanguage,
+      inferredStack: effectiveLanguage,
     };
   }
 
@@ -163,6 +180,8 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
       language: result.language,
       dryRun: false,
       primaryLanguage: result.inferredStack,
+      frameworks: result.config.scopes[0]?.stack.frameworks,
+      architecture: result.config.project.architecture,
     });
   }
 
