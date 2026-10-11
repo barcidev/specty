@@ -14,6 +14,9 @@
 4. **Session resumption:** On starting any interaction, read `specty.yaml` and `tasks.md` of the active change and resume from the first unchecked task (`- [ ]`).
 5. **Orientation via `specty next`:** At the start of each turn, invoke `specty next --card` or inspect the status card to anchor your execution state (`[change: <id> | status: ... | task: ... | next: ...]`).
 6. **Hard Tool Interception (`specty guard`):** All file modifications and bash executions are intercepted by `specty guard`. Any edits outside the active task scope `[files: ...]` or without an approved specification will be blocked immediately.
+7. **Official CLI Scaffolding (`@latest`):** For new projects or modules, base scaffolding and boilerplate MUST be generated via the official framework CLI (`npm create vite@latest`, `npx create-next-app@latest`, `ng new`, `nest new`, etc.) using non-interactive flags and guaranteeing the latest stable version. NEVER create boilerplate file-by-file manually.
+8. **Quality Standards & 300-Line Limit:** No file should exceed 300 lines of code whenever possible (decompose applying SRP). Prefer constants (`const`, `readonly`, immutability) over mutable variables and strictly apply SOLID principles in both new and existing code. Review `.specty/rules/core/coding-standards.md`.
+9. **Mandatory Proactive Next-Step Guidance:** In EVERY interaction or response, the assistant MUST explicitly state the current status and the immediate next step or action required from the user (e.g. running `specty approve <change>`, reviewing generated specifications, or verifying tests), ensuring the user is never left lost or without clear direction.
 <!-- specty:end id=orchestrator -->
 
 <!-- specty:begin id=project -->
@@ -49,5 +52,6 @@ Development is governed by a strict 5-phase lifecycle:
 - **Role Catalog:** Review `.specty/agents/<role>.md` for agent responsibilities and allowed files.
 - **Routing Matrix:** Review `.specty/routing.md` to determine which role and rules to load for a task.
 - **Modular Rules:** Review `.specty/rules/` for technology and architecture guidelines.
+- **Coding Standards & Scaffolding:** Review `.specty/rules/core/coding-standards.md` for mandatory directives on official CLI scaffolding, modularity (<= 300 lines), immutability, and SOLID.
 {{uiDirectives}}- **CLI Commands:** Invoke specty CLI tools via `specty status`, `specty next`, `specty guard`, `specty verify <change>`, or `specty validate [change]`. For direct OpenSpec commands, use `specty openspec [args...]`.
 <!-- specty:end id=links -->

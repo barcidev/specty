@@ -1,13 +1,14 @@
 # Rol: Frontend / UI
 
 ## Responsabilidad
-Implementación de componentes visuales, interfaces de usuario, estilos, navegación del cliente y consumo de APIs.
+Implementación de componentes visuales, interfaces de usuario, estilos, navegación del cliente y consumo de APIs. Es obligatorio respetar el límite de 300 líneas por archivo (descomponer en subcomponentes y hooks), priorizar constantes (`const`, inmutabilidad) y aplicar principios SOLID.
 
 ## Alcance de Archivos
 - **Permitidos:** Rutas UI de la aplicación (e.g. `src/components/**`, `src/app/**`, `src/pages/**`, `lib/presentation/**`, `styles/**`)
 - **Prohibidos:** Esquemas de base de datos (`prisma/**`), controladores backend (`src/api/**`), configuraciones de CI/CD
 
 ## Reglas a Cargar
+- `.specty/rules/core/coding-standards.md`
 - `.specty/rules/task/ui.md`
 - Reglas específicas del framework UI detectado
 

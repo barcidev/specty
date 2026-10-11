@@ -1,6 +1,8 @@
 # Framework Rules: NestJS
 
-- Encapsulate features in cohesive Modules (`@Module`).
-- Enforce input DTO validation using `class-validator` and `class-transformer`.
-- Keep Controllers thin by delegating business logic to injectable Services.
-- Handle application errors via central Exception Filters.
+- For new projects, scaffold with the official CLI: `npx @nestjs/cli@latest new <name> --strict --skip-git`. Never create base boilerplate file-by-file.
+- Encapsulate features into Modules (`@Module`).
+- Use DTOs with `class-validator` and `class-transformer` schemas for all incoming payloads.
+- Keep Controllers lean, delegating business logic to injectable Services.
+- Handle exceptions with custom exception filters (`@Catch`).
+- Respect the 300-line file limit (decompose into controllers, services, DTOs, and interfaces), prefer constants (`const`, `readonly`), and apply SOLID principles.

@@ -5,9 +5,9 @@ Progressive context loading: Each active task must load only the role and rules 
 | Task Type | Assigned Role | Rules to Load | Typical File Scope |
 | --- | --- | --- | --- |
 | **Planning** | `orchestrator` | `rules/core/*` | `openspec/**`, `AGENTS.md` |
-| **Data / DB** | `data` | `rules/task/data.md` | `prisma/**`, `src/database/**`, `migrations/**` |
-| **Logic / API** | `backend` | `rules/task/api.md`, `rules/lang/*` | `src/modules/**`, `src/services/**`, `lib/domain/**` |
-| **Interface / UI**| `frontend` | `rules/task/ui.md`, `rules/framework/*` | `src/components/**`, `src/app/**`, `lib/presentation/**` |
+| **Data / DB** | `data` | `rules/task/data.md`, `rules/core/coding-standards.md` | `prisma/**`, `src/database/**`, `migrations/**` |
+| **Logic / API** | `backend` | `rules/task/api.md`, `rules/lang/*`, `rules/core/coding-standards.md` | `src/modules/**`, `src/services/**`, `lib/domain/**` |
+| **Interface / UI**| `frontend` | `rules/task/ui.md`, `rules/framework/*`, `rules/core/coding-standards.md` | `src/components/**`, `src/app/**`, `lib/presentation/**` |
 | **Assurance** | `testing` | `rules/task/testing.md` | `test/**`, `tests/**`, `**/*.spec.*` |
 | **Security Audit**| `security-review`| `rules/task/security.md` | `openspec/changes/<change>/verification/**` |
 
