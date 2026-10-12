@@ -95,4 +95,5 @@ export interface McpToolResultMap {
   specty_verify: SpectyVerifyResult;
   specty_start_change: SpectyStateTransitionResult;
   specty_complete_change: SpectyStateTransitionResult;
+  specty_wait_action: import("../governance/wait-action.js").WaitActionResult;
 }

@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execa } from "execa";
 import { getChangeDetail } from "./change-service.js";
+import type { ChangeDetailPayload } from "./types.js";
 
 export interface IdeEnvironmentInfo {
   isAntigravity: boolean;
@@ -19,6 +20,7 @@ export interface ViewerDispatchResult {
   openedInIde: boolean;
   openedInBrowser: boolean;
   message: string;
+  dashboardContent?: string;
 }
 
 export function detectIdeEnvironment(): IdeEnvironmentInfo {
@@ -28,12 +30,17 @@ export function detectIdeEnvironment(): IdeEnvironmentInfo {
     env.ANTIGRAVITY_IDE ||
       env.GEMINI_CLI ||
       env.ANTIGRAVITY_AGENT ||
-      (env.HOME && env.GEMINI_CLI_CONFIG_DIR),
+      env.__CFBundleIdentifier === "com.google.antigravity-ide" ||
+      env.ANTIGRAVITY_EDITOR_APP_ROOT ||
+      Boolean(env.VSCODE_CODE_CACHE_PATH?.includes("Antigravity")) ||
+      Boolean(env.HOME && env.GEMINI_CLI_CONFIG_DIR),
   );
 
   const isCursor = Boolean(env.CURSOR_VERSION || env.CURSOR_AGENT);
   const isWindsurf = Boolean(env.WINDSURF_VERSION || env.CODEIUM_VERSION);
-  const isVsCode = Boolean(env.VSCODE_PID || env.TERM_PROGRAM === "vscode");
+  const isVsCode = Boolean(
+    !isAntigravity && !isCursor && !isWindsurf && (env.VSCODE_PID || env.TERM_PROGRAM === "vscode"),
+  );
 
   let name: IdeEnvironmentInfo["name"] = "browser";
   if (isAntigravity) name = "antigravity";
@@ -178,6 +185,23 @@ export async function openInIdeInternalViewer(target: {
 
   // 1. Si es archivo de plan, abrir directamente en el visor de archivos/planes del IDE
   if (target.filePath) {
+    if (ide.isAntigravity) {
+      try {
+        await execa("antigravity-ide", ["-g", target.filePath]);
+        return true;
+      } catch {
+        try {
+          await execa(
+            "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide",
+            ["-g", target.filePath],
+          );
+          return true;
+        } catch {
+          return true;
+        }
+      }
+    }
+
     if (ide.isCursor) {
       try {
         await execa("cursor", ["-g", target.filePath]);
@@ -195,16 +219,39 @@ export async function openInIdeInternalViewer(target: {
         // continue
       }
     }
-
-    // En Antigravity, el plan ya queda proyectado en el workspace para su visualización nativa
-    if (ide.isAntigravity) {
-      return true;
-    }
   }
 
   // 2. Si es URL web, intentar abrir en el Simple Browser interno del IDE
   if (target.url) {
-    // 2.1 Intentar comando CLI del editor con flag --open-url
+    // 2.1 Intentar soporte de Antigravity IDE (macOS URL Scheme & CLI)
+    if (ide.isAntigravity) {
+      if (process.platform === "darwin") {
+        try {
+          const handlerUri = `antigravity-ide://vscode.simple-browser/open?url=${encodeURIComponent(target.url)}`;
+          await execa("open", [handlerUri]);
+          return true;
+        } catch {
+          // continue
+        }
+      }
+
+      try {
+        await execa("antigravity-ide", ["--open-url", target.url]);
+        return true;
+      } catch {
+        try {
+          await execa(
+            "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide",
+            ["--open-url", target.url],
+          );
+          return true;
+        } catch {
+          // continue
+        }
+      }
+    }
+
+    // 2.2 Intentar comando CLI del editor con flag --open-url
     if (ide.isCursor) {
       try {
         await execa("cursor", ["--open-url", target.url]);
@@ -223,7 +270,7 @@ export async function openInIdeInternalViewer(target: {
       }
     }
 
-    // 2.2 En macOS, intentar handler directo del Simple Browser del editor
+    // 2.3 En macOS, intentar handler directo del Simple Browser del editor
     if (process.platform === "darwin" && (ide.isVsCode || ide.isCursor)) {
       try {
         const handlerUri = ide.isCursor
@@ -262,15 +309,86 @@ export async function openExternalBrowserFallback(url: string): Promise<boolean>
   }
 }
 
+/**
+ * Renderiza un dashboard formateado para chat/terminal idéntico a la UI web de Specty.
+ */
+export function renderChatPlanDashboard(detail: ChangeDetailPayload): string {
+  const statusBadge = detail.approval?.approved
+    ? "APPROVED"
+    : detail.status?.toUpperCase() || "DRAFT";
+
+  const totalTasks = detail.tasksData?.total || 0;
+  const completedTasks = detail.tasksData?.completed || 0;
+  const pct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  let dashboard = `\n# 📋 Specty Plan Dashboard: \`${detail.id}\`\n\n`;
+  dashboard += `> **Título:** ${detail.title || detail.id}\n`;
+  dashboard += `> **Estado:** \`${statusBadge}\` | **Progreso:** ${completedTasks}/${totalTasks} tareas (${pct}%)\n`;
+
+  if (detail.approval?.approved) {
+    dashboard += `> **Aprobado por:** \`${detail.approval.approvedBy || "Humano"}\` (Hash: \`${detail.approval.approvedHash || "N/A"}\`)\n`;
+  } else {
+    dashboard += `> **Aprobación:** \`PENDIENTE\` (Hash actual: \`${detail.approval?.currentHash || "calculando..."}\`)\n`;
+  }
+
+  if (detail.validation && !detail.validation.valid) {
+    const errorCount =
+      detail.validation.errorsCount ??
+      detail.validation.issues?.filter((i) => i.severity === "error").length ??
+      0;
+    dashboard += `> ⚠️ **Validación:** ${errorCount} errores encontrados\n`;
+  }
+
+  dashboard += "\n";
+
+  // Proposal sections
+  if (detail.proposalSections && detail.proposalSections.length > 0) {
+    dashboard += `## 📄 Especificación y Propuesta\n\n`;
+    for (const sec of detail.proposalSections) {
+      dashboard += `### ${sec.title}\n\n${sec.content}\n\n`;
+    }
+  }
+
+  // Tasks
+  if (detail.tasksData?.items && detail.tasksData.items.length > 0) {
+    dashboard += `## 📝 Tareas de Implementación\n\n`;
+    for (const item of detail.tasksData.items) {
+      const check = item.completed ? "[x]" : "[ ]";
+      const roleTag = item.role ? ` \`[rol: ${item.role}]\`` : "";
+      dashboard += `- ${check} ${item.text}${roleTag}\n`;
+    }
+    dashboard += "\n";
+  }
+
+  // Action Buttons
+  dashboard += `---
+### ⚡ Opciones de Acción Manual:
+- **[Aprobar Cambio]**: \`specty approve ${detail.id}\`
+- **[Aprobar sin Confirmación]**: \`specty approve ${detail.id} -y\`
+- **[Rechazar / Solicitar Ajustes]**: Solicita modificaciones en la especificación al asistente antes de proceder
+- **[Validar Especificación]**: \`specty validate ${detail.id}\`
+- **[Abrir Dashboard Web]**: \`specty ui --change ${detail.id}\`
+`;
+
+  return dashboard;
+}
+
+export interface DispatchViewerOptions {
+  preferIdePlan?: boolean;
+  openBrowser?: boolean;
+  formatChat?: boolean;
+}
+
 export async function dispatchSpecViewer(
   repoRoot: string,
   changeId: string,
-  options: { preferIdePlan?: boolean; openBrowser?: boolean } = {},
+  options: DispatchViewerOptions = {},
 ): Promise<ViewerDispatchResult> {
-  const ideInfo = detectIdeEnvironment();
+  const detail = await getChangeDetail(repoRoot, changeId);
+  const dashboardContent = detail ? renderChatPlanDashboard(detail) : undefined;
 
-  // Prioridad 1: Visor nativo de planes de Antigravity / IDE
-  if (ideInfo.isAntigravity || options.preferIdePlan) {
+  // Si se solicita forzar modo plan de texto en IDE
+  if (options.preferIdePlan) {
     const planFilePath = await projectPlanForIde(repoRoot, changeId);
     const openedInIde = await openInIdeInternalViewer({ filePath: planFilePath });
 
@@ -282,36 +400,42 @@ export async function dispatchSpecViewer(
       message: openedInIde
         ? `Plan proyectado y abierto en el visor interno del IDE: ${planFilePath}`
         : `Plan proyectado para el visor de Antigravity en: ${planFilePath}`,
+      dashboardContent,
     };
   }
 
-  // Prioridad 2: Servidor Web Local (Specty UI)
+  // Prioridad: Servidor Web Local (Specty UI) y apertura en Webview / Simple Browser del IDE
   const { url, wasStarted } = await ensureUiServerActive(repoRoot, changeId);
-
-  // Intentar primero en el visor / Simple Browser interno del IDE
   const openedInIde = await openInIdeInternalViewer({ url });
   let openedInBrowser = false;
 
-  // ÚLTIMA OPCIÓN: Solo abrir navegador externo si falló el visor interno del IDE
+  // Si falló abrir en webview interno del IDE y se permite navegador externo:
   if (!openedInIde && options.openBrowser !== false) {
     openedInBrowser = await openExternalBrowserFallback(url);
   }
+
+  // También sincronizar el archivo de plan para consulta en workspace
+  const planFilePath = await projectPlanForIde(repoRoot, changeId);
 
   let message = wasStarted
     ? `Servidor Specty UI activado automáticamente en segundo plano: ${url}`
     : `Specty UI activo: ${url}`;
 
   if (openedInIde) {
-    message += ` (Abierto en el visor interno del IDE)`;
+    message += ` (Abierto en el webview interno del IDE)`;
   } else if (openedInBrowser) {
-    message += ` (Abierto en navegador del sistema como última opción)`;
+    message += ` (Abierto en navegador del sistema)`;
+  } else {
+    message += ` (Visualización detallada disponible en consola/chat)`;
   }
 
   return {
     mode: "ui-server",
     url,
+    planFilePath,
     openedInIde,
     openedInBrowser,
     message,
+    dashboardContent,
   };
 }

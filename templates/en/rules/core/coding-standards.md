@@ -81,3 +81,26 @@ Strictly apply all 5 SOLID principles in both greenfield development and brownfi
 ## 6. Continuous User Guidance (Next-Step Guidance)
 
 - **Mandatory closing instruction:** At the end of every response or turn, the agent MUST explicitly tell the user the current status and what action to take next (e.g. command to run, file to review, or approval needed). Never leave a response without a clear next step.
+
+---
+
+## 7. Iconography and Visual Elements in Interfaces
+
+1. **Strict Prohibition of Unicode Symbols and Emojis as UI Icons:**
+   - Never use raw Unicode symbols or emojis (e.g. ✏️, 📐, 🔍, 🗑️, ⚙️, ✕, ➕, ☰, 👁️) as icons in buttons, toolbars, navigation menus, tabs, or interactive controls.
+   - Unicode glyphs suffer from inconsistent rendering across operating systems, browsers, and font fallbacks, lack vector styling precision, and convey an unfinished prototype appearance.
+
+2. **Mandatory Use of Vector Icon Libraries:**
+   - UI iconography must be implemented using clean SVG components or symbols from standard, production-ready icon libraries suitable for the project's framework.
+   - If no icon library is already present in the repository, prefer selecting and installing from among the following popular and established industry standards:
+     - **Lucide Icons** (`lucide-react`, `lucide-vue-next`, `lucide-angular`, `lucide-svelte`, `lucide-static`): Modern, crisp, highly compatible, and standard successor to Feather with uniform 24x24 px grid.
+     - **Heroicons** (`@heroicons/react`, `@heroicons/vue`): Handcrafted for Tailwind CSS in outline, solid, and micro styles.
+     - **Tabler Icons** (`@tabler/icons`, `@tabler/icons-react`, etc.): Massive library with 5,000+ consistent customizable icons.
+     - **Phosphor Icons** (`@phosphor-icons/react`, `@phosphor-icons/core`): Highly versatile with multiple visual weights (regular, bold, fill, duotone).
+     - **Remix Icon** (`remixicon`): Elegant, neutral open-source icon set for web and mobile interfaces.
+     - **Material Symbols / Material Icons** (`@material-symbols/svg-400`, `@fontsource/material-symbols-outlined`): Google's design standard covering extensive domain concepts.
+     - **FontAwesome** (`@fortawesome/fontawesome-svg-core`, `@fortawesome/free-solid-svg-icons`): Established, battle-tested icon suite.
+     - **Radix UI Icons** (`@radix-ui/react-icons`): Crisp 15x15 icons tailored for dense UI designs.
+     - **Simple Icons** (`simple-icons`): Specialized SVG icons for popular technology brands and services.
+     - **Iconify** (`@iconify/react`, `@iconify/vue`, etc.): Universal icon framework providing access to 100+ icon packs.
+   - In environments where adding an npm dependency is restricted, provide clean, optimized inline `<svg>` elements with `stroke="currentColor"` or `fill="currentColor"`, sized via design tokens or utility classes.

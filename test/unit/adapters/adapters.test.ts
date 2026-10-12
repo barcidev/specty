@@ -42,7 +42,7 @@ describe("individual tool adapter generation", () => {
     const adapter = getAdapter("antigravity");
     const files = await adapter.generateFiles(dummyCtx);
     expect(files).toHaveLength(1);
-    expect(files[0]?.relativePath).toBe(".agent/rules/specty.md");
+    expect(files[0]?.relativePath).toBe(".agents/rules/specty.md");
     expect(files[0]?.content).toContain("AGENTS.md");
     expect(adapter.getMcpInstructions?.("es")).toContain("Antigravity");
   });

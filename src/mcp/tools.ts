@@ -218,6 +218,24 @@ export function getMcpToolDefinitions(): McpToolDefinition[] {
         },
       },
     },
+    {
+      name: "specty_wait_action",
+      description:
+        "Reactively wait until the active plan is approved or updated by human review in Specty UI.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          changeId: {
+            type: "string",
+            description: "Optional specific change identifier to wait for.",
+          },
+          timeoutSeconds: {
+            type: "number",
+            description: "Maximum timeout in seconds to wait (defaults to 600).",
+          },
+        },
+      },
+    },
   ];
 }
 
@@ -480,6 +498,17 @@ export async function handleMcpToolCall(
         typeof args.changeId === "string" ? args.changeId : undefined,
       );
       return report;
+    }
+
+    case "specty_wait_action": {
+      const { waitForChangeAction } = await import("../governance/wait-action.js");
+      const timeoutSeconds = typeof args.timeoutSeconds === "number" ? args.timeoutSeconds : 600;
+      const res = await waitForChangeAction(
+        repoRoot,
+        typeof args.changeId === "string" ? args.changeId : undefined,
+        { timeoutMs: timeoutSeconds * 1000 },
+      );
+      return res;
     }
 
     default:

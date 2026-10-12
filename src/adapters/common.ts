@@ -19,6 +19,9 @@ La unica fuente de verdad para directivas, flujos, roles y restricciones es **[A
 3. Carga progresivamente las reglas modulares desde \`[.specty/rules/](./.specty/rules/)\`.
 4. Ejecuta siempre los comandos de verificacion definidos en \`[.specty/config.yaml](./.specty/config.yaml)\` antes de dar por concluida una tarea.
 5. En cada intervencion o respuesta, indica siempre al usuario el paso siguiente claro o la accion requerida de su parte (ej. comando a ejecutar o revision) para guiarlo de forma continua y evitar que quede desorientado.
+6. Para revision y aprobacion de planes o cambios:
+   - Si el IDE dispone de visor webview / Simple Browser, ejecuta o sugiere \`specty view <change>\` para abrir la interfaz grafica interactiva.
+   - En caso contrario o al interactuar en el chat, presenta un dashboard detallado de la especificacion (estado, metricas, propuesta y tareas) e incluye explicitamente las opciones de accion manual (\`specty approve <change>\`, rechazo con solicitudes de ajuste, \`specty validate <change>\`).
 `;
   }
 
@@ -35,6 +38,9 @@ The single source of truth for directives, workflows, roles, and boundaries is *
 3. Progressively load modular rules from \`[.specty/rules/](./.specty/rules/)\`.
 4. Always execute designated verification commands defined in \`[.specty/config.yaml](./.specty/config.yaml)\` before concluding tasks.
 5. In every response or intervention, always provide the user with clear next steps or the next required action (command to run, file review, or approval) to maintain continuous guidance and prevent disorientation.
+6. For reviewing and approving specification plans:
+   - If the IDE supports an internal webview / Simple Browser, run or suggest \`specty view <change>\` to open the local graphical interface.
+   - Otherwise, or directly in the chat, present a detailed specification dashboard (status, metrics, proposal, tasks) and explicitly list the manual action options (\`specty approve <change>\`, reject/request changes, \`specty validate <change>\`).
 `;
 }
 

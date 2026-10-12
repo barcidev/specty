@@ -4,55 +4,61 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Specty UI - Governance & Spec Dashboard</title>
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=2.8.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 </head>
 <body class="dark-theme">
   <!-- Top Navigation Bar -->
   <header class="topbar">
     <div class="topbar-left">
       <div class="brand">
-        <span class="brand-logo">⚡</span>
+        <span class="brand-logo"><i class="ph-bold ph-lightning"></i></span>
         <span class="brand-title">specty</span>
         <span class="brand-badge">UI</span>
       </div>
-      <div class="live-indicator" id="live-indicator" title="Sincronización en vivo vía Server-Sent Events">
-        <span class="live-dot"></span>
-        <span class="live-text">Live Sync</span>
-      </div>
       <div class="branch-pill" id="branch-pill">
-        <span class="branch-icon">⎇</span>
+        <span class="branch-icon"><i class="ph ph-git-branch"></i></span>
         <span id="branch-name">main</span>
-      </div>
-    </div>
-
-    <div class="topbar-center">
-      <div class="change-selector-wrapper">
-        <label for="change-select" class="selector-label">Change:</label>
-        <select id="change-select" class="change-select">
-          <option value="" disabled selected>Cargando changes...</option>
-        </select>
       </div>
     </div>
 
     <div class="topbar-right">
       <div class="approval-badge-wrapper">
         <div id="approval-status-badge" class="status-badge status-draft">
-          <span class="status-icon">●</span>
-          <span id="approval-status-text">Draft</span>
+          <span class="status-icon"><i class="ph-bold ph-circle"></i></span>
+          <span id="approval-status-text" data-i18n="statusDraft">Draft</span>
         </div>
       </div>
-      <button type="button" id="btn-quick-reviews" class="btn-subtle" title="Ver comentarios y revisiones">
-        💬 <span id="reviews-counter">0</span>
+      <button type="button" id="btn-quick-reviews" class="btn-subtle" title="Ver ajustes y revisiones">
+        <i class="ph ph-chat-teardrop-text"></i> <span id="reviews-counter">0</span>
       </button>
-      <button type="button" id="btn-open-ide" class="btn-secondary" title="Abrir en el editor / IDE">
-        ↗ Abrir en IDE
+      <button type="button" id="btn-approve" class="btn-primary" title="Actualizar plan según los ajustes de las secciones">
+        <i class="ph-bold ph-arrows-clockwise"></i> <span id="btn-approve-label" data-i18n="updatePlanBtn">Actualizar Plan según Ajustes</span>
       </button>
-      <button type="button" id="btn-approve" class="btn-primary" title="Aprobar especificación en 1 clic">
-        ✓ Aprobar Spec
-      </button>
+      <div class="settings-menu-wrapper" id="settings-menu-wrapper">
+        <button type="button" id="btn-settings-toggle" class="btn-subtle btn-settings" title="Ajustes" aria-label="Ajustes">
+          <i class="ph-bold ph-gear"></i>
+        </button>
+        <div id="settings-dropdown" class="settings-dropdown hidden">
+          <div class="settings-dropdown-section">
+            <span class="settings-dropdown-label" data-i18n="settingsLanguage">Idioma</span>
+            <div class="lang-switch" id="lang-switch">
+              <button type="button" class="lang-btn" data-lang="es" title="Español">ES</button>
+              <span class="lang-divider">/</span>
+              <button type="button" class="lang-btn" data-lang="en" title="English">EN</button>
+            </div>
+          </div>
+          <div class="settings-dropdown-divider"></div>
+          <button type="button" id="btn-open-ide" class="settings-dropdown-item" title="Abrir en el editor / IDE">
+            <i class="ph ph-arrow-square-out"></i> <span data-i18n="openInIde">Abrir en IDE</span>
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -61,17 +67,17 @@
     <!-- Sub-header / Tabs -->
     <nav class="tabs-nav">
       <div class="tabs-list">
-        <button type="button" class="tab-btn active" data-tab="tab-proposal">
-          📋 Propuesta <span class="tab-sub">proposal.md</span>
+        <button type="button" class="tab-btn tab-btn-proposal active" data-tab="tab-proposal">
+          <i class="ph ph-file-text"></i> <span data-i18n="tabProposal">Propuesta</span> <span class="tab-sub">proposal.md</span>
         </button>
-        <button type="button" class="tab-btn" data-tab="tab-tasks">
-          ✅ Lista de Tareas <span id="tab-tasks-badge" class="pill-badge">0/0</span>
+        <button type="button" class="tab-btn tab-btn-tasks" data-tab="tab-tasks">
+          <i class="ph ph-check-square"></i> <span data-i18n="tabTasks">Lista de Tareas</span> <span id="tab-tasks-badge" class="pill-badge pill-emerald">0/0</span>
         </button>
-        <button type="button" class="tab-btn" data-tab="tab-diff">
-          🔀 Diffs de Código & Specs <span id="tab-diff-badge" class="pill-badge">0</span>
+        <button type="button" class="tab-btn tab-btn-diff" data-tab="tab-diff">
+          <i class="ph ph-git-diff"></i> <span data-i18n="tabDiffs">Diffs de Código & Specs</span> <span id="tab-diff-badge" class="pill-badge pill-purple">0</span>
         </button>
-        <button type="button" class="tab-btn" data-tab="tab-reviews">
-          💬 Reviews & Feedback <span id="tab-reviews-badge" class="pill-badge pill-amber">0</span>
+        <button type="button" class="tab-btn tab-btn-reviews" data-tab="tab-reviews">
+          <i class="ph ph-chats-teardrop"></i> <span data-i18n="tabReviews">Reviews & Feedback</span> <span id="tab-reviews-badge" class="pill-badge pill-amber">0</span>
         </button>
       </div>
       <div class="tabs-actions">
@@ -88,12 +94,12 @@
         </div>
         <div class="pane-actions">
           <button type="button" id="btn-add-general-review" class="btn-secondary btn-sm">
-            💬 Comentar Sección
+            <i class="ph ph-chat-teardrop-text"></i> <span data-i18n="commentSection">Ajustar Sección</span>
           </button>
         </div>
       </div>
 
-      <div id="proposal-sections-container" class="sections-container">
+      <div id="proposal-sections-container" class="sections-container scroll-container">
         <!-- Rendered sections injected here -->
       </div>
     </section>
@@ -102,8 +108,8 @@
     <section id="tab-tasks" class="tab-pane">
       <div class="pane-header">
         <div class="pane-title-group">
-          <h2>Lista de Tareas</h2>
-          <p class="sub-description">Checklist interactiva sincronizada con <code>tasks.md</code>. Marca tareas con un clic.</p>
+          <h2 data-i18n="tasksTitle">Lista de Tareas</h2>
+          <p class="sub-description" data-i18n="tasksDesc">Checklist interactiva sincronizada con <code>tasks.md</code>. Marca tareas con un clic.</p>
         </div>
         <div class="progress-box">
           <div class="progress-stats">
@@ -116,7 +122,7 @@
         </div>
       </div>
 
-      <div id="tasks-container" class="tasks-container">
+      <div id="tasks-container" class="tasks-container scroll-container">
         <!-- Tasks rendered by role groups -->
       </div>
     </section>
@@ -125,20 +131,20 @@
     <section id="tab-diff" class="tab-pane">
       <div class="pane-header">
         <div class="pane-title-group">
-          <h2>Diferencias de Código y Especificaciones</h2>
-          <p class="sub-description">Inspecciona los cambios propuestos en el repositorio y los deltas de especificaciones.</p>
+          <h2 data-i18n="diffsTitle">Diferencias de Código y Especificaciones</h2>
+          <p class="sub-description" data-i18n="diffsDesc">Inspecciona los cambios propuestos en el repositorio y los deltas de especificaciones.</p>
         </div>
         <div class="diff-scope-selector">
-          <button type="button" class="scope-btn active" data-scope="all">Todos</button>
+          <button type="button" class="scope-btn active" data-scope="all" data-i18n="scopeAll">Todos</button>
           <button type="button" class="scope-btn" data-scope="staged">Staged</button>
           <button type="button" class="scope-btn" data-scope="unstaged">Unstaged</button>
         </div>
       </div>
 
       <div class="diff-layout">
-        <aside class="diff-file-sidebar">
+        <aside class="diff-file-sidebar scroll-container">
           <div class="sidebar-header">
-            <span>Archivos Modificados</span>
+            <span data-i18n="modifiedFiles">Archivos Modificados</span>
             <span id="diff-file-count" class="counter">0</span>
           </div>
           <ul id="diff-files-list" class="diff-files-list">
@@ -146,14 +152,17 @@
           </ul>
         </aside>
 
-        <div class="diff-viewer-panel">
+        <div class="diff-viewer-panel scroll-container">
           <div id="diff-empty-state" class="empty-state">
-            <p>Selecciona un archivo modificado para inspeccionar el diff.</p>
+            <i class="ph ph-file-code empty-state-icon"></i>
+            <p data-i18n="diffEmpty">Selecciona un archivo modificado para inspeccionar el diff.</p>
           </div>
           <div id="diff-content-wrapper" class="diff-content-wrapper hidden">
             <div class="diff-file-header">
               <span id="diff-current-file-name" class="current-file-name">archivo</span>
-              <button type="button" id="btn-open-diff-file" class="btn-subtle btn-xs">Abrir archivo ↗</button>
+              <button type="button" id="btn-open-diff-file" class="btn-subtle btn-xs">
+                <span data-i18n="openFile">Abrir archivo</span> <i class="ph ph-arrow-square-out"></i>
+              </button>
             </div>
             <pre id="diff-code-pre" class="diff-code-pre"><code></code></pre>
           </div>
@@ -165,18 +174,13 @@
     <section id="tab-reviews" class="tab-pane">
       <div class="pane-header">
         <div class="pane-title-group">
-          <h2>Sesión de Revisión y Retroalimentación</h2>
-          <p class="sub-description">Comentarios y solicitudes de cambio anclados por sección (estilo Antigravity Plan Viewer).</p>
-        </div>
-        <div class="pane-actions">
-          <button type="button" id="btn-apply-suggestions" class="btn-primary btn-sm">
-            ⚡ Aplicar Sugerencias al Spec
-          </button>
+          <h2 data-i18n="reviewsTitle">Historial de Ajustes</h2>
+          <p class="sub-description" data-i18n="reviewsDesc">Registro de auditoría (log) de todos los ajustes realizados al plan.</p>
         </div>
       </div>
 
       <div class="reviews-layout">
-        <div id="reviews-list-container" class="reviews-list-container">
+        <div id="reviews-list-container" class="reviews-list-container scroll-container">
           <!-- Review cards -->
         </div>
       </div>
@@ -187,44 +191,44 @@
   <div id="modal-review" class="modal-backdrop hidden">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 id="modal-review-title">Agregar Comentario a Sección</h3>
-        <button type="button" class="modal-close" id="modal-review-close">&times;</button>
+        <h3 id="modal-review-title" data-i18n="modalReviewTitle">Agregar Comentario a Sección</h3>
+        <button type="button" class="modal-close" id="modal-review-close" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="review-section-name">Sección:</label>
+          <label for="review-section-name" data-i18n="modalReviewSection">Sección:</label>
           <input type="text" id="review-section-name" class="form-control" readonly>
           <input type="hidden" id="review-section-id">
         </div>
         <div class="form-group" id="group-selected-text">
-          <label for="review-selected-text">Texto Referenciado (Opcional):</label>
+          <label for="review-selected-text" data-i18n="modalReviewRefText">Texto Referenciado (Opcional):</label>
           <textarea id="review-selected-text" class="form-control form-textarea-sm" placeholder="Texto o línea seleccionada..."></textarea>
         </div>
         <div class="form-group">
-          <span class="group-label">Tipo de Observación:</span>
+          <span class="group-label" data-i18n="modalReviewType">Tipo de Observación:</span>
           <div class="radio-group">
             <label class="radio-label">
               <input type="radio" name="review-type" value="comment" checked>
-              <span>💬 Comentario / Pregunta</span>
+              <span><i class="ph ph-chat-teardrop-text"></i> <span data-i18n="typeComment">Comentario / Pregunta</span></span>
             </label>
             <label class="radio-label">
               <input type="radio" name="review-type" value="change_request">
-              <span>⚠️ Solicitud de Cambio</span>
+              <span><i class="ph ph-warning-circle"></i> <span data-i18n="typeChangeRequest">Solicitud de Cambio</span></span>
             </label>
           </div>
         </div>
         <div class="form-group">
-          <label for="review-comment-text">Observación / Comentario:</label>
+          <label for="review-comment-text" data-i18n="modalReviewCommentLabel">Observación / Comentario:</label>
           <textarea id="review-comment-text" class="form-control form-textarea" placeholder="Escribe tu feedback detallado aquí..."></textarea>
         </div>
         <div class="form-group">
-          <label for="review-suggestion-text">Sugerencia de Reemplazo Textual (Opcional):</label>
+          <label for="review-suggestion-text" data-i18n="modalReviewSuggestionLabel">Sugerencia de Reemplazo Textual (Opcional):</label>
           <textarea id="review-suggestion-text" class="form-control form-textarea-sm mono" placeholder="Si tienes una propuesta de texto exacto, colócala aquí para aplicarla automáticamente..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" id="btn-cancel-review" class="btn-secondary">Cancelar</button>
-        <button type="button" id="btn-save-review" class="btn-primary">Guardar Comentario</button>
+        <button type="button" id="btn-cancel-review" class="btn-secondary" data-i18n="btnCancel">Cancelar</button>
+        <button type="button" id="btn-save-review" class="btn-primary" data-i18n="btnSaveComment">Guardar Comentario</button>
       </div>
     </div>
   </div>
@@ -233,34 +237,39 @@
   <div id="modal-approve" class="modal-backdrop hidden">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>Aprobar Especificación</h3>
-        <button type="button" class="modal-close" id="modal-approve-close">&times;</button>
+        <h3 data-i18n="modalApproveTitle">Aprobar Especificación</h3>
+        <button type="button" class="modal-close" id="modal-approve-close" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="modal-intro">Estás a punto de aprobar el change <strong id="modal-approve-change-id"></strong>.</p>
+        <p class="modal-intro"><span data-i18n="modalApproveIntro">Estás a punto de aprobar el change</span> <strong id="modal-approve-change-id"></strong>.</p>
         <div id="modal-validation-summary" class="validation-summary-box">
           <!-- Validation warnings or errors -->
         </div>
         <div class="form-group">
-          <label for="approve-user-input">Aprobado por:</label>
+          <label for="approve-user-input" data-i18n="modalApproveUser">Aprobado por:</label>
           <input type="text" id="approve-user-input" class="form-control" placeholder="Nombre o usuario de Git">
         </div>
         <div class="form-group">
-          <label for="approve-notes-input">Notas de Aprobación (Opcional):</label>
+          <label for="approve-notes-input" data-i18n="modalApproveNotes">Notas de Aprobación (Opcional):</label>
           <input type="text" id="approve-notes-input" class="form-control" placeholder="Ej. Aprobado tras revisión de arquitectura">
         </div>
-        <p class="approval-hint">
-          ✓ Se calculará el hash criptográfico SHA-256 de la especificación.<br>
-          ✓ Se registrará en <code>.specty/audit/approvals.jsonl</code> para la auditoría y compuertas de Git/CI.
-        </p>
+        <div class="approval-hint">
+          <p><i class="ph ph-check"></i> <span data-i18n="modalApproveHint1">Se calculará el hash criptográfico SHA-256 de la especificación.</span></p>
+          <p><i class="ph ph-check"></i> <span data-i18n="modalApproveHint2">Se registrará en .specty/audit/approvals.jsonl para auditoría y CI.</span></p>
+        </div>
       </div>
       <div class="modal-footer">
-        <button type="button" id="btn-cancel-approve" class="btn-secondary">Cancelar</button>
-        <button type="button" id="btn-confirm-approve" class="btn-primary btn-success">✓ Confirmar y Firmar Aprobación</button>
+        <button type="button" id="btn-cancel-approve" class="btn-secondary" data-i18n="btnCancel">Cancelar</button>
+        <button type="button" id="btn-confirm-approve" class="btn-primary btn-success">
+          <i class="ph-bold ph-check"></i> <span data-i18n="btnConfirmApprove">Confirmar y Firmar Aprobación</span>
+        </button>
       </div>
     </div>
   </div>
 
-  <script src="./app.js"></script>
+  <!-- Toast Notification -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="./app.js?v=2.8.0"></script>
 </body>
 </html>

@@ -137,14 +137,14 @@ export async function applyReviewSuggestionsToSpec(
 ): Promise<{ appliedCount: number; unresolvedCount: number; message: string }> {
   const comments = await loadChangeReviews(repoRoot, changeId);
   const targetComments = commentIds
-    ? comments.filter((c) => commentIds.includes(c.id) && !c.resolved && c.suggestion)
-    : comments.filter((c) => !c.resolved && c.suggestion);
+    ? comments.filter((c) => commentIds.includes(c.id) && !c.resolved)
+    : comments.filter((c) => !c.resolved);
 
   if (targetComments.length === 0) {
     return {
       appliedCount: 0,
-      unresolvedCount: comments.filter((c) => !c.resolved).length,
-      message: "No unresolved comments with direct text suggestions found.",
+      unresolvedCount: 0,
+      message: "No unresolved comments found.",
     };
   }
 
@@ -153,35 +153,31 @@ export async function applyReviewSuggestionsToSpec(
   try {
     proposalContent = await fs.readFile(proposalPath, "utf8");
   } catch {
-    return {
-      appliedCount: 0,
-      unresolvedCount: comments.filter((c) => !c.resolved).length,
-      message: `Could not read proposal.md for change "${changeId}".`,
-    };
+    proposalContent = "";
   }
 
-  let appliedCount = 0;
+  let textReplacementsCount = 0;
   for (const comment of targetComments) {
-    if (comment.selection && comment.suggestion) {
+    if (comment.selection && comment.suggestion && proposalContent) {
       if (proposalContent.includes(comment.selection)) {
         proposalContent = proposalContent.replace(comment.selection, comment.suggestion);
-        comment.resolved = true;
-        comment.resolvedAt = new Date().toISOString();
-        appliedCount++;
+        textReplacementsCount++;
       }
     }
+    comment.resolved = true;
+    comment.resolvedAt = new Date().toISOString();
   }
 
-  if (appliedCount > 0) {
+  if (proposalContent && textReplacementsCount > 0) {
     await fs.writeFile(proposalPath, proposalContent, "utf8");
-    await saveChangeReviews(repoRoot, changeId, comments);
   }
+  await saveChangeReviews(repoRoot, changeId, comments);
 
   const remaining = comments.filter((c) => !c.resolved).length;
   return {
-    appliedCount,
+    appliedCount: targetComments.length,
     unresolvedCount: remaining,
-    message: `Applied ${appliedCount} text suggestions to proposal.md. ${remaining} comments remaining.`,
+    message: `Applied ${targetComments.length} adjustments to the plan.`,
   };
 }
 

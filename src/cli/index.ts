@@ -427,10 +427,32 @@ program
   .option("--web", "force local web dashboard viewer")
   .option("-p, --port <number>", "HTTP port (defaults to 4173)")
   .option("--no-open", "do not automatically open web browser")
+  .option("--chat", "render detailed visual dashboard for chat/terminal with manual actions")
   .action(async (change: string | undefined, options) => {
     try {
       const { executeView } = await import("./commands/view.js");
       await executeView(change, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+program
+  .command("wait [change]")
+  .description("reactively wait for plan approval or updates from the web UI or team")
+  .option("-t, --timeout <seconds>", "timeout in seconds (default: 600)")
+  .option("--poll <ms>", "poll interval in milliseconds (default: 300)")
+  .option("--json", "output result as JSON")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeWait } = await import("./commands/wait.js");
+      const result = await executeWait(change, options);
+      if (result.action === "timeout") {
+        process.exit(2);
+      } else if (result.action === "aborted") {
+        process.exit(130);
+      }
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exit(1);

@@ -10,7 +10,7 @@ export const antigravityAdapter: ToolAdapter = {
   async generateFiles(ctx: AdapterContext): Promise<GeneratedFile[]> {
     return [
       {
-        relativePath: ".agent/rules/specty.md",
+        relativePath: ".agents/rules/specty.md",
         content: createThinDirective("Antigravity", ctx.language),
         description: "Antigravity rule pointing to AGENTS.md",
       },
@@ -18,7 +18,7 @@ export const antigravityAdapter: ToolAdapter = {
   },
 
   getExpectedFilePaths(): string[] {
-    return [".agent/rules/specty.md"];
+    return [".agents/rules/specty.md"];
   },
 
   getMcpInstructions(language: SupportedLanguage): string {
