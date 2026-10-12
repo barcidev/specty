@@ -81,3 +81,26 @@ Aplica rigurosamente los 5 principios SOLID tanto en código nuevo como en refac
 ## 6. Orientación Continua al Usuario (Next-Step Guidance)
 
 - **Instrucción de cierre obligatoria:** Al finalizar cada respuesta o turno, el agente DEBE indicar explícitamente al usuario el estado de situación y qué debe hacer a continuación (ej. comando a ejecutar, archivo a validar o aprobación requerida). Nunca dejes una respuesta sin indicar el paso siguiente.
+
+---
+
+## 7. Iconografía y Elementos Visuales en Interfaces
+
+1. **Prohibición estricta de Símbolos Unicode y Emojis como Iconos:**
+   - Queda estrictamente prohibido utilizar símbolos Unicode o caracteres emoji (ej. ✏️, 📐, 🔍, 🗑️, ⚙️, ✕, ➕, ☰, 👁️) como iconos de interfaz en botones, barras de herramientas, menús de navegación, pestañas o controles interactivos.
+   - Los caracteres Unicode sufren disparidad de renderizado tipográfico según el sistema operativo, navegador o versión de fuentes, no escalan con precisión vectorial y transmiten un aspecto informal o de prototipo descuidado.
+
+2. **Uso obligatorio de Librerías de Iconos Vectoriales:**
+   - La iconografía debe implementarse mediante componentes o vectores SVG limpios provenientes de librerías consagradas en el ecosistema del framework.
+   - Si no hay una librería preinstalada en el proyecto, se debe seleccionar e instalar preferentemente una de las siguientes opciones populares y estándares de la industria:
+     - **Lucide Icons** (`lucide-react`, `lucide-vue-next`, `lucide-angular`, `lucide-svelte`, `lucide-static`): Moderna, minimalista, altamente compatible y con trazo uniforme de 24x24 px.
+     - **Heroicons** (`@heroicons/react`, `@heroicons/vue`): Diseñada para encajar de forma nativa con Tailwind CSS (variantes outline, solid y micro).
+     - **Tabler Icons** (`@tabler/icons`, `@tabler/icons-react`, etc.): Catálogo extenso con más de 5,000 iconos consistentes y configurables.
+     - **Phosphor Icons** (`@phosphor-icons/react`, `@phosphor-icons/core`): Versátil y flexible con múltiples pesos visuales (regular, bold, fill, duotone).
+     - **Remix Icon** (`remixicon`): Completo conjunto de iconos neutrales y elegantes para aplicaciones web y móviles.
+     - **Material Symbols / Material Icons** (`@material-symbols/svg-400`, `@fontsource/material-symbols-outlined`): Estándar de diseño de Google con amplia cobertura de conceptos.
+     - **FontAwesome** (`@fortawesome/fontawesome-svg-core`, `@fortawesome/free-solid-svg-icons`): Librería tradicional con amplia adopción corporativa.
+     - **Radix UI Icons** (`@radix-ui/react-icons`): Iconos compactos de 15x15 px optimizados para componentes de alta densidad.
+     - **Simple Icons** (`simple-icons`): Conjunto especializado en logotipos y marcas de tecnología.
+     - **Iconify** (`@iconify/react`, `@iconify/vue`, etc.): Acceso unificado a múltiples colecciones de iconos bajo un mismo componente.
+   - En entornos o componentes donde no se puedan instalar dependencias externas, utiliza elementos `<svg>` inline limpios y optimizados con `stroke="currentColor"` o `fill="currentColor"` y dimensiones controladas mediante clases o tokens de diseño.

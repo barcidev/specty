@@ -150,14 +150,39 @@ export async function getChangeDetail(
   repoRoot: string,
   changeId: string,
 ): Promise<ChangeDetailPayload | null> {
-  const changeDir = path.join(repoRoot, "openspec", "changes", changeId);
+  let changeDir = path.join(repoRoot, "openspec", "changes", changeId);
+  let isArchived = false;
 
   try {
     const stat = await fs.stat(changeDir);
-    if (!stat.isDirectory()) return null;
+    if (!stat.isDirectory()) {
+      changeDir = "";
+    }
   } catch {
-    return null;
+    changeDir = "";
   }
+
+  if (!changeDir) {
+    const archiveBase = path.join(repoRoot, "openspec", "changes", "archive");
+    try {
+      const entries = await fs.readdir(archiveBase);
+      for (const entry of entries) {
+        if (entry === changeId || entry.endsWith(`-${changeId}`)) {
+          const candidate = path.join(archiveBase, entry);
+          const stat = await fs.stat(candidate);
+          if (stat.isDirectory()) {
+            changeDir = candidate;
+            isArchived = true;
+            break;
+          }
+        }
+      }
+    } catch {
+      // no archive directory
+    }
+  }
+
+  if (!changeDir) return null;
 
   const state = await readChangeState(changeDir);
 
@@ -197,7 +222,7 @@ export async function getChangeDetail(
     title: extractTitleFromProposal(proposalRaw, changeId),
     status: state?.status ?? "draft",
     path: changeDir,
-    isArchived: false,
+    isArchived: isArchived || Boolean(state?.status === "archived"),
     proposalRaw,
     proposalSections,
     tasksRaw,

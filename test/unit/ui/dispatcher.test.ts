@@ -96,4 +96,32 @@ describe("ui/dispatcher", () => {
 
     expect(typeof openExternalBrowserFallback).toBe("function");
   });
+
+  it("renders rich chat dashboard with manual action buttons", async () => {
+    const { renderChatPlanDashboard } = await import("../../../src/ui/dispatcher.js");
+    const { getChangeDetail } = await import("../../../src/ui/change-service.js");
+
+    const detail = await getChangeDetail(tempDir, changeId);
+    expect(detail).toBeDefined();
+
+    if (detail) {
+      const dashboard = renderChatPlanDashboard(detail);
+      expect(dashboard).toContain(`# 📋 Specty Plan Dashboard: \`${changeId}\``);
+      expect(dashboard).toContain("## 📄 Especificación y Propuesta");
+      expect(dashboard).toContain("## 📝 Tareas de Implementación");
+      expect(dashboard).toContain("### ⚡ Opciones de Acción Manual:");
+      expect(dashboard).toContain(`specty approve ${changeId}`);
+      expect(dashboard).toContain(`specty validate ${changeId}`);
+    }
+  });
+
+  it("dispatches spec viewer with dashboardContent in result", async () => {
+    const result = await dispatchSpecViewer(tempDir, changeId, {
+      preferIdePlan: true,
+      openBrowser: false,
+    });
+
+    expect(result.dashboardContent).toBeDefined();
+    expect(result.dashboardContent).toContain(changeId);
+  });
 });

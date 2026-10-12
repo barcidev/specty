@@ -288,8 +288,18 @@ export class UiRouter {
       // 13. Open in IDE: POST /api/open-ide
       if (pathname === "/api/open-ide" && method === "POST") {
         const body = await this.readJsonBody(req);
-        const targetPath = body.file
-          ? path.resolve(this.repoRoot, String(body.file))
+        let rawFilePath = body.file ? String(body.file) : "";
+        if (rawFilePath.startsWith("file://")) {
+          try {
+            rawFilePath = decodeURIComponent(new URL(rawFilePath).pathname);
+          } catch {
+            rawFilePath = decodeURIComponent(rawFilePath.replace(/^file:\/\//, ""));
+          }
+        }
+        const targetPath = rawFilePath
+          ? path.isAbsolute(rawFilePath)
+            ? rawFilePath
+            : path.resolve(this.repoRoot, rawFilePath)
           : this.repoRoot;
         const line = body.line ? Number(body.line) : undefined;
         const target = line ? `${targetPath}:${line}` : targetPath;
@@ -476,6 +486,9 @@ export class UiRouter {
         res.writeHead(200, {
           "Content-Type": "text/html; charset=utf-8",
           "Content-Length": buf.length,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
         });
         res.end(buf);
         return;
@@ -485,6 +498,9 @@ export class UiRouter {
       res.writeHead(200, {
         "Content-Type": contentType,
         "Content-Length": content.length,
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
       });
       res.end(content);
     } catch {
@@ -504,6 +520,9 @@ export class UiRouter {
       res.writeHead(200, {
         "Content-Type": "text/html; charset=utf-8",
         "Content-Length": buf.length,
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
       });
       res.end(buf);
     } catch {

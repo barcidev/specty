@@ -234,6 +234,7 @@ ${tokensBlockEs}
 - **Estados Interactivos:** Todo elemento clickable debe definir estilos explicitos para \`:hover\`, \`:active\`, \`:disabled\` y \`:focus-visible\` con transiciones fluidas de 150ms a 200ms.
 - **Accesibilidad:** Garantizar un contraste de al menos 4.5:1 para texto normal y 3:1 para controles e iconos respecto a su fondo.
 - **Prohibicion de Wireframes Planos:** No generar interfaces que parezcan maquetas sin terminar o disenos MVP descuidados.
+- **Iconografia Profesional (Prohibicion de Simbolos Unicode):** Queda estrictamente prohibido usar caracteres Unicode o emojis (ej. ✏️, 📐, 🔍, 🗑️, ⚙️, ✕, ➕) como iconos en botones, toolbars o controles. Deben utilizarse componentes SVG de librerias consolidadas (Lucide, Heroicons, Tabler, Phosphor, Remix Icon, Material Symbols, FontAwesome, Radix Icons) o SVGs inline con \`stroke="currentColor"\` / \`fill="currentColor"\`.
 
 <!-- USER_LIBRARIES_START -->
 ## 5. Bibliotecas y Componentes Especificos del Proyecto
@@ -300,6 +301,7 @@ ${tokensBlockEn}
 - **Interactive Feedback:** All clickable elements must specify explicit \`:hover\`, \`:active\`, \`:disabled\`, and \`:focus-visible\` states with smooth 150ms-200ms transitions.
 - **Accessibility:** Ensure at least 4.5:1 contrast for regular text and 3:1 for interactive controls.
 - **No Flat Wireframes:** Agents must never produce plain MVP wireframes or unstyled placeholders.
+- **Professional Iconography (Ban on Raw Unicode Glyphs):** Never use raw Unicode characters or emojis (e.g. ✏️, 📐, 🔍, 🗑️, ⚙️, ✕, ➕) as UI icons. Use vector SVG components from established libraries (Lucide, Heroicons, Tabler, Phosphor, Remix Icon, Material Symbols, FontAwesome, Radix Icons) or clean inline SVGs with \`stroke="currentColor"\` / \`fill="currentColor"\`.
 
 <!-- USER_LIBRARIES_START -->
 ## 5. Specific Component Libraries & Design Systems

@@ -11,6 +11,7 @@ export interface ViewCommandOptions {
   web?: boolean;
   port?: number | string;
   noOpen?: boolean;
+  chat?: boolean;
 }
 
 export async function executeView(
@@ -39,19 +40,29 @@ export async function executeView(
   const result = await dispatchSpecViewer(repoRoot, targetChangeId, {
     preferIdePlan: options.idePlan || (!options.web && undefined),
     openBrowser: !options.noOpen,
+    formatChat: options.chat,
   });
 
+  if (options.chat && result.dashboardContent) {
+    console.log(result.dashboardContent);
+    return;
+  }
+
   if (result.mode === "ide-plan") {
-    console.log(
-      `\n${picocolors.bold(picocolors.green("⚡ Visor de Planes de IDE (Antigravity):"))}`,
-    );
+    console.log(`\n${picocolors.bold(picocolors.green("⚡ Visor de Planes de IDE:"))}`);
     console.log(`  ${picocolors.cyan(result.message)}`);
     console.log(
       `${picocolors.dim("  El archivo ha sido sincronizado con formato enriquecido para el visor del editor.")}\n`,
     );
+    if (result.dashboardContent) {
+      console.log(result.dashboardContent);
+    }
   } else {
     console.log(`\n${picocolors.bold(picocolors.green("⚡ Interfaz Web Local (Specty UI):"))}`);
     console.log(`  ${picocolors.cyan(result.message)}`);
     console.log(`${picocolors.dim("  Sincronización en vivo SSE activa.")}\n`);
+    if (!result.openedInIde && result.dashboardContent) {
+      console.log(result.dashboardContent);
+    }
   }
 }
