@@ -122,4 +122,18 @@ describe("waitForChangeAction & executeWait", () => {
     expect(result.action).toBe("approved");
     expect(result.changeId).toBe(changeId);
   });
+
+  it("waits indefinitely by default (timeoutMs = 0) until action occurs", async () => {
+    setTimeout(async () => {
+      await approveChange(tmp, changeId, { approvedBy: "indefinite-tester" });
+    }, 120);
+
+    // Sin timeoutMs explícito (por defecto 0 = indefinido)
+    const result = await waitForChangeAction(tmp, changeId, {
+      pollIntervalMs: 40,
+    });
+
+    expect(result.action).toBe("approved");
+    expect(result.details?.approvedBy).toBe("indefinite-tester");
+  });
 });

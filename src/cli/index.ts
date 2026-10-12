@@ -441,7 +441,7 @@ program
 program
   .command("wait [change]")
   .description("reactively wait for plan approval or updates from the web UI or team")
-  .option("-t, --timeout <seconds>", "timeout in seconds (default: 600)")
+  .option("-t, --timeout <seconds>", "timeout in seconds (default: 0 for indefinite wait)")
   .option("--poll <ms>", "poll interval in milliseconds (default: 300)")
   .option("--json", "output result as JSON")
   .action(async (change: string | undefined, options) => {

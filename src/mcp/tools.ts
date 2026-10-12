@@ -231,7 +231,7 @@ export function getMcpToolDefinitions(): McpToolDefinition[] {
           },
           timeoutSeconds: {
             type: "number",
-            description: "Maximum timeout in seconds to wait (defaults to 600).",
+            description: "Maximum timeout in seconds to wait (defaults to 0 for indefinite wait).",
           },
         },
       },
@@ -502,7 +502,7 @@ export async function handleMcpToolCall(
 
     case "specty_wait_action": {
       const { waitForChangeAction } = await import("../governance/wait-action.js");
-      const timeoutSeconds = typeof args.timeoutSeconds === "number" ? args.timeoutSeconds : 600;
+      const timeoutSeconds = typeof args.timeoutSeconds === "number" ? args.timeoutSeconds : 0;
       const res = await waitForChangeAction(
         repoRoot,
         typeof args.changeId === "string" ? args.changeId : undefined,

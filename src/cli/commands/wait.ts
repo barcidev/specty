@@ -36,8 +36,8 @@ export async function executeWait(
     process.exit(1);
   }
 
-  const timeoutSeconds = options.timeout ? Number(options.timeout) : 600;
-  const timeoutMs = (Number.isNaN(timeoutSeconds) ? 600 : timeoutSeconds) * 1000;
+  const timeoutSeconds = options.timeout !== undefined ? Number(options.timeout) : 0;
+  const timeoutMs = Number.isNaN(timeoutSeconds) || timeoutSeconds <= 0 ? 0 : timeoutSeconds * 1000;
   const pollIntervalMs = options.poll ? Number(options.poll) : 300;
 
   const isInteractive = Boolean(process.stdout.isTTY && !options.json);
@@ -46,10 +46,16 @@ export async function executeWait(
   if (isInteractive) {
     p.intro(`specty wait - Esperando acción humana para el plan '${targetChange}'`);
     spinner = p.spinner();
-    spinner.start("Esperando aprobación o ajustes en Specty UI...");
+    spinner.start(
+      timeoutMs > 0
+        ? `Esperando aprobación o ajustes en Specty UI (timeout: ${Math.round(timeoutMs / 1000)}s)...`
+        : "Esperando aprobación o ajustes en Specty UI (espera indefinida)...",
+    );
   } else if (!options.json) {
     logger.info(
-      `Esperando acción en Specty UI para el plan '${targetChange}' (timeout: ${Math.round(timeoutMs / 1000)}s)...`,
+      timeoutMs > 0
+        ? `Esperando acción en Specty UI para el plan '${targetChange}' (timeout: ${Math.round(timeoutMs / 1000)}s)...`
+        : `Esperando acción en Specty UI para el plan '${targetChange}' (espera indefinida)...`,
     );
   }
 

@@ -30,7 +30,8 @@ export async function waitForChangeAction(
     throw new Error("No active change specified or found to wait for.");
   }
 
-  const timeoutMs = options.timeoutMs ?? 600000; // 10 minutos por defecto
+  const timeoutMs = options.timeoutMs ?? 0; // 0 significa indefinido por defecto
+  const isInfinite = timeoutMs <= 0 || !Number.isFinite(timeoutMs);
   const pollIntervalMs = options.pollIntervalMs ?? 300;
   const startTime = Date.now();
 
@@ -42,7 +43,7 @@ export async function waitForChangeAction(
   const initialReviews = await loadChangeReviews(repoRoot, changeId);
   const initialPendingReviews = initialReviews.filter((r) => !r.resolved).length;
 
-  while (Date.now() - startTime < timeoutMs) {
+  while (isInfinite || Date.now() - startTime < timeoutMs) {
     if (options.signal?.aborted) {
       return {
         action: "aborted",
