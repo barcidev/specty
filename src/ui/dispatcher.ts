@@ -186,20 +186,20 @@ export async function openInIdeInternalViewer(target: {
   // 1. Si es archivo de plan, abrir directamente en el visor de archivos/planes del IDE
   if (target.filePath) {
     if (ide.isAntigravity) {
-      try {
-        await execa("antigravity-ide", ["-g", target.filePath]);
-        return true;
-      } catch {
+      const candidates = [
+        "antigravity-ide",
+        path.join(process.env.HOME || "", ".antigravity-ide/antigravity-ide/bin/antigravity-ide"),
+        "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide",
+      ];
+      for (const cmd of candidates) {
         try {
-          await execa(
-            "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide",
-            ["-g", target.filePath],
-          );
+          await execa(cmd, ["-g", target.filePath]);
           return true;
         } catch {
-          return true;
+          // continue
         }
       }
+      return true;
     }
 
     if (ide.isCursor) {
@@ -235,15 +235,14 @@ export async function openInIdeInternalViewer(target: {
         }
       }
 
-      try {
-        await execa("antigravity-ide", ["--open-url", target.url]);
-        return true;
-      } catch {
+      const candidates = [
+        "antigravity-ide",
+        path.join(process.env.HOME || "", ".antigravity-ide/antigravity-ide/bin/antigravity-ide"),
+        "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide",
+      ];
+      for (const cmd of candidates) {
         try {
-          await execa(
-            "/Applications/Antigravity IDE.app/Contents/Resources/app/bin/antigravity-ide",
-            ["--open-url", target.url],
-          );
+          await execa(cmd, ["--open-url", target.url]);
           return true;
         } catch {
           // continue

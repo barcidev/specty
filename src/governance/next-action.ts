@@ -101,15 +101,16 @@ export async function determineNextAction(
   if (!approval.approved || approval.code === "reapproval_required") {
     const statusLabel =
       approval.code === "reapproval_required" ? "re-approval" : targetChange.status || "draft";
-    const card = `[specty | change: ${targetChange.id} | status: ${statusLabel} | next: specty approve ${targetChange.id}]`;
+    const nextCmd = `specty view ${targetChange.id} --web && specty wait ${targetChange.id}`;
+    const card = `[specty | change: ${targetChange.id} | status: ${statusLabel} | next: ${nextCmd}]`;
     return {
       actionType: "AWAIT_APPROVAL",
       changeId: targetChange.id,
       changeStatus: statusLabel,
       activeTask: null,
       allowedFiles: [],
-      prescribedCommand: `specty approve ${targetChange.id}`,
-      message: `Change '${targetChange.id}' is pending human review (${approval.code}). Stop execution and request human approval. Do NOT edit code.`,
+      prescribedCommand: nextCmd,
+      message: `Change '${targetChange.id}' is pending human review (${approval.code}). Auto-launch UI with 'specty view ${targetChange.id} --web' and reactively wait with 'specty wait ${targetChange.id}'. Do NOT edit code.`,
       statusCard: card,
     };
   }

@@ -48,9 +48,11 @@ describe("next-action state machine & status card", () => {
 
     const report = await determineNextAction(tmpDir, "user-auth");
     expect(report.actionType).toBe("AWAIT_APPROVAL");
-    expect(report.prescribedCommand).toBe("specty approve user-auth");
+    expect(report.prescribedCommand).toBe("specty view user-auth --web && specty wait user-auth");
     expect(report.statusCard).toContain("change: user-auth");
-    expect(report.statusCard).toContain("next: specty approve user-auth");
+    expect(report.statusCard).toContain(
+      "next: specty view user-auth --web && specty wait user-auth",
+    );
   });
 
   it("returns EXECUTE_TASK with active task scope when change is approved", async () => {
