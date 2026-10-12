@@ -17,6 +17,12 @@ export interface WaitActionResult {
     approvedHash?: string;
     approvedBy?: string;
     message?: string;
+    feedbackComments?: Array<{
+      sectionTitle?: string;
+      comment: string;
+      type?: string;
+      author?: string;
+    }>;
   };
 }
 
@@ -42,6 +48,7 @@ export async function waitForChangeAction(
   const initialProposalContent = await readFileSafe(proposalPath);
   const initialReviews = await loadChangeReviews(repoRoot, changeId);
   const initialPendingReviews = initialReviews.filter((r) => !r.resolved).length;
+  const initialResolvedIds = new Set(initialReviews.filter((r) => r.resolved).map((r) => r.id));
 
   while (isInfinite || Date.now() - startTime < timeoutMs) {
     if (options.signal?.aborted) {
@@ -85,12 +92,40 @@ export async function waitForChangeAction(
     // 3. Verificar si se aplicaron y consolidaron ajustes pendientes
     const currentReviews = await loadChangeReviews(repoRoot, changeId);
     const currentPendingReviews = currentReviews.filter((r) => !r.resolved).length;
+
+    // 3a. Se resolvieron comentarios (nuevos o existentes, ej. al pulsar 'Actualizar Plan' en la UI)
+    const newlyResolved = currentReviews.filter((r) => r.resolved && !initialResolvedIds.has(r.id));
+    if (newlyResolved.length > 0) {
+      const feedbackComments = newlyResolved.map((r) => ({
+        sectionTitle: r.sectionTitle || r.sectionId,
+        comment: r.comment,
+        type: r.type,
+        author: r.author,
+      }));
+      return {
+        action: "updated",
+        changeId,
+        details: {
+          message: `${newlyResolved.length} ajuste(s) del plan fueron aplicados y resueltos en la interfaz.`,
+          feedbackComments,
+        },
+      };
+    }
+
+    // 3b. Se resolvieron comentarios que estaban pendientes al inicio
     if (initialPendingReviews > 0 && currentPendingReviews === 0) {
+      const feedbackComments = currentReviews.map((r) => ({
+        sectionTitle: r.sectionTitle || r.sectionId,
+        comment: r.comment,
+        type: r.type,
+        author: r.author,
+      }));
       return {
         action: "updated",
         changeId,
         details: {
           message: "Todos los ajustes y comentarios del plan fueron aplicados y resueltos.",
+          feedbackComments,
         },
       };
     }

@@ -97,6 +97,32 @@ describe("waitForChangeAction & executeWait", () => {
     expect(result.changeId).toBe(changeId);
   });
 
+  it("detects when reviews are added and applied during wait starting from 0 reviews", async () => {
+    setTimeout(async () => {
+      await saveChangeReviews(tmp, changeId, [
+        {
+          id: "rev-new",
+          sectionId: "modified-capabilities",
+          sectionTitle: "Capacidades Modificadas",
+          comment: "Ajuste de hover y extrusion",
+          resolved: true,
+          createdAt: new Date().toISOString(),
+          resolvedAt: new Date().toISOString(),
+        },
+      ]);
+    }, 100);
+
+    const result = await waitForChangeAction(tmp, changeId, {
+      timeoutMs: 3000,
+      pollIntervalMs: 40,
+    });
+
+    expect(result.action).toBe("updated");
+    expect(result.changeId).toBe(changeId);
+    expect(result.details?.feedbackComments).toHaveLength(1);
+    expect(result.details?.feedbackComments?.[0]?.comment).toBe("Ajuste de hover y extrusion");
+  });
+
   it("returns timeout when no action occurs within timeoutMs", async () => {
     const result = await waitForChangeAction(tmp, changeId, {
       timeoutMs: 150,

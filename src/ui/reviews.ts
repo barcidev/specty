@@ -188,8 +188,9 @@ async function syncFeedbackMarkdown(
 ): Promise<void> {
   const feedbackPath = getFeedbackMarkdownPath(repoRoot, changeId);
   const activeComments = comments.filter((c) => !c.resolved);
+  const resolvedComments = comments.filter((c) => c.resolved);
 
-  if (activeComments.length === 0) {
+  if (comments.length === 0) {
     try {
       await fs.rm(feedbackPath, { force: true });
     } catch {
@@ -200,11 +201,17 @@ async function syncFeedbackMarkdown(
 
   let content = `# Human Review Feedback for Change \`${changeId}\`\n\n`;
   content += `> Total active review comments: ${activeComments.length}\n`;
+  content += `> Total resolved/applied comments: ${resolvedComments.length}\n`;
   content += `> Last updated: ${new Date().toISOString()}\n\n`;
 
-  for (const c of activeComments) {
-    const icon = c.type === "change_request" ? "⚠️ [CHANGE REQUEST]" : "💬 [COMMENT]";
-    content += `### ${icon} Section: ${c.sectionTitle || c.sectionId}\n`;
+  const listToRender = activeComments.length > 0 ? activeComments : comments;
+  for (const c of listToRender) {
+    const statusTag = c.resolved
+      ? "✓ [APPLIED VIA UI]"
+      : c.type === "change_request"
+        ? "⚠️ [CHANGE REQUEST]"
+        : "💬 [COMMENT]";
+    content += `### ${statusTag} Section: ${c.sectionTitle || c.sectionId}\n`;
     content += `- **Author**: ${c.author} (${c.createdAt})\n`;
     if (c.selection) {
       content += `- **Referenced Text**:\n  > ${c.selection.split("\n").join("\n  > ")}\n`;
