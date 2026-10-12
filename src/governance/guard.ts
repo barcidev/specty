@@ -244,7 +244,7 @@ export async function evaluateGuard(repoRoot: string, input: GuardInput): Promis
         allowed: false,
         code: "CHANGE_NOT_APPROVED",
         reason: `Cannot edit source file '${relPath}'. Active change '${targetChange.id}' has status '${targetChange.status}' (${approval.code}).`,
-        actionAdvice: `Stop and request human approval by running 'specty approve ${targetChange.id}'.`,
+        actionAdvice: `Stop and request human approval via 'specty view ${targetChange.id} --web && specty wait ${targetChange.id}' or 'specty approve ${targetChange.id}'.`,
       };
     }
 
