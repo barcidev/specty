@@ -73,6 +73,13 @@ export async function executeWait(
     } else if (result.action === "updated") {
       spinner.stop("✓ Plan actualizado con nuevos comentarios y ajustes.");
       p.outro("El plan ha sido actualizado. Revisa las modificaciones y ajusta según corresponda.");
+      if (result.details?.feedbackComments && result.details.feedbackComments.length > 0) {
+        console.log("\n📝 Ajustes solicitados por el usuario:");
+        for (const fb of result.details.feedbackComments) {
+          console.log(`- [${fb.sectionTitle || "General"}]: ${fb.comment}`);
+        }
+        console.log("");
+      }
     } else if (result.action === "timeout") {
       spinner.stop("⏱ Tiempo de espera agotado sin acción en la interfaz.");
       p.outro(
@@ -86,6 +93,11 @@ export async function executeWait(
       logger.success(`Plan aprobado con éxito: ${result.details?.message || ""}`);
     } else if (result.action === "updated") {
       logger.info(`Plan actualizado en el repositorio: ${result.details?.message || ""}`);
+      if (result.details?.feedbackComments && result.details.feedbackComments.length > 0) {
+        for (const fb of result.details.feedbackComments) {
+          logger.info(`  - [${fb.sectionTitle || "General"}]: ${fb.comment}`);
+        }
+      }
     } else if (result.action === "timeout") {
       logger.warn(`Tiempo de espera agotado: ${result.details?.message || ""}`);
     }
