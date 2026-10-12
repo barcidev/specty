@@ -234,14 +234,19 @@
   const btnRegenerateTools = document.getElementById("btn-regenerate-tools");
 
   // Toast Helper
+  let toastTimer = null;
   function showToast(msg, isError = false) {
     if (!toastEl) return;
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
     toastEl.textContent = msg;
     toastEl.className = `toast ${isError ? "toast-error" : "toast-success"}`;
     toastEl.classList.remove("hidden");
-    setTimeout(() => {
+    toastTimer = setTimeout(() => {
       toastEl.classList.add("hidden");
-    }, 4000);
+    }, 3200);
   }
 
   // Setup Tabs

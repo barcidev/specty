@@ -220,13 +220,19 @@
     return trimmed;
   }
 
+  let toastTimer = null;
   function showToast(message, isError = false) {
     const toast = document.getElementById("toast");
     if (!toast) return;
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
     toast.textContent = message;
-    toast.className = `toast ${isError ? "error" : "success"}`;
-    setTimeout(() => {
-      toast.className = "toast hidden";
+    toast.className = `toast ${isError ? "toast-error" : "toast-success"}`;
+    toast.classList.remove("hidden");
+    toastTimer = setTimeout(() => {
+      toast.classList.add("hidden");
     }, 3200);
   }
 
