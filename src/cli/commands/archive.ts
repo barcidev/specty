@@ -4,6 +4,7 @@ import { logger } from "../../core/logger.js";
 import { getSpecEngine } from "../../engines/factory.js";
 import { resolveTargetChange } from "../../governance/change-resolver.js";
 import { transitionChangeState } from "../../governance/state-machine.js";
+import { triggerCodebaseIndex } from "../../mcp/indexer.js";
 
 export interface ArchiveCliOptions {
   cwd?: string;
@@ -54,5 +55,10 @@ export async function executeArchive(
   }
 
   logger.success(`Change "${changeId}" has been ARCHIVED successfully.`);
+
+  if (!process.env.VITEST && !options.dryRun) {
+    await triggerCodebaseIndex(repoRoot);
+  }
+
   return true;
 }

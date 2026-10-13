@@ -712,6 +712,19 @@ export async function runInteractiveInit(
   }
   const enableMcp = Boolean(mcpRes);
 
+  let autoIndex = true;
+  if (enableMcp) {
+    const autoIndexRes = await p.confirm({
+      message: dict.init.autoIndexPrompt,
+      initialValue: true,
+    });
+    if (p.isCancel(autoIndexRes)) {
+      p.cancel(dict.init.canceled);
+      return null;
+    }
+    autoIndex = Boolean(autoIndexRes);
+  }
+
   // Step 9: Hooks & CI (Section 8.0 #7)
   const hooksRes = await p.confirm({
     message: dict.init.hooksPrompt,
@@ -888,6 +901,12 @@ export async function runInteractiveInit(
     },
     mcp: {
       enabled: enableMcp,
+      graph_provider: "codebase-memory",
+      codebase_memory: {
+        command: "codebase-memory-mcp",
+        args: [],
+        auto_index: autoIndex,
+      },
       graph: { max_file_kb: 512, exclude: [] },
     },
     metrics: { enabled: true },

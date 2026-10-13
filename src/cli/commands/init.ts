@@ -28,6 +28,7 @@ import type {
   SupportedLanguageId,
 } from "../../detect/types.js";
 import { generateProjectInfrastructure } from "../../generate/index.js";
+import { triggerCodebaseIndex } from "../../mcp/indexer.js";
 import { getRecommendedArchitectures } from "./architectures.js";
 import { runInteractiveInit } from "./init-prompts.js";
 import type { InitCommandOptions, InitFlowResult } from "./init-types.js";
@@ -250,6 +251,14 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
       await ensureGlobalDependencies(config, {
         skipGlobalInstall: options.skipGlobalInstall,
       });
+      if (
+        config.mcp?.enabled &&
+        config.mcp?.graph_provider === "codebase-memory" &&
+        config.mcp?.codebase_memory?.auto_index !== false &&
+        !process.env.VITEST
+      ) {
+        await triggerCodebaseIndex(repoRoot, { silent: false });
+      }
     }
 
     const dict = getDictionary(language);
@@ -292,6 +301,15 @@ export async function executeInit(options: InitCommandOptions = {}): Promise<Ini
     await ensureGlobalDependencies(result.config, {
       skipGlobalInstall: options.skipGlobalInstall,
     });
+
+    if (
+      result.config.mcp?.enabled &&
+      result.config.mcp?.graph_provider === "codebase-memory" &&
+      result.config.mcp?.codebase_memory?.auto_index !== false &&
+      !process.env.VITEST
+    ) {
+      await triggerCodebaseIndex(repoRoot);
+    }
   }
 
   return result;
