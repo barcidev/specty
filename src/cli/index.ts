@@ -141,6 +141,7 @@ program
   .command("sync")
   .description("synchronize AI tool configs and rules with current project configuration")
   .option("--dry-run", "preview changes without writing files")
+  .option("--cwd <path>", "custom repository root directory")
   .action(async (options) => {
     try {
       const { executeSync } = await import("./commands/sync.js");
@@ -553,6 +554,7 @@ program
   .option("--change <change>", "target specification change identifier")
   .option("--card", "output compact one-line status card")
   .option("--json", "output next action report as JSON")
+  .option("--cwd <path>", "custom repository root directory")
   .action(async (options) => {
     try {
       const { executeNext } = await import("./commands/next.js");
