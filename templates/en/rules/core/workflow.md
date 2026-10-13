@@ -22,7 +22,8 @@ draft ──► approved ──► in-progress ──► verifying ──► don
 
 3. **Phase 3: in-progress (Implementation)**
    - The agent executes tasks sequentially respecting roles and file scopes.
-   - Checkboxes are marked `- [x]` immediately upon task completion.
+   - **Mandatory atomic task cycle:** `Implement task -> Verify -> Commit task -> Mark - [x] -> Advance to next task`.
+   - Batching multiple tasks into a single commit or advancing to the next task without verifying and committing the previous one is strictly forbidden.
 
 4. **Phase 4: verifying (Verification)**
    - Test and lint verification commands run via `specty verify <change>`.

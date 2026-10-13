@@ -18,6 +18,12 @@
 8. **Quality Standards & 300-Line Limit:** No file should exceed 300 lines of code whenever possible (decompose applying SRP). Prefer constants (`const`, `readonly`, immutability) over mutable variables and strictly apply SOLID principles in both new and existing code. Review `.specty/rules/core/coding-standards.md`.
 9. **Mandatory Proactive Next-Step Guidance:** In EVERY interaction or response, the assistant MUST explicitly state the current status and the immediate next step or action required from the user (e.g. running `specty approve <change>`, reviewing generated specifications, or verifying tests), ensuring the user is never left lost or without clear direction.
 10. **Proactive UI Launch & Reactive Wait (`specty view` & `specty wait`):** Immediately after authoring or updating the initial specification (`proposal.md`, `tasks.md`), the assistant MUST proactively run `specty view <change> --web && specty wait <change>` (or call `specty_wait_action`) to launch and project the local Specty web interface and pause execution until the user clicks approve or requests changes in the UI. If the environment does not support background processes, render the detailed specification dashboard in chat with explicit manual action choices (`specty approve <change>`, reject/request changes, `specty validate <change>`). NEVER begin modifying code without prior user approval.
+11. **Mandatory Atomic Task-by-Task Workflow (`Implement -> Verify -> Commit -> Next Task`):** Each task in `tasks.md` MUST be executed following a strictly sequential, atomic lifecycle:
+    1. **Implement task:** Only edit files within the allowed scope `[files: ...]`.
+    2. **Verify:** Run relevant unit tests and linters (`specty verify <change>`, stack test commands) ensuring green status.
+    3. **Commit the task:** Create an atomic git commit for that specific task using Conventional Commits (`feat(...)`, `fix(...)`, `refactor(...)`, etc.), leaving a clean working tree.
+    4. **Mark and advance:** Mark the task completed (`- [x]`) and proceed to the next active task.
+    It is STRICTLY FORBIDDEN to batch multiple tasks into a single commit or start the next task without verifying and committing the previous one.
 <!-- specty:end id=orchestrator -->
 
 <!-- specty:begin id=project -->
@@ -43,7 +49,7 @@ Development is governed by a strict 5-phase lifecycle:
 
 1. **Phase 1 (draft):** The orchestrator plans the feature by writing `proposal.md`, `design.md`, spec deltas in `specs/`, and checklist in `tasks.md`. It does NOT write production code.
 2. **Phase 2 (human approval):** The human developer reviews specifications and interactively approves via `specty approve <change>` or the visual web dashboard (`specty view <change> --web && specty wait <change>`). The AI assistant is STRICTLY FORBIDDEN from running approval commands or manually modifying approval status in `specty.yaml`. The content hash is recorded.
-3. **Phase 3 (in-progress):** Only after approval, tasks are executed sequentially respecting roles and file scopes.
+3. **Phase 3 (in-progress):** Only after approval, tasks are executed one by one following the mandatory atomic cycle: `Implement task -> Verify -> Commit task -> Mark - [x] -> Advance to next task`. Never start a new task without verifying and committing the previous one.
 4. **Phase 4 (verifying):** Stack verification commands and acceptance criteria are executed using `specty verify <change>`.
 5. **Phase 5 (done & archive):** When all checks pass, the change is archived and consolidated into `openspec/specs/`.
 <!-- specty:end id=workflow -->

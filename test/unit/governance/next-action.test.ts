@@ -74,6 +74,9 @@ describe("next-action state machine & status card", () => {
     expect(report.statusCard).toBe(
       "[specty | change: user-auth | status: approved | task: 1.1 (backend) | files: src/auth/** | next: npm test:auth]",
     );
+    expect(report.message).toContain(
+      "Mandatory workflow: Implement task -> Verify (npm test:auth) -> Git commit task -> Mark completed (- [x]) -> Advance to next task.",
+    );
   });
 
   it("returns VERIFY_CHANGE when all tasks are completed but unverified", async () => {
