@@ -58,6 +58,9 @@
       toggleTestDesc: "Exige que la suite de pruebas del proyecto pase en verde.",
       toggleStatic: "Análisis Estático / Tipado",
       toggleStaticDesc: "Verifica tipos y reglas de análisis estático del lenguaje.",
+      toggleWait: "Espera Reactiva de Aprobación (specty wait)",
+      toggleWaitDesc:
+        "Pausa al asistente de IA esperando aprobación o ajustes del plan en la interfaz.",
       saveBottom: "Guardar Cambios en .specty/config.yaml",
       aiToolsTitle: "Herramientas de IA y Editores Soportados",
       aiToolsDesc:
@@ -117,6 +120,9 @@
       toggleTestDesc: "Requires test suite to pass without failures.",
       toggleStatic: "Static Analysis / Typecheck",
       toggleStaticDesc: "Checks types and static analysis rules.",
+      toggleWait: "Reactive Approval Wait (specty wait)",
+      toggleWaitDesc:
+        "Pauses AI assistant execution until the user approves or adjusts the plan in the UI.",
       saveBottom: "Save Changes to .specty/config.yaml",
       aiToolsTitle: "Supported AI Tools & Editors",
       aiToolsDesc: "Select which editors and assistants will synchronize Specty rules and context.",
@@ -262,6 +268,7 @@
   const cfgGateLint = document.getElementById("cfg-gate-lint");
   const cfgGateTest = document.getElementById("cfg-gate-test");
   const cfgGateStatic = document.getElementById("cfg-gate-static");
+  const cfgGovernanceWait = document.getElementById("cfg-governance-wait");
   const btnSaveTop = document.getElementById("btn-save-top");
   const btnSaveBottom = document.getElementById("btn-save-bottom");
   const saveStatusMsg = document.getElementById("save-status-msg");
@@ -355,6 +362,9 @@
       cfgGateLint.checked = Boolean(currentConfig.governance?.quality_gates?.lint !== false);
       cfgGateTest.checked = Boolean(currentConfig.governance?.quality_gates?.test !== false);
       cfgGateStatic.checked = Boolean(currentConfig.governance?.quality_gates?.static !== false);
+      if (cfgGovernanceWait) {
+        cfgGovernanceWait.checked = Boolean(currentConfig.governance?.wait !== false);
+      }
 
       renderAiToolsList(currentConfig.tools || []);
     } catch (err) {
@@ -431,6 +441,7 @@
             test: cfgGateTest.checked,
             static: cfgGateStatic.checked,
           },
+          wait: cfgGovernanceWait ? cfgGovernanceWait.checked : true,
         },
       };
 

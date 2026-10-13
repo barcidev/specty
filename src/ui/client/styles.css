@@ -214,7 +214,7 @@ textarea {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 200px;
+  width: 220px;
   background: var(--bg-surface-elevated);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-md);
@@ -266,6 +266,7 @@ textarea {
   font-weight: 500;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
   transition: all 0.15s ease;
 }
 
@@ -277,6 +278,49 @@ textarea {
 .settings-dropdown-item:hover {
   background: var(--bg-surface-hover);
   color: #ffffff;
+}
+
+/* Mini Switch Toggle */
+.switch-toggle {
+  position: relative;
+  display: inline-block;
+  width: 28px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.switch-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  inset: 0;
+  background-color: var(--border-medium);
+  border-radius: 9999px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 12px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.switch-toggle input:checked + .switch-slider {
+  background-color: var(--color-primary);
+}
+
+.switch-toggle input:checked + .switch-slider:before {
+  transform: translateX(12px);
 }
 
 /* Status Badges */

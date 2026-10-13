@@ -472,6 +472,10 @@ program
   .description("reactively wait for plan approval or updates from the web UI or team")
   .option("-t, --timeout <seconds>", "timeout in seconds (default: 0 for indefinite wait)")
   .option("--poll <ms>", "poll interval in milliseconds (default: 300)")
+  .option("--disable", "disable reactive wait in configuration (.specty/config.yaml)")
+  .option("--enable", "enable reactive wait in configuration (.specty/config.yaml)")
+  .option("--status", "show reactive wait configuration status")
+  .option("-f, --force", "run wait even if disabled in configuration")
   .option("--json", "output result as JSON")
   .action(async (change: string | undefined, options) => {
     try {
@@ -482,6 +486,55 @@ program
       } else if (result.action === "aborted") {
         process.exit(130);
       }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+const configCmd = program
+  .command("config")
+  .description("inspect or update specty configuration (.specty/config.yaml)");
+
+configCmd
+  .command("get [key]")
+  .description("get a configuration value or the entire configuration")
+  .option("--json", "output as JSON")
+  .action(async (key: string | undefined, options) => {
+    try {
+      const { executeConfigGet } = await import("./commands/config.js");
+      await executeConfigGet(key, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+configCmd
+  .command("set <key> <value>")
+  .description("set a configuration value")
+  .option("--json", "output as JSON")
+  .action(async (key: string, value: string, options) => {
+    try {
+      const { executeConfigSet } = await import("./commands/config.js");
+      await executeConfigSet(key, value, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+configCmd
+  .command("wait")
+  .description("configure reactive wait behavior")
+  .option("--enable", "enable reactive wait in configuration")
+  .option("--disable", "disable reactive wait in configuration")
+  .option("--status", "show current reactive wait status")
+  .option("--json", "output as JSON")
+  .action(async (options) => {
+    try {
+      const { executeConfigWait } = await import("./commands/config.js");
+      await executeConfigWait(options);
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exit(1);

@@ -1,5 +1,6 @@
 import path from "node:path";
 import * as p from "@clack/prompts";
+import { loadConfig, type SpectyConfig, saveConfig } from "../../core/config.js";
 import { logger } from "../../core/logger.js";
 import { resolveTargetChange } from "../../governance/change-resolver.js";
 import { type WaitActionResult, waitForChangeAction } from "../../governance/wait-action.js";
@@ -9,6 +10,10 @@ export interface WaitCommandOptions {
   timeout?: string | number;
   poll?: string | number;
   json?: boolean;
+  disable?: boolean;
+  enable?: boolean;
+  status?: boolean;
+  force?: boolean;
 }
 
 export async function executeWait(
@@ -16,6 +21,87 @@ export async function executeWait(
   options: WaitCommandOptions = {},
 ): Promise<WaitActionResult> {
   const repoRoot = path.resolve(options.cwd ?? process.cwd());
+
+  // 1. Manejo de flags de configuración CLI (--disable, --enable, --status)
+  if (options.disable || options.enable || options.status) {
+    let config: SpectyConfig;
+    try {
+      config = await loadConfig(repoRoot);
+    } catch {
+      config = { governance: { wait: true } } as SpectyConfig;
+    }
+
+    if (options.status) {
+      const isEnabled = config.governance?.wait !== false;
+      if (options.json) {
+        console.log(JSON.stringify({ action: "status", wait: isEnabled }));
+      } else {
+        logger.info(
+          `Estado de espera reactiva ('specty wait'): ${isEnabled ? "activada (enabled)" : "desactivada (disabled)"}`,
+        );
+      }
+      return {
+        action: "skipped",
+        changeId: changeArg || "",
+        details: { message: `Wait option is ${isEnabled ? "enabled" : "disabled"}` },
+      };
+    }
+
+    const newWaitValue = Boolean(options.enable);
+    config.governance = {
+      ...config.governance,
+      wait: newWaitValue,
+    };
+
+    await saveConfig(repoRoot, config);
+
+    if (options.json) {
+      console.log(JSON.stringify({ action: "configured", wait: newWaitValue }));
+    } else {
+      if (newWaitValue) {
+        logger.success("✓ Espera reactiva ('specty wait') activada en .specty/config.yaml");
+      } else {
+        logger.success("✓ Espera reactiva ('specty wait') desactivada en .specty/config.yaml");
+      }
+    }
+
+    return {
+      action: "skipped",
+      changeId: changeArg || "",
+      details: { message: `Wait option set to ${newWaitValue}` },
+    };
+  }
+
+  // 2. Verificar si la opción wait está desactivada en la configuración
+  let config: SpectyConfig | null = null;
+  try {
+    config = await loadConfig(repoRoot);
+  } catch {
+    // Config no encontrada o por defecto
+  }
+
+  const isWaitEnabled = config?.governance?.wait !== false;
+  if (!isWaitEnabled && !options.force) {
+    const skippedResult: WaitActionResult = {
+      action: "skipped",
+      changeId: changeArg || "",
+      details: {
+        message:
+          "La espera reactiva ('specty wait') está desactivada en la configuración (.specty/config.yaml).",
+      },
+    };
+
+    if (options.json) {
+      console.log(JSON.stringify(skippedResult));
+    } else {
+      logger.info(
+        "ℹ Espera reactiva ('specty wait') desactivada en .specty/config.yaml.\n  (Usa 'specty wait --force' para esperar puntualmente, o 'specty wait --enable' para reactivarla)",
+      );
+    }
+
+    return skippedResult;
+  }
+
   let targetChange = changeArg?.trim();
   if (!targetChange) {
     const resolution = await resolveTargetChange(repoRoot);

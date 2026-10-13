@@ -240,11 +240,13 @@ export async function evaluateGuard(repoRoot: string, input: GuardInput): Promis
     // Verify approval status
     const approval = await checkApprovalStatus(repoRoot, targetChange.id);
     if (!approval.approved || approval.code === "reapproval_required") {
+      const waitEnabled = config.governance?.wait !== false;
+      const adviceWait = waitEnabled ? ` && specty wait ${targetChange.id}` : "";
       return {
         allowed: false,
         code: "CHANGE_NOT_APPROVED",
         reason: `Cannot edit source file '${relPath}'. Active change '${targetChange.id}' has status '${targetChange.status}' (${approval.code}).`,
-        actionAdvice: `Stop and request human approval via 'specty view ${targetChange.id} --web && specty wait ${targetChange.id}' or 'specty approve ${targetChange.id}'.`,
+        actionAdvice: `Stop and request human approval via 'specty view ${targetChange.id} --web${adviceWait}' or 'specty approve ${targetChange.id}'.`,
       };
     }
 

@@ -11,7 +11,7 @@ export interface WaitActionOptions {
 }
 
 export interface WaitActionResult {
-  action: "approved" | "updated" | "timeout" | "aborted";
+  action: "approved" | "updated" | "timeout" | "aborted" | "skipped";
   changeId: string;
   details?: {
     approvedHash?: string;
