@@ -501,6 +501,14 @@ export async function handleMcpToolCall(
     }
 
     case "specty_wait_action": {
+      const cfg = await loadConfig(repoRoot).catch(() => null);
+      if (cfg?.governance?.wait === false) {
+        return {
+          action: "skipped",
+          changeId: typeof args.changeId === "string" ? args.changeId : "",
+          details: { message: "Wait action is disabled in specty configuration." },
+        };
+      }
       const { waitForChangeAction } = await import("../governance/wait-action.js");
       const timeoutSeconds = typeof args.timeoutSeconds === "number" ? args.timeoutSeconds : 0;
       const res = await waitForChangeAction(

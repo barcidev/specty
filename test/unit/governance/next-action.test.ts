@@ -55,6 +55,27 @@ describe("next-action state machine & status card", () => {
     );
   });
 
+  it("omits specty wait when wait is disabled in governance config", async () => {
+    const changeDir = path.join(tmpDir, "openspec", "changes", "user-auth");
+    await fs.mkdir(changeDir, { recursive: true });
+    await fs.writeFile(path.join(changeDir, "proposal.md"), "# Proposal\n\nAuth feature\n");
+    await fs.writeFile(
+      path.join(changeDir, "tasks.md"),
+      "- [ ] 1.1 Implement login [agent: backend] [files: src/auth/**]\n      verify: npm test\n",
+    );
+
+    const { saveConfig, loadConfig } = await import("../../../src/core/config.js");
+    const cfg = await loadConfig(tmpDir);
+    cfg.governance.wait = false;
+    await saveConfig(tmpDir, cfg);
+
+    const report = await determineNextAction(tmpDir, "user-auth");
+    expect(report.actionType).toBe("AWAIT_APPROVAL");
+    expect(report.prescribedCommand).toBe("specty view user-auth --web");
+    expect(report.statusCard).toContain("next: specty view user-auth --web");
+    expect(report.message).toContain("specty approve user-auth");
+  });
+
   it("returns EXECUTE_TASK with active task scope when change is approved", async () => {
     const changeDir = path.join(tmpDir, "openspec", "changes", "user-auth");
     await fs.mkdir(changeDir, { recursive: true });

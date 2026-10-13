@@ -89,6 +89,10 @@
       commentSavedToast: "Ajuste guardado para esta sección",
       tasksReadonly: "Solo lectura",
       settingsLanguage: "Idioma",
+      quickWaitLabel: "Espera Reactiva (wait)",
+      openSettings: "Configuración & Métricas",
+      waitEnabledToast: "Espera reactiva activada para el asistente",
+      waitDisabledToast: "Espera reactiva desactivada",
     },
     en: {
       liveSync: "Live Sync",
@@ -168,6 +172,10 @@
       commentSavedToast: "Adjustment saved for this section",
       tasksReadonly: "Read-only",
       settingsLanguage: "Language",
+      quickWaitLabel: "Reactive Wait (wait)",
+      openSettings: "Settings & Global Metrics",
+      waitEnabledToast: "Reactive wait enabled for AI assistant",
+      waitDisabledToast: "Reactive wait disabled",
     },
   };
 
@@ -313,6 +321,7 @@
   const changeSelectEl = document.getElementById("change-select");
   const btnSettingsToggle = document.getElementById("btn-settings-toggle");
   const settingsDropdown = document.getElementById("settings-dropdown");
+  const quickToggleWait = document.getElementById("quick-toggle-wait");
   const approvalBadgeEl = document.getElementById("approval-status-badge");
   const reviewsCounterEl = document.getElementById("reviews-counter");
   const specEngineTagEl = document.getElementById("spec-engine-tag");
@@ -404,6 +413,14 @@
       sseSource.addEventListener("review:deleted", () => {
         if (currentChangeId) loadChange(currentChangeId, true);
       });
+      sseSource.addEventListener("config:updated", (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (quickToggleWait && payload.config?.governance) {
+            quickToggleWait.checked = Boolean(payload.config.governance.wait !== false);
+          }
+        } catch {}
+      });
     } catch (e) {
       console.warn("SSE connection error", e);
     }
@@ -427,6 +444,9 @@
       }
       if (statusRes.config?.language && !localStorage.getItem("specty_lang")) {
         setLanguage(statusRes.config.language);
+      }
+      if (quickToggleWait && statusRes.config?.governance) {
+        quickToggleWait.checked = Boolean(statusRes.config.governance.wait !== false);
       }
 
       await refreshChangesList(false);
@@ -1129,6 +1149,37 @@
           btnSettingsToggle.classList.remove("active");
         }
       });
+    }
+
+    // Quick Wait Toggle Change
+    if (quickToggleWait) {
+      quickToggleWait.onchange = async () => {
+        const isChecked = quickToggleWait.checked;
+        try {
+          const cfgRes = await fetch("/api/config", { headers: authHeaders() });
+          if (cfgRes.ok) {
+            const data = await cfgRes.json();
+            const currentCfg = data.config || {};
+            const updated = {
+              ...currentCfg,
+              governance: {
+                ...(currentCfg.governance || {}),
+                wait: isChecked,
+              },
+            };
+            const saveRes = await authFetch("/api/config", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(updated),
+            });
+            if (saveRes.ok) {
+              showToast(isChecked ? t("waitEnabledToast") : t("waitDisabledToast"), false);
+            }
+          }
+        } catch (err) {
+          console.error("Error updating wait setting:", err);
+        }
+      };
     }
 
     // Quick Reviews Button

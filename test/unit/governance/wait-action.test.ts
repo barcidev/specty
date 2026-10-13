@@ -68,8 +68,11 @@ describe("waitForChangeAction & executeWait", () => {
     await saveChangeReviews(tmp, changeId, [
       {
         id: "rev-1",
+        changeId,
         sectionId: "why",
         comment: "Please refine why",
+        type: "comment",
+        author: "reviewer",
         resolved: false,
         createdAt: new Date().toISOString(),
       },
@@ -80,8 +83,11 @@ describe("waitForChangeAction & executeWait", () => {
       await saveChangeReviews(tmp, changeId, [
         {
           id: "rev-1",
+          changeId,
           sectionId: "why",
           comment: "Please refine why",
+          type: "comment",
+          author: "reviewer",
           resolved: true,
           createdAt: new Date().toISOString(),
         },
@@ -102,9 +108,12 @@ describe("waitForChangeAction & executeWait", () => {
       await saveChangeReviews(tmp, changeId, [
         {
           id: "rev-new",
+          changeId,
           sectionId: "modified-capabilities",
           sectionTitle: "Capacidades Modificadas",
           comment: "Ajuste de hover y extrusion",
+          type: "comment",
+          author: "reviewer",
           resolved: true,
           createdAt: new Date().toISOString(),
           resolvedAt: new Date().toISOString(),
@@ -161,5 +170,46 @@ describe("waitForChangeAction & executeWait", () => {
 
     expect(result.action).toBe("approved");
     expect(result.details?.approvedBy).toBe("indefinite-tester");
+  });
+
+  it("handles --disable and --enable flags to configure wait persistently", async () => {
+    // 1. Desactivar wait
+    const disableResult = await executeWait(undefined, {
+      cwd: tmp,
+      disable: true,
+      json: true,
+    });
+    expect(disableResult.action).toBe("skipped");
+
+    const { loadConfig } = await import("../../../src/core/config.js");
+    let cfg = await loadConfig(tmp);
+    expect(cfg.governance.wait).toBe(false);
+
+    // 2. Comprobar status
+    const statusResult = await executeWait(undefined, {
+      cwd: tmp,
+      status: true,
+      json: true,
+    });
+    expect(statusResult.action).toBe("skipped");
+
+    // 3. Ejecutar wait cuando está desactivado sin --force
+    const skippedWait = await executeWait(changeId, {
+      cwd: tmp,
+      json: true,
+    });
+    expect(skippedWait.action).toBe("skipped");
+    expect(skippedWait.details?.message).toContain("desactivada");
+
+    // 4. Reactivar wait
+    const enableResult = await executeWait(undefined, {
+      cwd: tmp,
+      enable: true,
+      json: true,
+    });
+    expect(enableResult.action).toBe("skipped");
+
+    cfg = await loadConfig(tmp);
+    expect(cfg.governance.wait).toBe(true);
   });
 });
