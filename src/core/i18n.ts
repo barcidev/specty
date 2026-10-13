@@ -38,6 +38,7 @@ export interface TranslationDictionary {
     toolsPrompt: string;
     enginePrompt: string;
     mcpPrompt: string;
+    autoIndexPrompt: string;
     hooksPrompt: string;
     ciPrompt: string;
     gitWorkflowPrompt: string;
@@ -123,6 +124,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       toolsPrompt: "Select AI assistant tools to configure:",
       enginePrompt: "Select spec engine:",
       mcpPrompt: "Enable MCP code graph server and metrics?",
+      autoIndexPrompt: "Index repository into codebase-memory knowledge graph upon completion?",
       hooksPrompt: "Configure git pre-commit hooks and IDE guards?",
       ciPrompt: "Generate CI workflow template?",
       gitWorkflowPrompt: "Select Git branching workflow:",
@@ -214,6 +216,7 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       toolsPrompt: "Selecciona las herramientas de IA a configurar:",
       enginePrompt: "Selecciona el motor de specs:",
       mcpPrompt: "¿Activar servidor MCP de grafo de codigo y metricas?",
+      autoIndexPrompt: "¿Indexar el repositorio en el grafo de codebase-memory al finalizar?",
       hooksPrompt: "¿Configurar hooks pre-commit de git y compuertas de IDE?",
       ciPrompt: "¿Generar plantilla de CI para integracion continua?",
       gitWorkflowPrompt: "Selecciona el flujo de trabajo de Git (branching workflow):",

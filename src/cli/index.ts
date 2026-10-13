@@ -305,6 +305,20 @@ handoffCmd
     }
   });
 
+program
+  .command("index")
+  .description("build or update the codebase knowledge graph index")
+  .option("--cwd <path>", "custom repository root directory")
+  .action(async (options) => {
+    try {
+      const { triggerCodebaseIndex } = await import("../mcp/indexer.js");
+      await triggerCodebaseIndex(options.cwd ?? process.cwd());
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 const mcpCmd = program
   .command("mcp")
   .description("manage and start Model Context Protocol (MCP) servers")
@@ -312,6 +326,20 @@ const mcpCmd = program
     try {
       const { executeMcp } = await import("./commands/mcp.js");
       await executeMcp();
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+mcpCmd
+  .command("index")
+  .description("index repository with codebase-memory knowledge graph")
+  .option("--cwd <path>", "custom repository root directory")
+  .action(async (options) => {
+    try {
+      const { triggerCodebaseIndex } = await import("../mcp/indexer.js");
+      await triggerCodebaseIndex(options.cwd ?? process.cwd());
     } catch (err: unknown) {
       console.error(err instanceof Error ? err.message : String(err));
       process.exit(1);

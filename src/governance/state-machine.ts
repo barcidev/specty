@@ -225,6 +225,13 @@ export async function transitionChangeState(
     timestamp: now,
   });
 
+  // 4. Background re-indexing if transition reached 'done'
+  if (targetStatus === "done" && !process.env.VITEST) {
+    import("../mcp/indexer.js")
+      .then(({ triggerCodebaseIndex }) => triggerCodebaseIndex(repoRoot, { silent: true }))
+      .catch(() => {});
+  }
+
   return {
     success: true,
     changeId,

@@ -2,6 +2,7 @@ import path from "node:path";
 import { logger } from "../../core/logger.js";
 import { resolveTargetChange } from "../../governance/change-resolver.js";
 import { transitionChangeState } from "../../governance/state-machine.js";
+import { triggerCodebaseIndex } from "../../mcp/indexer.js";
 
 export interface DoneCliOptions {
   cwd?: string;
@@ -41,5 +42,10 @@ export async function executeDone(
   if (result.reason) {
     logger.info(result.reason);
   }
+
+  if (!process.env.VITEST) {
+    await triggerCodebaseIndex(repoRoot);
+  }
+
   return true;
 }
