@@ -184,12 +184,46 @@
     { id: "junie", name: "JetBrains Junie" },
   ];
 
+  async function refreshSessionToken() {
+    try {
+      const res = await fetch("/api/status");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.sessionToken) {
+          sessionToken = data.sessionToken;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return sessionToken;
+  }
+
   function authHeaders(extra = {}) {
-    const headers = { ...extra };
+    const headers = extra instanceof Headers ? new Headers(extra) : { ...extra };
     if (sessionToken) {
-      headers["X-Specty-Token"] = sessionToken;
+      if (headers instanceof Headers) {
+        headers.set("X-Specty-Token", sessionToken);
+      } else {
+        headers["X-Specty-Token"] = sessionToken;
+      }
     }
     return headers;
+  }
+
+  async function authFetch(url, options = {}) {
+    if (!sessionToken) {
+      await refreshSessionToken();
+    }
+    const reqHeaders = authHeaders(options.headers || {});
+    let res = await fetch(url, { ...options, headers: reqHeaders });
+    if (res.status === 403) {
+      sessionToken = null;
+      await refreshSessionToken();
+      const retryHeaders = authHeaders(options.headers || {});
+      res = await fetch(url, { ...options, headers: retryHeaders });
+    }
+    return res;
   }
 
   // DOM Elements
@@ -284,7 +318,7 @@
       const res = await fetch("/api/status");
       if (!res.ok) return;
       const data = await res.json();
-      if (data.sessionToken && !sessionToken) {
+      if (data.sessionToken) {
         sessionToken = data.sessionToken;
       }
       branchNameEl.textContent = data.branch || "unknown";
@@ -400,9 +434,9 @@
         },
       };
 
-      const res = await fetch("/api/config", {
+      const res = await authFetch("/api/config", {
         method: "PUT",
-        headers: authHeaders({ "Content-Type": "application/json" }),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated),
       });
 
@@ -545,9 +579,9 @@
   async function handleExport(format) {
     try {
       showToast(`Generando reporte ${format.toUpperCase()}...`);
-      const res = await fetch("/api/metrics/export", {
+      const res = await authFetch("/api/metrics/export", {
         method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json" }),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ format, period: currentPeriod }),
       });
 
@@ -602,9 +636,9 @@
     try {
       btnRegenerateTools.disabled = true;
       btnRegenerateTools.innerHTML = `<i class="ph ph-spinner"></i> <span>${t("syncing")}</span>`;
-      const res = await fetch("/api/infrastructure/regenerate", {
+      const res = await authFetch("/api/infrastructure/regenerate", {
         method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json" }),
+        headers: { "Content-Type": "application/json" },
       });
       if (!res.ok) throw new Error("Error regenerando infraestructura");
       const data = await res.json();

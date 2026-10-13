@@ -269,12 +269,43 @@
     });
   }
 
+  async function refreshSessionToken() {
+    try {
+      const statusRes = await fetch("/api/status").then((r) => r.json());
+      if (statusRes.sessionToken) {
+        sessionToken = statusRes.sessionToken;
+      }
+    } catch {
+      // ignore
+    }
+    return sessionToken;
+  }
+
   function authHeaders(extra = {}) {
-    const headers = { ...extra };
+    const headers = extra instanceof Headers ? new Headers(extra) : { ...extra };
     if (sessionToken) {
-      headers["X-Specty-Token"] = sessionToken;
+      if (headers instanceof Headers) {
+        headers.set("X-Specty-Token", sessionToken);
+      } else {
+        headers["X-Specty-Token"] = sessionToken;
+      }
     }
     return headers;
+  }
+
+  async function authFetch(url, options = {}) {
+    if (!sessionToken) {
+      await refreshSessionToken();
+    }
+    const reqHeaders = authHeaders(options.headers || {});
+    let res = await fetch(url, { ...options, headers: reqHeaders });
+    if (res.status === 403) {
+      sessionToken = null;
+      await refreshSessionToken();
+      const retryHeaders = authHeaders(options.headers || {});
+      res = await fetch(url, { ...options, headers: retryHeaders });
+    }
+    return res;
   }
 
   // DOM Elements
@@ -382,7 +413,7 @@
   async function loadInitialData() {
     try {
       const statusRes = await fetch("/api/status").then((r) => r.json());
-      if (statusRes.sessionToken && !sessionToken) {
+      if (statusRes.sessionToken) {
         sessionToken = statusRes.sessionToken;
       }
       if (statusRes.branch) {
@@ -543,9 +574,9 @@
   async function handleUpdatePlan() {
     btnApprove.disabled = true;
     try {
-      await fetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews/apply`, {
+      await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews/apply`, {
         method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json" }),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
       showToast(t("updatePlanSuccess"));
@@ -618,9 +649,9 @@
 
       btnSave.disabled = true;
       try {
-        await fetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews`, {
+        await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews`, {
           method: "POST",
-          headers: authHeaders({ "Content-Type": "application/json" }),
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             sectionId: section.id,
             sectionTitle: localizedTitle,
@@ -758,11 +789,14 @@
 
           const btnResolve = revBox.querySelector(".btn-resolve-review");
           btnResolve.onclick = async () => {
-            await fetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews/${rev.id}`, {
-              method: "PATCH",
-              headers: authHeaders({ "Content-Type": "application/json" }),
-              body: JSON.stringify({ resolved: true }),
-            });
+            await authFetch(
+              `/api/changes/${encodeURIComponent(currentChangeId)}/reviews/${rev.id}`,
+              {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ resolved: true }),
+              },
+            );
             await loadChange(currentChangeId);
           };
 
@@ -1013,9 +1047,9 @@
 
   async function openFileInIde(filePath) {
     try {
-      await fetch("/api/open-ide", {
+      await authFetch("/api/open-ide", {
         method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json" }),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file: filePath }),
       });
     } catch (err) {
@@ -1149,9 +1183,9 @@
         return;
       }
 
-      const res = await fetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews`, {
+      const res = await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews`, {
         method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json" }),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sectionId,
           sectionTitle,
@@ -1183,9 +1217,9 @@
       const user = approveUserInput.value.trim();
       const notes = approveNotesInput.value.trim();
 
-      const res = await fetch(`/api/changes/${encodeURIComponent(currentChangeId)}/approve`, {
+      const res = await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/approve`, {
         method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json" }),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user, notes }),
       });
 
