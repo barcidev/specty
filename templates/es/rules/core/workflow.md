@@ -22,7 +22,8 @@ draft ──► approved ──► in-progress ──► verifying ──► don
 
 3. **Fase 3: in-progress (Implementación)**
    - El agente ejecuta las tareas una a una respetando roles y alcance de archivos.
-   - Se marca `- [x]` inmediatamente al terminar cada tarea.
+   - **Ciclo atómico obligatorio por tarea:** `Implementar tarea -> Verificar -> Hacer commit de la tarea -> Marcar - [x] -> Pasar a la siguiente tarea`.
+   - Está estrictamente prohibido acumular múltiples tareas en un commit o avanzar a la siguiente tarea sin haber verificado y commiteado la tarea previa.
 
 4. **Fase 4: verifying (Verificación)**
    - Se ejecutan los comandos de prueba y linter con `specty verify <change>`.

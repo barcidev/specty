@@ -143,7 +143,7 @@ export async function determineNextAction(
       activeTask,
       allowedFiles,
       prescribedCommand: nextCmd,
-      message: `Execute task ${activeTask.id}${roleTag}: "${activeTask.description}". Only modify files matching [files: ${filesStr}].`,
+      message: `Execute task ${activeTask.id}${roleTag}: "${activeTask.description}". Only modify files matching [files: ${filesStr}]. Mandatory workflow: Implement task -> Verify (${nextCmd}) -> Git commit task -> Mark completed (- [x]) -> Advance to next task.`,
       statusCard: card,
     };
   }

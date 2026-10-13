@@ -121,6 +121,7 @@ ${branchSection}
 
 ${commitSection}
 - Considera únicamente los cambios en staging (\`git diff --cached\`).
+- Commits atómicos por tarea: Cada tarea completada de \`tasks.md\` DEBE commitearse de forma independiente tras verificarla (\`Implementar -> Verificar -> Commit -> Siguiente tarea\`). Está prohibido agrupar múltiples tareas en un commit.
 `;
 }
 
@@ -233,5 +234,6 @@ ${branchSection}
 
 ${commitSection}
 - Consider only staged changes (\`git diff --cached\`).
+- Atomic task commits: Each completed task from \`tasks.md\` MUST be committed independently after verification (\`Implement -> Verify -> Commit -> Next task\`). Batching multiple tasks into a single commit is forbidden.
 `;
 }
