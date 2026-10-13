@@ -740,6 +740,31 @@ playgroundCmd
     }
   });
 
+program
+  .command("uninstall")
+  .alias("eject")
+  .alias("remove")
+  .description("remove specty configuration, adapters, or purge all traces from project")
+  .option(
+    "-a, --all",
+    "purge everything including openspec/ specifications, changes and audit history",
+  )
+  .option("-y, --yes", "non-interactive mode with confirmation defaults")
+  .option("--dry-run", "preview files and components that would be removed without touching disk")
+  .option("--cwd <path>", "custom working directory path")
+  .action(async (options) => {
+    try {
+      const { executeUninstall } = await import("./commands/uninstall.js");
+      const success = await executeUninstall(options);
+      if (!success) {
+        process.exit(1);
+      }
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 export function getRegisteredCommands(): string[] {
   const commands: string[] = [];
   for (const cmd of program.commands) {

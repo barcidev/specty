@@ -18,6 +18,7 @@ export interface TranslationDictionary {
     indexDescription: string;
     metricsDescription: string;
     updateDescription: string;
+    uninstallDescription: string;
   };
   init: {
     welcome: string;
@@ -104,6 +105,8 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       indexDescription: "build or incrementally update the code graph index",
       metricsDescription: "display or export flow metrics (JSON / CSV)",
       updateDescription: "refresh templates and rules respecting user customizations",
+      uninstallDescription:
+        "remove specty configuration, adapters, or purge all traces from project",
     },
     init: {
       welcome: "Welcome to specty - AI assistant governance setup",
@@ -195,6 +198,8 @@ export const translations: Record<SupportedLanguage, TranslationDictionary> = {
       indexDescription: "construye o actualiza incrementalmente el grafo de codigo",
       metricsDescription: "muestra o exporta las metricas del flujo (JSON / CSV)",
       updateDescription: "refresca plantillas y reglas respetando personalizaciones",
+      uninstallDescription:
+        "eliminar la configuracion y adaptadores de specty, o purgar todos los registros del proyecto",
     },
     init: {
       welcome: "Bienvenido a specty - Configuracion de gobernanza para asistentes de IA",
