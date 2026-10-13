@@ -39,11 +39,32 @@ export async function resolveClientDirectory(): Promise<string> {
   return path.join(currentDir, "client");
 }
 
+async function resolveSessionToken(repoRoot: string, customToken?: string): Promise<string> {
+  if (customToken) return customToken;
+  const tokenPath = path.join(repoRoot, ".specty", ".session-token");
+  try {
+    const existing = await fs.readFile(tokenPath, "utf8");
+    if (existing.trim().length >= 16) {
+      return existing.trim();
+    }
+  } catch {
+    // File does not exist yet
+  }
+  const newToken = crypto.randomBytes(24).toString("hex");
+  try {
+    await fs.mkdir(path.dirname(tokenPath), { recursive: true });
+    await fs.writeFile(tokenPath, newToken, "utf8");
+  } catch {
+    // Ignore write errors (e.g. read-only file systems)
+  }
+  return newToken;
+}
+
 export async function startUiServer(options: UiServerOptions = {}): Promise<UiServerInstance> {
   const repoRoot = path.resolve(options.repoRoot || process.cwd());
   const host = options.host || DEFAULT_HOST;
   const preferredPort = options.port || DEFAULT_PORT;
-  const sessionToken = options.sessionToken || crypto.randomBytes(24).toString("hex");
+  const sessionToken = await resolveSessionToken(repoRoot, options.sessionToken);
 
   const clientStaticDir = await resolveClientDirectory();
   const sseHub = new SseHub();

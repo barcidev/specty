@@ -68,7 +68,7 @@ export class UiRouter {
         res.setHeader("Access-Control-Allow-Origin", origin);
       }
     }
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Specty-Token");
 
     if (method === "OPTIONS") {
@@ -78,7 +78,10 @@ export class UiRouter {
     }
 
     // CSRF Protection: Require valid X-Specty-Token for state-changing operations
-    if (this.sessionToken && (method === "POST" || method === "PATCH" || method === "DELETE")) {
+    if (
+      this.sessionToken &&
+      (method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE")
+    ) {
       const tokenHeader = req.headers["x-specty-token"];
       if (tokenHeader !== this.sessionToken) {
         this.jsonResponse(res, 403, {

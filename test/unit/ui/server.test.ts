@@ -225,4 +225,17 @@ describe("ui/server", () => {
       await serverInstance.close();
     }
   });
+
+  it("persists session token across server restarts", async () => {
+    const s1 = await startUiServer({ repoRoot: tempDir, port: 0 });
+    const token1 = s1.sessionToken;
+    await s1.close();
+
+    const s2 = await startUiServer({ repoRoot: tempDir, port: 0 });
+    const token2 = s2.sessionToken;
+    await s2.close();
+
+    expect(token1).toBe(token2);
+    expect(token1.length).toBeGreaterThanOrEqual(16);
+  });
 });
