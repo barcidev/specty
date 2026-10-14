@@ -55,6 +55,7 @@ export interface GateResult {
     | "reapproval_required"
     | "out_of_scope"
     | "all_tasks_completed"
+    | "no_tasks_declared"
     | "protected_config_tampered"
     | "ambiguous_active_changes"
     | "branch_change_mismatch";
