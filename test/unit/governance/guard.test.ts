@@ -56,6 +56,41 @@ describe("guard engine", () => {
         command: "npm test",
       });
     });
+
+    it("parses Antigravity hook stdin payload for replace_file_content", () => {
+      const payload = {
+        toolCall: {
+          name: "replace_file_content",
+          args: {
+            TargetFile: "src/engine/mesh.ts",
+            Instruction: "Update mesh",
+          },
+        },
+      };
+      const parsed = parseGuardPayload(payload);
+      expect(parsed).toEqual({
+        toolName: "replace_file_content",
+        filePath: "src/engine/mesh.ts",
+        command: undefined,
+      });
+    });
+
+    it("parses Antigravity hook stdin payload for run_command", () => {
+      const payload = {
+        toolCall: {
+          name: "run_command",
+          args: {
+            CommandLine: "git commit -m 'feat: update'",
+          },
+        },
+      };
+      const parsed = parseGuardPayload(payload);
+      expect(parsed).toEqual({
+        toolName: "run_command",
+        filePath: undefined,
+        command: "git commit -m 'feat: update'",
+      });
+    });
   });
 
   describe("evaluateGuard - Bash Anti-Tampering", () => {

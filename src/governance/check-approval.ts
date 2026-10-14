@@ -8,7 +8,12 @@ import { recordMetricEvent } from "../metrics/index.js";
 import { type ApprovalStateCode, checkApprovalStatus } from "./approvals.js";
 import { resolveTargetChange } from "./change-resolver.js";
 import { getGitHubContext } from "./github-client.js";
-import { getAllTasksFileGlobs, isPathMatchingGlobs, parseTasksWithScope } from "./task-scope.js";
+import {
+  getActiveTask,
+  getAllTasksFileGlobs,
+  isPathMatchingGlobs,
+  parseTasksWithScope,
+} from "./task-scope.js";
 
 export interface GateChangeSummary {
   id: string;
@@ -49,6 +54,7 @@ export interface GateResult {
     | "no_approved_change"
     | "reapproval_required"
     | "out_of_scope"
+    | "all_tasks_completed"
     | "protected_config_tampered"
     | "ambiguous_active_changes"
     | "branch_change_mismatch";
@@ -432,7 +438,29 @@ export async function checkApprovalGate(
     }
 
     const parsedTasks = parseTasksWithScope(tasksContent);
-    const allowedGlobs = getAllTasksFileGlobs(parsedTasks);
+    const activeTask = getActiveTask(parsedTasks);
+
+    // If change is in verifying or if all tasks are completed, block source modifications
+    if ((parsedTasks.length > 0 && !activeTask) || targetSummary.status === "verifying") {
+      return {
+        passed: false,
+        bypassed: false,
+        modifiedSourceFiles,
+        modifiedExemptFiles,
+        allModifiedFiles: modifiedFiles,
+        activeApprovedChange: targetSummary.id,
+        changeDetails: targetSummary,
+        allChanges: changeSummaries,
+        errorCode: "all_tasks_completed",
+        reason: `Cannot commit source code modifications. All tasks in change "${targetSummary.id}" are marked completed or change is in "${targetSummary.status}" phase.\n\nTo apply adjustments or further changes:\n  1. Add new task(s) to tasks.md with their file scopes [files: ...]\n  2. Obtain human approval via 'specty approve ${targetSummary.id}'\n  3. Commit the implementation under the active task.`,
+      };
+    }
+
+    // Active task exists! Allowed globs prioritize the active task's scope
+    const allowedGlobs =
+      activeTask && activeTask.filesGlobs.length > 0
+        ? activeTask.filesGlobs
+        : getAllTasksFileGlobs(parsedTasks);
 
     const outOfScopeFiles =
       allowedGlobs.length > 0
@@ -440,6 +468,7 @@ export async function checkApprovalGate(
         : [];
 
     if (outOfScopeFiles.length > 0) {
+      const taskScopeDesc = activeTask ? ` (active task ${activeTask.id})` : "";
       return {
         passed: false,
         bypassed: false,
@@ -451,7 +480,7 @@ export async function checkApprovalGate(
         allChanges: changeSummaries,
         outOfScopeFiles,
         errorCode: "out_of_scope",
-        reason: `Modified files outside the scope of approved change "${targetSummary.id}":\n${outOfScopeFiles.map((f) => `  - ${f}`).join("\n")}\n\nAllowed file scopes for this change:\n${allowedGlobs.map((g) => `  [files: ${g}]`).join("\n")}\n\nTo modify these files, amend the change specification tasks and re-approve.`,
+        reason: `Modified files outside the scope of approved change "${targetSummary.id}"${taskScopeDesc}:\n${outOfScopeFiles.map((f) => `  - ${f}`).join("\n")}\n\nAllowed file scopes${activeTask ? ` for task ${activeTask.id}` : ""}:\n${allowedGlobs.map((g) => `  [files: ${g}]`).join("\n")}\n\nTo modify these files, amend the change specification tasks and re-approve.`,
       };
     }
 
@@ -464,7 +493,7 @@ export async function checkApprovalGate(
       activeApprovedChange: targetSummary.id,
       changeDetails: targetSummary,
       allChanges: changeSummaries,
-      reason: `Governed by approved change "${targetSummary.id}".`,
+      reason: `Governed by active task ${activeTask?.id ?? "1"} in approved change "${targetSummary.id}".`,
     };
   }
 

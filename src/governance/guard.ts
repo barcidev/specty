@@ -88,13 +88,31 @@ export function parseGuardPayload(payload: unknown): GuardInput {
   }
 
   const p = payload as Record<string, unknown>;
+  const toolCall =
+    p.toolCall && typeof p.toolCall === "object"
+      ? (p.toolCall as Record<string, unknown>)
+      : undefined;
+
+  const toolCallArgs =
+    toolCall?.args && typeof toolCall.args === "object"
+      ? (toolCall.args as Record<string, unknown>)
+      : undefined;
+
   const toolName =
-    typeof p.tool_name === "string" ? p.tool_name : typeof p.tool === "string" ? p.tool : undefined;
+    typeof p.tool_name === "string"
+      ? p.tool_name
+      : typeof p.tool === "string"
+        ? p.tool
+        : typeof toolCall?.name === "string"
+          ? toolCall.name
+          : undefined;
 
   const toolInput =
     p.tool_input && typeof p.tool_input === "object"
       ? (p.tool_input as Record<string, unknown>)
-      : p;
+      : toolCallArgs
+        ? toolCallArgs
+        : p;
 
   const filePath =
     typeof toolInput.file_path === "string"
@@ -105,7 +123,9 @@ export function parseGuardPayload(payload: unknown): GuardInput {
           ? toolInput.file
           : typeof toolInput.TargetFile === "string"
             ? toolInput.TargetFile
-            : undefined;
+            : typeof toolInput.targetFile === "string"
+              ? toolInput.targetFile
+              : undefined;
 
   const command =
     typeof toolInput.command === "string"
@@ -114,7 +134,9 @@ export function parseGuardPayload(payload: unknown): GuardInput {
         ? toolInput.cmd
         : typeof toolInput.CommandLine === "string"
           ? toolInput.CommandLine
-          : undefined;
+          : typeof toolInput.commandLine === "string"
+            ? toolInput.commandLine
+            : undefined;
 
   return {
     toolName,

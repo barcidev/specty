@@ -38,12 +38,24 @@ describe("individual tool adapter generation", () => {
     enableMcp: true,
   };
 
-  it("generates expected files for Antigravity", async () => {
+  it("generates expected files for Antigravity with hooks, skills, and MCP", async () => {
     const adapter = getAdapter("antigravity");
     const files = await adapter.generateFiles(dummyCtx);
-    expect(files).toHaveLength(1);
-    expect(files[0]?.relativePath).toBe(".agents/rules/specty.md");
-    expect(files[0]?.content).toContain("AGENTS.md");
+    const relPaths = files.map((f) => f.relativePath);
+
+    expect(relPaths).toContain(".agents/rules/specty.md");
+    expect(relPaths).toContain(".agents/hooks.json");
+    expect(relPaths).toContain(".agents/skills/specty/SKILL.md");
+    expect(relPaths).toContain(".agents/mcp_config.json");
+
+    const hookFile = files.find((f) => f.relativePath === ".agents/hooks.json");
+    expect(hookFile?.content).toContain("PreToolUse");
+    expect(hookFile?.content).toContain("replace_file_content");
+
+    const skillFile = files.find((f) => f.relativePath === ".agents/skills/specty/SKILL.md");
+    expect(skillFile?.content).toContain("name: specty");
+
+    expect(adapter.getExpectedFilePaths(dummyCtx)).toContain(".agents/hooks.json");
     expect(adapter.getMcpInstructions?.("es")).toContain("Antigravity");
   });
 
