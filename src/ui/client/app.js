@@ -93,6 +93,53 @@
       openSettings: "Configuración & Métricas",
       waitEnabledToast: "Espera reactiva activada para el asistente",
       waitDisabledToast: "Espera reactiva desactivada",
+      stepDraft: "Borrador",
+      stepApproved: "Aprobado",
+      stepInProgress: "En Progreso",
+      stepVerifying: "Verificando",
+      stepDone: "Completado",
+      stepArchived: "Archivado",
+      btnStartImpl: "Iniciar Desarrollo",
+      btnRunVerify: "Ejecutar Verificación",
+      btnCompleteDone: "Aprobar y Finalizar (Done)",
+      btnArchiveFeature: "Cerrar y Archivar Feature",
+      archivedFeature: "Feature Archivado (Solo Lectura)",
+      tabVerify: "Verificación",
+      verifyTitle: "Verificación Técnica & Quality Gates",
+      verifyDesc:
+        "Resultados de ejecución de comandos de stack, linters, pruebas unitarias y aceptación.",
+      verifyPendingTitle: "Sin verificación reciente",
+      verifyPendingDesc:
+        "Ejecuta la verificación técnica para evaluar las suites de pruebas y compuertas de calidad.",
+      verifyPassedTitle: "Comprobaciones superadas con éxito",
+      verifyFailedTitle: "Falla en comprobaciones de verificación",
+      allChecksPassed: "Todas las comprobaciones pasaron limpiamente",
+      someChecksFailed: "Se encontraron fallas o advertencias en las pruebas.",
+      metricStack: "Stack Checks",
+      metricTasks: "Task Checks",
+      stackChecksTitle: "Comandos de Stack (Build, Linters, Tests)",
+      taskChecksTitle: "Comprobaciones de Tareas Específicas",
+      noStackResults: "No hay resultados de stack disponibles.",
+      noTaskResults: "No hay verificaciones de tareas configuradas.",
+      verifyingSpinner: "Ejecutando verificación...",
+      verificationPassedToast: "Verificación superada exitosamente.",
+      verificationFailedToast: "La verificación ha fallado. Revisa los detalles.",
+      modalDoneTitle: "Completar y Aprobar Feature",
+      modalDoneIntro: "Estás a punto de marcar como completado el change",
+      precondTasks: "Todas las tareas en tasks.md completadas",
+      precondVerify: "Verificación técnica superada en HEAD",
+      precondScope: "Archivos modificados dentro del alcance gobernado",
+      chkDoneForce: "Forzar finalización aunque existan advertencias (--force)",
+      btnConfirmDone: "Confirmar y Marcar como Done",
+      doneSuccessToast: "Feature completado con éxito.",
+      modalArchiveTitle: "Cerrar y Archivar Feature",
+      modalArchiveIntro: "Estás a punto de archivar formalmente",
+      archiveWarningText:
+        "El directorio se moverá a openspec/changes/archive/ y se actualizará el índice del grafo de código MCP. La especificación quedará en modo histórico de solo lectura.",
+      chkArchiveForce: "Forzar archivado sin exigir estado previo 'done' (--force)",
+      btnConfirmArchive: "Confirmar y Archivar",
+      archiveSuccessToast: "Feature archivado exitosamente.",
+      startImplToast: "Feature transicionado a 'in-progress'. Asistente habilitado para codificar.",
     },
     en: {
       liveSync: "Live Sync",
@@ -176,6 +223,51 @@
       openSettings: "Settings & Global Metrics",
       waitEnabledToast: "Reactive wait enabled for AI assistant",
       waitDisabledToast: "Reactive wait disabled",
+      stepDraft: "Draft",
+      stepApproved: "Approved",
+      stepInProgress: "In Progress",
+      stepVerifying: "Verifying",
+      stepDone: "Done",
+      stepArchived: "Archived",
+      btnStartImpl: "Start Implementation",
+      btnRunVerify: "Run Verification",
+      btnCompleteDone: "Approve & Complete Feature",
+      btnArchiveFeature: "Archive Feature",
+      archivedFeature: "Archived Feature (Read-only)",
+      tabVerify: "Verification",
+      verifyTitle: "Technical Verification & Quality Gates",
+      verifyDesc: "Execution results of stack commands, linters, unit tests, and acceptance.",
+      verifyPendingTitle: "No recent execution",
+      verifyPendingDesc: "Run technical verification to evaluate test suites and quality gates.",
+      verifyPassedTitle: "All checks passed successfully",
+      verifyFailedTitle: "Verification checks failed",
+      allChecksPassed: "All checks passed cleanly",
+      someChecksFailed: "Failures or warnings were found during verification.",
+      metricStack: "Stack Checks",
+      metricTasks: "Task Checks",
+      stackChecksTitle: "Stack Commands (Build, Linters, Tests)",
+      taskChecksTitle: "Task Verification Commands",
+      noStackResults: "No stack results available.",
+      noTaskResults: "No task verifications configured.",
+      verifyingSpinner: "Running verification...",
+      verificationPassedToast: "Verification passed successfully.",
+      verificationFailedToast: "Verification failed. Inspect details.",
+      modalDoneTitle: "Complete & Approve Feature",
+      modalDoneIntro: "You are about to mark change as completed",
+      precondTasks: "All tasks in tasks.md completed",
+      precondVerify: "Technical verification passed on HEAD",
+      precondScope: "Modified files within governed scope",
+      chkDoneForce: "Force completion despite warnings (--force)",
+      btnConfirmDone: "Confirm & Mark as Done",
+      doneSuccessToast: "Feature marked as done successfully.",
+      modalArchiveTitle: "Close & Archive Feature",
+      modalArchiveIntro: "You are about to formally archive",
+      archiveWarningText:
+        "The directory will be moved to openspec/changes/archive/ and codebase graph index will be updated. The spec will become historical read-only.",
+      chkArchiveForce: "Force archiving without requiring 'done' state (--force)",
+      btnConfirmArchive: "Confirm & Archive",
+      archiveSuccessToast: "Feature archived successfully.",
+      startImplToast: "Feature transitioned to 'in-progress'. Assistant enabled to code.",
     },
   };
 
@@ -381,6 +473,24 @@
   const btnQuickReviews = document.getElementById("btn-quick-reviews");
   const btnAddGeneralReview = document.getElementById("btn-add-general-review");
 
+  // Lifecycle Elements
+  const modalDone = document.getElementById("modal-done");
+  const modalDoneClose = document.getElementById("modal-done-close");
+  const btnCancelDone = document.getElementById("btn-cancel-done");
+  const btnConfirmDone = document.getElementById("btn-confirm-done");
+  const modalDoneChangeId = document.getElementById("modal-done-change-id");
+  const chkDoneForce = document.getElementById("chk-done-force");
+
+  const modalArchive = document.getElementById("modal-archive");
+  const modalArchiveClose = document.getElementById("modal-archive-close");
+  const btnCancelArchive = document.getElementById("btn-cancel-archive");
+  const btnConfirmArchive = document.getElementById("btn-confirm-archive");
+  const modalArchiveChangeId = document.getElementById("modal-archive-change-id");
+  const chkArchiveForce = document.getElementById("chk-archive-force");
+
+  const btnRunVerify = document.getElementById("btn-run-verify");
+  const tabVerifyBadge = document.getElementById("tab-verify-badge");
+
   // Initialize
   async function init() {
     setupTabSwitching();
@@ -402,6 +512,15 @@
         if (currentChangeId) loadChange(currentChangeId, true);
       });
       sseSource.addEventListener("change:approved", () => {
+        if (currentChangeId) loadChange(currentChangeId, true);
+      });
+      sseSource.addEventListener("change:status_changed", () => {
+        if (currentChangeId) loadChange(currentChangeId, true);
+      });
+      sseSource.addEventListener("change:verified", () => {
+        if (currentChangeId) loadChange(currentChangeId, true);
+      });
+      sseSource.addEventListener("change:archived", () => {
         if (currentChangeId) loadChange(currentChangeId, true);
       });
       sseSource.addEventListener("review:added", () => {
@@ -533,8 +652,11 @@
     changeTitleEl.textContent = data.title || data.id;
     changeIdSubEl.textContent = `openspec/changes/${data.id}`;
 
-    // Approval Badge & Plan Update Button
-    updateApprovalBadge(data.approval, data.status, data.reviews || []);
+    // Lifecycle Stepper
+    updateLifecycleStepper(data.status);
+
+    // Approval Badge & Lifecycle Action Button
+    updateApprovalBadge(data.approval, data.status, data.reviews || [], data);
 
     // Reviews Counter
     const activeReviews = (data.reviews || []).filter((r) => !r.resolved);
@@ -550,20 +672,76 @@
 
     // Render Reviews Tab
     renderReviewsTab(data.reviews || []);
+
+    // Render Technical Verification Tab
+    renderVerificationReport(data.verification);
   }
 
-  function updateApprovalBadge(approval, _status, reviews = []) {
+  const LIFECYCLE_STAGES = ["draft", "approved", "in-progress", "verifying", "done", "archived"];
+
+  function updateLifecycleStepper(status) {
+    const normStatus = (status || "draft").toLowerCase();
+    const currentIndex = LIFECYCLE_STAGES.indexOf(normStatus);
+    const activeIndex = currentIndex !== -1 ? currentIndex : 0;
+
+    LIFECYCLE_STAGES.forEach((stage, idx) => {
+      const node = document.getElementById(`step-node-${stage}`);
+      if (!node) return;
+
+      node.classList.remove("active", "completed");
+      if (idx < activeIndex) {
+        node.classList.add("completed");
+      } else if (idx === activeIndex) {
+        node.classList.add("active");
+      }
+    });
+
+    const connectors = [
+      { id: "conn-draft-approved", fromIdx: 0 },
+      { id: "conn-approved-in-progress", fromIdx: 1 },
+      { id: "conn-in-progress-verifying", fromIdx: 2 },
+      { id: "conn-verifying-done", fromIdx: 3 },
+      { id: "conn-done-archived", fromIdx: 4 },
+    ];
+
+    connectors.forEach((c) => {
+      const el = document.getElementById(c.id);
+      if (!el) return;
+      if (c.fromIdx < activeIndex) {
+        el.classList.add("completed");
+      } else {
+        el.classList.remove("completed");
+      }
+    });
+  }
+
+  function updateApprovalBadge(approval, status, reviews = [], currentData = null) {
     approvalBadgeEl.className = "status-badge";
-    if (approval?.approved) {
+    const normStatus = (status || "draft").toLowerCase();
+
+    // 1. Status Badge
+    if (normStatus === "archived") {
+      approvalBadgeEl.classList.add("status-archived");
+      approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-archive"></i></span><span id="approval-status-text">${t("stepArchived")}</span>`;
+    } else if (normStatus === "done") {
+      approvalBadgeEl.classList.add("status-done");
+      approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-check-fat"></i></span><span id="approval-status-text">${t("stepDone")}</span>`;
+    } else if (normStatus === "verifying") {
+      approvalBadgeEl.classList.add("status-verifying");
+      approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-shield-check"></i></span><span id="approval-status-text">${t("stepVerifying")}</span>`;
+    } else if (normStatus === "in-progress") {
+      approvalBadgeEl.classList.add("status-in-progress");
+      approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-gear-fine"></i></span><span id="approval-status-text">${t("stepInProgress")}</span>`;
+    } else if (approval?.approved || normStatus === "approved") {
       approvalBadgeEl.classList.add("status-approved");
-      const shortHash = approval.approvedHash ? `#${approval.approvedHash.slice(0, 8)}` : "OK";
+      const shortHash = approval?.approvedHash ? `#${approval.approvedHash.slice(0, 8)}` : "OK";
       approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-check-circle"></i></span><span id="approval-status-text">${t("statusApproved")} (${shortHash})</span>`;
     } else {
       approvalBadgeEl.classList.add("status-draft");
       approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-circle"></i></span><span id="approval-status-text">${t("statusDraft")}</span>`;
     }
 
-    // Estado dinámico del botón principal
+    // 2. Dynamic Primary Action Button
     const activeReviews = (reviews || []).filter((r) => !r.resolved);
 
     if (activeReviews.length > 0) {
@@ -573,12 +751,36 @@
       btnApprove.disabled = false;
       btnApprove.onclick = handleUpdatePlan;
     } else {
-      if (approval?.approved) {
-        btnApprove.className = "btn-primary btn-success btn-approved-state";
-        btnApprove.innerHTML = `<i class="ph-bold ph-check-circle"></i> <span>${t("approvedSpec")}</span>`;
-        btnApprove.title = t("approvedSpec");
+      if (normStatus === "archived") {
+        btnApprove.className = "btn-secondary btn-archived-state";
+        btnApprove.innerHTML = `<i class="ph-bold ph-archive"></i> <span>${t("archivedFeature")}</span>`;
+        btnApprove.title = t("archivedFeature");
         btnApprove.disabled = true;
         btnApprove.onclick = null;
+      } else if (normStatus === "done") {
+        btnApprove.className = "btn-primary btn-archive";
+        btnApprove.innerHTML = `<i class="ph-bold ph-archive"></i> <span>${t("btnArchiveFeature")}</span>`;
+        btnApprove.title = t("btnArchiveFeature");
+        btnApprove.disabled = false;
+        btnApprove.onclick = () => openArchiveModal();
+      } else if (normStatus === "verifying") {
+        btnApprove.className = "btn-primary btn-success";
+        btnApprove.innerHTML = `<i class="ph-bold ph-check-fat"></i> <span>${t("btnCompleteDone")}</span>`;
+        btnApprove.title = t("btnCompleteDone");
+        btnApprove.disabled = false;
+        btnApprove.onclick = () => openDoneModal(currentData);
+      } else if (normStatus === "in-progress") {
+        btnApprove.className = "btn-primary";
+        btnApprove.innerHTML = `<i class="ph-bold ph-shield-check"></i> <span>${t("btnRunVerify")}</span>`;
+        btnApprove.title = t("btnRunVerify");
+        btnApprove.disabled = false;
+        btnApprove.onclick = handleRunVerification;
+      } else if (approval?.approved || normStatus === "approved") {
+        btnApprove.className = "btn-primary btn-success";
+        btnApprove.innerHTML = `<i class="ph-bold ph-play"></i> <span>${t("btnStartImpl")}</span>`;
+        btnApprove.title = t("btnStartImpl");
+        btnApprove.disabled = false;
+        btnApprove.onclick = handleStartImplementation;
       } else {
         btnApprove.className = "btn-primary";
         btnApprove.innerHTML = `<i class="ph-bold ph-check"></i> <span>${t("approveSpec")}</span>`;
@@ -588,6 +790,266 @@
           modalApprove.classList.remove("hidden");
         };
       }
+    }
+  }
+
+  function renderVerificationReport(verification) {
+    const banner = document.getElementById("verify-overview-banner");
+    const bannerTitle = document.getElementById("verify-banner-title");
+    const bannerDesc = document.getElementById("verify-banner-desc");
+    const bannerIcon = document.getElementById("verify-banner-icon");
+    const metaInfo = document.getElementById("verify-meta-info");
+    const metricStackVal = document.getElementById("metric-stack-val");
+    const metricTasksVal = document.getElementById("metric-tasks-val");
+    const stackList = document.getElementById("verify-stack-results");
+    const taskList = document.getElementById("verify-task-results");
+    const badge = tabVerifyBadge;
+
+    if (!banner || !bannerTitle || !stackList || !taskList || !badge) return;
+
+    if (!verification) {
+      banner.className = "verify-banner banner-pending";
+      bannerIcon.className = "ph-bold ph-clock";
+      bannerTitle.textContent = t("verifyPendingTitle");
+      bannerDesc.textContent = t("verifyPendingDesc");
+      if (metaInfo) metaInfo.innerHTML = "";
+      metricStackVal.textContent = "0/0";
+      metricTasksVal.textContent = "0/0";
+      stackList.innerHTML = `<div class="empty-state-subtle">${t("noStackResults")}</div>`;
+      taskList.innerHTML = `<div class="empty-state-subtle">${t("noTaskResults")}</div>`;
+      badge.textContent = t("pending");
+      badge.className = "pill-badge pill-blue";
+      return;
+    }
+
+    const passed = Boolean(verification.passed);
+    banner.className = `verify-banner ${passed ? "banner-passed" : "banner-failed"}`;
+    bannerIcon.className = passed ? "ph-bold ph-check-circle" : "ph-bold ph-x-circle";
+    bannerTitle.textContent = passed ? t("verifyPassedTitle") : t("verifyFailedTitle");
+    bannerDesc.textContent = passed
+      ? `${t("allChecksPassed")} (${(verification.totalStackCommands || 0) + (verification.totalTasks || 0)} checks)`
+      : t("someChecksFailed");
+
+    const shortCommit = verification.commitSha ? `HEAD: ${verification.commitSha.slice(0, 8)}` : "";
+    const dateStr = verification.timestamp
+      ? new Date(verification.timestamp).toLocaleString(currentLang)
+      : "";
+    if (metaInfo) {
+      metaInfo.innerHTML = `<span>${escapeHtml(shortCommit)}</span> <span>${escapeHtml(dateStr)}</span>`;
+    }
+
+    const stackPassed = (verification.stackResults || []).filter((r) => r.passed).length;
+    const stackTotal = verification.totalStackCommands || (verification.stackResults || []).length;
+    metricStackVal.textContent = `${stackPassed}/${stackTotal}`;
+
+    const tasksPassed = (verification.tasksResults || []).filter((r) => r.passed).length;
+    const tasksTotal = verification.totalTasks || (verification.tasksResults || []).length;
+    metricTasksVal.textContent = `${tasksPassed}/${tasksTotal}`;
+
+    badge.textContent = passed ? "Passed" : "Failed";
+    badge.className = `pill-badge ${passed ? "pill-emerald" : "pill-rose"}`;
+
+    // Render stack results
+    if (verification.stackResults && verification.stackResults.length > 0) {
+      stackList.innerHTML = "";
+      verification.stackResults.forEach((res) => {
+        const card = document.createElement("div");
+        card.className = `verify-result-card ${res.passed ? "passed" : "failed"}`;
+        const durationSec = (res.durationMs / 1000).toFixed(2);
+        card.innerHTML = `
+          <div class="card-top-row">
+            <div class="card-title-group">
+              <span class="card-badge-status ${res.passed ? "pass" : "fail"}">
+                <i class="ph-bold ${res.passed ? "ph-check" : "ph-x"}"></i>
+                ${res.passed ? "PASSED" : "FAILED"}
+              </span>
+              <strong>[${escapeHtml(res.scope)}] ${escapeHtml(res.commandType)}</strong>
+            </div>
+            <span class="card-duration">${durationSec}s</span>
+          </div>
+          <div class="card-cmd-text">${escapeHtml(res.command)}</div>
+          ${!res.passed && (res.stderr || res.stdout) ? `<pre class="card-output-details">${escapeHtml(res.stderr || res.stdout)}</pre>` : ""}
+        `;
+        stackList.appendChild(card);
+      });
+    } else {
+      stackList.innerHTML = `<div class="empty-state-subtle">${t("noStackResults")}</div>`;
+    }
+
+    // Render task results
+    if (verification.tasksResults && verification.tasksResults.length > 0) {
+      taskList.innerHTML = "";
+      verification.tasksResults.forEach((res) => {
+        const card = document.createElement("div");
+        card.className = `verify-result-card ${res.passed ? "passed" : "failed"}`;
+        const durationSec = (res.durationMs / 1000).toFixed(2);
+        card.innerHTML = `
+          <div class="card-top-row">
+            <div class="card-title-group">
+              <span class="card-badge-status ${res.passed ? "pass" : "fail"}">
+                <i class="ph-bold ${res.passed ? "ph-check" : "ph-x"}"></i>
+                ${res.passed ? "PASSED" : "FAILED"}
+              </span>
+              <strong>Task ${escapeHtml(res.taskId)}</strong>
+            </div>
+            <span class="card-duration">${durationSec}s</span>
+          </div>
+          <div class="card-cmd-text">${escapeHtml(res.command)}</div>
+          ${!res.passed && (res.stderr || res.stdout) ? `<pre class="card-output-details">${escapeHtml(res.stderr || res.stdout)}</pre>` : ""}
+        `;
+        taskList.appendChild(card);
+      });
+    } else {
+      taskList.innerHTML = `<div class="empty-state-subtle">${t("noTaskResults")}</div>`;
+    }
+  }
+
+  async function handleStartImplementation() {
+    if (!currentChangeId) return;
+    btnApprove.disabled = true;
+    try {
+      const res = await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        showToast(t("startImplToast"), false);
+        await loadChange(currentChangeId);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || "Error starting implementation", true);
+      }
+    } catch (err) {
+      console.error("Error starting implementation", err);
+      showToast("Error starting implementation", true);
+    } finally {
+      btnApprove.disabled = false;
+    }
+  }
+
+  async function handleRunVerification() {
+    if (!currentChangeId) return;
+    if (btnRunVerify) btnRunVerify.disabled = true;
+    btnApprove.disabled = true;
+    showToast(t("verifyingSpinner"), false);
+    try {
+      const res = await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const passed = Boolean(data.report?.passed);
+        showToast(passed ? t("verificationPassedToast") : t("verificationFailedToast"), !passed);
+        await loadChange(currentChangeId);
+        switchTab("tab-verify");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || "Error running verification", true);
+      }
+    } catch (err) {
+      console.error("Error running verification", err);
+      showToast("Error running verification", true);
+    } finally {
+      if (btnRunVerify) btnRunVerify.disabled = false;
+      btnApprove.disabled = false;
+    }
+  }
+
+  function openDoneModal(currentData) {
+    if (!modalDone) return;
+    modalDoneChangeId.textContent = currentChangeId || "";
+    chkDoneForce.checked = false;
+
+    const precondTasks = document.getElementById("precond-tasks");
+    const precondVerify = document.getElementById("precond-verify");
+    const precondScope = document.getElementById("precond-scope");
+
+    const allTasksDone = Boolean(
+      currentData?.tasksData?.total > 0 &&
+        currentData?.tasksData?.completed === currentData?.tasksData?.total,
+    );
+    const verifPassed = Boolean(currentData?.verification?.passed);
+
+    if (precondTasks) {
+      precondTasks.className = `precondition-item ${allTasksDone ? "valid" : "invalid"}`;
+      const icon = precondTasks.querySelector("i");
+      if (icon) icon.className = `ph-bold ${allTasksDone ? "ph-check-circle" : "ph-x-circle"}`;
+    }
+
+    if (precondVerify) {
+      precondVerify.className = `precondition-item ${verifPassed ? "valid" : "invalid"}`;
+      const icon = precondVerify.querySelector("i");
+      if (icon) icon.className = `ph-bold ${verifPassed ? "ph-check-circle" : "ph-x-circle"}`;
+    }
+
+    if (precondScope) {
+      precondScope.className = "precondition-item valid";
+      const icon = precondScope.querySelector("i");
+      if (icon) icon.className = "ph-bold ph-check-circle";
+    }
+
+    modalDone.classList.remove("hidden");
+  }
+
+  async function handleConfirmDone() {
+    if (!currentChangeId) return;
+    btnConfirmDone.disabled = true;
+    try {
+      const force = Boolean(chkDoneForce?.checked);
+      const res = await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/done`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ force }),
+      });
+      if (res.ok) {
+        modalDone.classList.add("hidden");
+        showToast(t("doneSuccessToast"), false);
+        await loadChange(currentChangeId);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || "Cannot complete change", true);
+      }
+    } catch (err) {
+      console.error("Error completing change", err);
+      showToast("Error completing change", true);
+    } finally {
+      btnConfirmDone.disabled = false;
+    }
+  }
+
+  function openArchiveModal() {
+    if (!modalArchive) return;
+    modalArchiveChangeId.textContent = currentChangeId || "";
+    chkArchiveForce.checked = false;
+    modalArchive.classList.remove("hidden");
+  }
+
+  async function handleConfirmArchive() {
+    if (!currentChangeId) return;
+    btnConfirmArchive.disabled = true;
+    try {
+      const force = Boolean(chkArchiveForce?.checked);
+      const res = await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/archive`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ force }),
+      });
+      if (res.ok) {
+        modalArchive.classList.add("hidden");
+        showToast(t("archiveSuccessToast"), false);
+        await refreshChangesList(true);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || "Cannot archive change", true);
+      }
+    } catch (err) {
+      console.error("Error archiving change", err);
+      showToast("Error archiving change", true);
+    } finally {
+      btnConfirmArchive.disabled = false;
     }
   }
 
@@ -1283,6 +1745,23 @@
         alert(`${t("alertApproveError")} ${errJson.error}`);
       }
     };
+
+    // Verification trigger
+    if (btnRunVerify) {
+      btnRunVerify.onclick = () => {
+        handleRunVerification();
+      };
+    }
+
+    // Done Modal
+    if (modalDoneClose) modalDoneClose.onclick = () => modalDone.classList.add("hidden");
+    if (btnCancelDone) btnCancelDone.onclick = () => modalDone.classList.add("hidden");
+    if (btnConfirmDone) btnConfirmDone.onclick = () => handleConfirmDone();
+
+    // Archive Modal
+    if (modalArchiveClose) modalArchiveClose.onclick = () => modalArchive.classList.add("hidden");
+    if (btnCancelArchive) btnCancelArchive.onclick = () => modalArchive.classList.add("hidden");
+    if (btnConfirmArchive) btnConfirmArchive.onclick = () => handleConfirmArchive();
   }
 
   // Tabs Switching

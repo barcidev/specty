@@ -72,6 +72,41 @@
 
   <!-- Main Container -->
   <main class="main-layout">
+    <!-- Lifecycle Pipeline Stepper -->
+    <div class="lifecycle-bar" id="lifecycle-bar">
+      <div class="lifecycle-steps" id="lifecycle-steps">
+        <div class="step-item active" data-step="draft" id="step-node-draft">
+          <span class="step-dot"><i class="ph-bold ph-pencil-simple"></i></span>
+          <span class="step-label" data-i18n="stepDraft">Draft</span>
+        </div>
+        <div class="step-connector" id="conn-draft-approved"></div>
+        <div class="step-item" data-step="approved" id="step-node-approved">
+          <span class="step-dot"><i class="ph-bold ph-seal-check"></i></span>
+          <span class="step-label" data-i18n="stepApproved">Approved</span>
+        </div>
+        <div class="step-connector" id="conn-approved-in-progress"></div>
+        <div class="step-item" data-step="in-progress" id="step-node-in-progress">
+          <span class="step-dot"><i class="ph-bold ph-gear-fine"></i></span>
+          <span class="step-label" data-i18n="stepInProgress">In Progress</span>
+        </div>
+        <div class="step-connector" id="conn-in-progress-verifying"></div>
+        <div class="step-item" data-step="verifying" id="step-node-verifying">
+          <span class="step-dot"><i class="ph-bold ph-shield-check"></i></span>
+          <span class="step-label" data-i18n="stepVerifying">Verifying</span>
+        </div>
+        <div class="step-connector" id="conn-verifying-done"></div>
+        <div class="step-item" data-step="done" id="step-node-done">
+          <span class="step-dot"><i class="ph-bold ph-check-fat"></i></span>
+          <span class="step-label" data-i18n="stepDone">Done</span>
+        </div>
+        <div class="step-connector" id="conn-done-archived"></div>
+        <div class="step-item" data-step="archived" id="step-node-archived">
+          <span class="step-dot"><i class="ph-bold ph-archive"></i></span>
+          <span class="step-label" data-i18n="stepArchived">Archived</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Sub-header / Tabs -->
     <nav class="tabs-nav">
       <div class="tabs-list">
@@ -86,6 +121,9 @@
         </button>
         <button type="button" class="tab-btn tab-btn-reviews" data-tab="tab-reviews">
           <i class="ph ph-chats-teardrop"></i> <span data-i18n="tabReviews">Reviews & Feedback</span> <span id="tab-reviews-badge" class="pill-badge pill-amber">0</span>
+        </button>
+        <button type="button" class="tab-btn tab-btn-verify" data-tab="tab-verify">
+          <i class="ph ph-shield-check"></i> <span data-i18n="tabVerify">Verificación</span> <span id="tab-verify-badge" class="pill-badge pill-blue">Pending</span>
         </button>
       </div>
       <div class="tabs-actions">
@@ -193,6 +231,68 @@
         </div>
       </div>
     </section>
+
+    <!-- Tab 5: Technical Verification View -->
+    <section id="tab-verify" class="tab-pane">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2 data-i18n="verifyTitle">Verificación Técnica & Quality Gates</h2>
+          <p class="sub-description" data-i18n="verifyDesc">Resultados de ejecución de comandos de stack, linters, pruebas unitarias y aceptación.</p>
+        </div>
+        <div class="pane-actions">
+          <button type="button" id="btn-run-verify" class="btn-primary btn-sm">
+            <i class="ph-bold ph-play"></i> <span data-i18n="btnRunVerify">Ejecutar Verificación</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="verify-layout scroll-container">
+        <!-- Verification Overview Banner -->
+        <div id="verify-overview-banner" class="verify-banner banner-pending">
+          <div class="banner-icon-wrap">
+            <i id="verify-banner-icon" class="ph-bold ph-clock"></i>
+          </div>
+          <div class="banner-info">
+            <h3 id="verify-banner-title" data-i18n="verifyPendingTitle">Sin ejecución reciente</h3>
+            <p id="verify-banner-desc" data-i18n="verifyPendingDesc">Ejecuta la verificación técnica para evaluar las suites de pruebas y compuertas de calidad.</p>
+            <div class="verify-meta-info" id="verify-meta-info">
+              <!-- Commit SHA and Timestamp -->
+            </div>
+          </div>
+          <div class="banner-metrics" id="verify-banner-metrics">
+            <div class="metric-chip">
+              <span class="chip-label" data-i18n="metricStack">Stack Checks</span>
+              <span class="chip-val" id="metric-stack-val">0/0</span>
+            </div>
+            <div class="metric-chip">
+              <span class="chip-label" data-i18n="metricTasks">Task Checks</span>
+              <span class="chip-val" id="metric-tasks-val">0/0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Verification Detail Lists -->
+        <div class="verify-sections-grid">
+          <div class="verify-card-panel">
+            <div class="panel-subhead">
+              <h4 data-i18n="stackChecksTitle">Comandos de Stack (Build, Linters, Tests)</h4>
+            </div>
+            <div id="verify-stack-results" class="verify-results-list">
+              <div class="empty-state-subtle" data-i18n="noStackResults">No hay resultados de stack disponibles.</div>
+            </div>
+          </div>
+
+          <div class="verify-card-panel">
+            <div class="panel-subhead">
+              <h4 data-i18n="taskChecksTitle">Comprobaciones de Tareas Específicas</h4>
+            </div>
+            <div id="verify-task-results" class="verify-results-list">
+              <div class="empty-state-subtle" data-i18n="noTaskResults">No hay verificaciones de tareas configuradas.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- Modal: Crear Comentario / Review -->
@@ -270,6 +370,76 @@
         <button type="button" id="btn-cancel-approve" class="btn-secondary" data-i18n="btnCancel">Cancelar</button>
         <button type="button" id="btn-confirm-approve" class="btn-primary btn-success">
           <i class="ph-bold ph-check"></i> <span data-i18n="btnConfirmApprove">Confirmar y Firmar Aprobación</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Completar Feature (Mark as Done) -->
+  <div id="modal-done" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 data-i18n="modalDoneTitle">Completar y Aprobar Feature</h3>
+        <button type="button" class="modal-close" id="modal-done-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro"><span data-i18n="modalDoneIntro">Estás a punto de marcar como completado el change</span> <strong id="modal-done-change-id"></strong>.</p>
+        
+        <div class="done-preconditions-box" id="done-preconditions-box">
+          <div class="precondition-item" id="precond-tasks">
+            <i class="ph-bold ph-circle" id="precond-tasks-icon"></i>
+            <span data-i18n="precondTasks">Todas las tareas en tasks.md completadas</span>
+          </div>
+          <div class="precondition-item" id="precond-verify">
+            <i class="ph-bold ph-circle" id="precond-verify-icon"></i>
+            <span data-i18n="precondVerify">Verificación técnica superada en HEAD</span>
+          </div>
+          <div class="precondition-item" id="precond-scope">
+            <i class="ph-bold ph-circle" id="precond-scope-icon"></i>
+            <span data-i18n="precondScope">Archivos modificados dentro del alcance gobernado</span>
+          </div>
+        </div>
+
+        <div class="form-group-checkbox mt-4">
+          <label class="checkbox-label" for="chk-done-force">
+            <input type="checkbox" id="chk-done-force" class="form-checkbox">
+            <span data-i18n="chkDoneForce">Forzar finalización aunque existan advertencias (--force)</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-cancel-done" class="btn-secondary" data-i18n="btnCancel">Cancelar</button>
+        <button type="button" id="btn-confirm-done" class="btn-primary btn-success">
+          <i class="ph-bold ph-check-fat"></i> <span data-i18n="btnConfirmDone">Confirmar y Marcar como Done</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Archivar Feature -->
+  <div id="modal-archive" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 data-i18n="modalArchiveTitle">Cerrar y Archivar Feature</h3>
+        <button type="button" class="modal-close" id="modal-archive-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro"><span data-i18n="modalArchiveIntro">Estás a punto de archivar formalmente</span> <strong id="modal-archive-change-id"></strong>.</p>
+        <div class="archive-warning-box">
+          <i class="ph-bold ph-warning-circle"></i>
+          <p data-i18n="archiveWarningText">El directorio se moverá a openspec/changes/archive/ y se actualizará el índice del grafo de código MCP. La especificación quedará en modo histórico de solo lectura.</p>
+        </div>
+        <div class="form-group-checkbox mt-4">
+          <label class="checkbox-label" for="chk-archive-force">
+            <input type="checkbox" id="chk-archive-force" class="form-checkbox">
+            <span data-i18n="chkArchiveForce">Forzar archivado sin exigir estado previo 'done' (--force)</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-cancel-archive" class="btn-secondary" data-i18n="btnCancel">Cancelar</button>
+        <button type="button" id="btn-confirm-archive" class="btn-primary btn-archive">
+          <i class="ph-bold ph-archive"></i> <span data-i18n="btnConfirmArchive">Confirmar y Archivar</span>
         </button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import fg from "fast-glob";
 import { parseTasksSummary, readChangeState, writeChangeState } from "../engines/change-state.js";
 import { checkApprovalStatus } from "../governance/approvals.js";
 import { validateChangeSpecification } from "../governance/spec-validator.js";
+import type { VerificationReport } from "../governance/verifier.js";
 import { loadChangeReviews } from "./reviews.js";
 import type {
   ChangeDetailPayload,
@@ -217,6 +218,14 @@ export async function getChangeDetail(
     // ignore
   }
 
+  let verification: VerificationReport | null = null;
+  try {
+    const rawVerif = await fs.readFile(path.join(changeDir, "verification.json"), "utf8");
+    verification = JSON.parse(rawVerif) as VerificationReport;
+  } catch {
+    // no verification evidence yet
+  }
+
   return {
     id: changeId,
     title: extractTitleFromProposal(proposalRaw, changeId),
@@ -231,6 +240,7 @@ export async function getChangeDetail(
     validation,
     reviews,
     specFiles,
+    verification,
   };
 }
 

@@ -1,5 +1,6 @@
 import type { ValidationResult } from "../engines/types.js";
 import type { ApprovalStatusResult } from "../governance/approvals.js";
+import type { VerificationReport } from "../governance/verifier.js";
 
 export type ReviewCommentType = "comment" | "change_request";
 
@@ -76,6 +77,7 @@ export interface ChangeDetailPayload {
   validation: ValidationResult;
   reviews: ReviewComment[];
   specFiles: string[];
+  verification?: VerificationReport | null;
 }
 
 export interface UiServerOptions {

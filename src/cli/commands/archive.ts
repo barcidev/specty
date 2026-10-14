@@ -1,5 +1,5 @@
 import path from "node:path";
-import { loadConfig } from "../../core/config.js";
+import { createDefaultConfig, loadConfig, type SpectyConfig } from "../../core/config.js";
 import { logger } from "../../core/logger.js";
 import { getSpecEngine } from "../../engines/factory.js";
 import { resolveTargetChange } from "../../governance/change-resolver.js";
@@ -43,7 +43,12 @@ export async function executeArchive(
   }
 
   // Physically move change into archive/
-  const config = await loadConfig(repoRoot);
+  let config: SpectyConfig;
+  try {
+    config = await loadConfig(repoRoot);
+  } catch {
+    config = createDefaultConfig();
+  }
   const engine = getSpecEngine(config.spec_engine);
   const archived = await engine.archive(repoRoot, changeId, {
     dryRun: options.dryRun,
