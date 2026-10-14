@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { setAgentSessionStatus } from "../governance/agent-session.js";
 import type { ChangeReviewsData, ReviewComment } from "./types.js";
 
 export const REVIEWS_DIR = ".specty/reviews";
@@ -158,14 +159,19 @@ export async function applyReviewSuggestionsToSpec(
 
   let textReplacementsCount = 0;
   for (const comment of targetComments) {
+    let applied = false;
     if (comment.selection && comment.suggestion && proposalContent) {
       if (proposalContent.includes(comment.selection)) {
         proposalContent = proposalContent.replace(comment.selection, comment.suggestion);
         textReplacementsCount++;
+        applied = true;
       }
     }
-    comment.resolved = true;
-    comment.resolvedAt = new Date().toISOString();
+    // Solo marcamos como resuelto automáticamente si hubo una sustitución textual efectiva en disco
+    if (applied) {
+      comment.resolved = true;
+      comment.resolvedAt = new Date().toISOString();
+    }
   }
 
   if (proposalContent && textReplacementsCount > 0) {
@@ -175,9 +181,42 @@ export async function applyReviewSuggestionsToSpec(
 
   const remaining = comments.filter((c) => !c.resolved).length;
   return {
-    appliedCount: targetComments.length,
+    appliedCount: textReplacementsCount,
     unresolvedCount: remaining,
-    message: `Applied ${targetComments.length} adjustments to the plan.`,
+    message: textReplacementsCount > 0
+      ? `Applied ${textReplacementsCount} direct textual replacements to proposal.md.`
+      : "No direct textual replacements were matched in proposal.md.",
+  };
+}
+
+/**
+ * Despacha los comentarios y solicitudes de ajuste al asistente de IA en su sesión de chat/terminal,
+ * aplicando reemplazos textuales directos y transicionando el estado de la sesión a 'processing_feedback'.
+ */
+export async function dispatchReviewsToAgent(
+  repoRoot: string,
+  changeId: string,
+  commentIds?: string[],
+): Promise<{ dispatchedCount: number; appliedCount: number; unresolvedCount: number; message: string }> {
+  const applyResult = await applyReviewSuggestionsToSpec(repoRoot, changeId, commentIds);
+  const comments = await loadChangeReviews(repoRoot, changeId);
+  const remainingActive = comments.filter((c) => !c.resolved);
+
+  // Notificar al asistente y bloquear la UI temporalmente contra aprobaciones de planes obsoletos
+  await setAgentSessionStatus(repoRoot, "processing_feedback", {
+    changeId,
+    activity: remainingActive.length > 0
+      ? `Asistente procesando ${remainingActive.length} ajuste(s) y reformulando plan en el chat`
+      : "Ajustes textuales aplicados directamente a la propuesta",
+  });
+
+  return {
+    dispatchedCount: remainingActive.length,
+    appliedCount: applyResult.appliedCount,
+    unresolvedCount: remainingActive.length,
+    message: remainingActive.length > 0
+      ? `${remainingActive.length} ajuste(s) enviados al asistente en el chat para reformular el plan.`
+      : "Todos los ajustes textuales fueron aplicados directamente a la propuesta.",
   };
 }
 

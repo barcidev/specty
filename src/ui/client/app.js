@@ -188,6 +188,28 @@
       agentWorkingDesc: "El agente está trabajando en esta sesión. Acción temporalmente bloqueada.",
       agentUnlocked: "Sesión del agente desbloqueada.",
       agentLockBlockedMsg: "El agente está trabajando en este plan. Espera a que termine su turno.",
+      btnAddTask: "Nueva Tarea",
+      modalAddTaskTitle: "Agregar Nueva Tarea Gobernada",
+      taskDescLabel: "Descripción de la Tarea:",
+      taskRoleLabel: "Rol de Agente ([agent: ...]):",
+      taskFilesLabel: "Alcance de Archivos Permitidos ([files: ...]):",
+      taskFilesHint: "Lista de globs separados por comas que el agente tendrá autorizado modificar.",
+      taskVerifyLabel: "Comando de Verificación (verify:):",
+      taskGovernanceHint: "Esta tarea se registrará en tasks.md y actualizará la compuerta de Git para autorizar cambios en el alcance especificado.",
+      btnSaveTask: "Crear Tarea Gobernada",
+      taskCreatedToast: "Tarea gobernada agregada con éxito",
+      filterAll: "Todos",
+      filterPending: "Pendientes",
+      filterResolved: "Aplicados",
+      btnDispatchReviews: "Enviar al Asistente",
+      dispatchReviewsBtn: "Enviar Ajustes al Asistente",
+      dispatchReviewsSuccess: "Ajustes enviados al asistente. Esperando actualización...",
+      btnCardToTask: "Convertir a Tarea",
+      btnCardDelete: "Eliminar",
+      agentWaitingHandoff: "Asistente en Espera Reactiva (specty wait)",
+      agentWaitingDesc: "El asistente está escuchando en terminal. Revisa las tareas y la propuesta; al aprobar o enviar ajustes se reanudará automáticamente en el chat.",
+      agentProcessingFeedback: "Asistente actualizando plan en el chat...",
+      agentProcessingDesc: "Se han enviado tus observaciones. El asistente está reformulando la propuesta y registrando las tareas.",
     },
     en: {
       liveSync: "Live Sync",
@@ -364,6 +386,28 @@
       agentWorkingDesc: "The agent is working on this session. Action temporarily locked.",
       agentUnlocked: "Agent session unlocked.",
       agentLockBlockedMsg: "The AI agent is currently working on this plan. Wait for it to finish.",
+      btnAddTask: "New Task",
+      modalAddTaskTitle: "Add Governed Task",
+      taskDescLabel: "Task Description:",
+      taskRoleLabel: "Agent Role ([agent: ...]):",
+      taskFilesLabel: "Allowed Files Scope ([files: ...]):",
+      taskFilesHint: "Comma-separated globs the agent is authorized to modify.",
+      taskVerifyLabel: "Verification Command (verify:):",
+      taskGovernanceHint: "This task will be recorded in tasks.md and update Git gates to authorize changes.",
+      btnSaveTask: "Create Governed Task",
+      taskCreatedToast: "Governed task added successfully",
+      filterAll: "All",
+      filterPending: "Pending",
+      filterResolved: "Applied",
+      btnDispatchReviews: "Send to Assistant",
+      dispatchReviewsBtn: "Send Adjustments to Assistant",
+      dispatchReviewsSuccess: "Adjustments sent to assistant. Awaiting update...",
+      btnCardToTask: "Convert to Task",
+      btnCardDelete: "Delete",
+      agentWaitingHandoff: "Assistant in Reactive Wait (specty wait)",
+      agentWaitingDesc: "The assistant is listening in terminal. Review tasks and proposal; upon approval or adjustments it resumes automatically.",
+      agentProcessingFeedback: "Assistant updating plan in chat...",
+      agentProcessingDesc: "Your feedback was sent. The assistant is updating proposal and registering tasks.",
     },
   };
 
@@ -566,6 +610,7 @@
   // Top Action Buttons
   const btnApprove = document.getElementById("btn-approve");
   const btnOpenIde = document.getElementById("btn-open-ide");
+  const btnOpenSettings = document.getElementById("btn-open-settings");
   const btnQuickReviews = document.getElementById("btn-quick-reviews");
   const btnAddGeneralReview = document.getElementById("btn-add-general-review");
 
@@ -623,6 +668,29 @@
   const btnForceUnlock = document.getElementById("btn-force-unlock");
   let currentAgentSession = null;
 
+  // Session Handoff & Presence Elements
+  const sessionHandoffBanner = document.getElementById("session-handoff-banner");
+  const sessionHandoffIndicator = document.getElementById("session-handoff-indicator");
+  const sessionHandoffTitle = document.getElementById("session-handoff-title");
+  const sessionHandoffText = document.getElementById("session-handoff-text");
+  const btnSessionHandoffAction = document.getElementById("btn-session-handoff-action");
+
+  // Add Task Modal Elements
+  const btnAddTaskModal = document.getElementById("btn-add-task-modal");
+  const modalAddTask = document.getElementById("modal-add-task");
+  const modalAddTaskClose = document.getElementById("modal-add-task-close");
+  const btnCancelAddTask = document.getElementById("btn-cancel-add-task");
+  const btnSaveAddTask = document.getElementById("btn-save-add-task");
+  const taskDescInput = document.getElementById("task-desc-input");
+  const taskRoleSelect = document.getElementById("task-role-select");
+  const taskFilesInput = document.getElementById("task-files-input");
+  const taskVerifyCmdInput = document.getElementById("task-verify-cmd-input");
+
+  // Reviews Filters and Dispatch
+  const reviewsFilterGroup = document.getElementById("reviews-filter-group");
+  const btnDispatchReviewsTab = document.getElementById("btn-dispatch-reviews-tab");
+  let currentReviewFilter = "all";
+
   // Initialize
   async function init() {
     setupTabSwitching();
@@ -676,12 +744,17 @@
         try {
           const payload = JSON.parse(e.data);
           if (!payload.changeId || payload.changeId === currentChangeId) {
-            currentAgentSession = payload.active ? payload : null;
+            const hasSession =
+              payload.status !== "idle" &&
+              (payload.active ||
+                payload.status === "waiting_human" ||
+                payload.status === "processing_feedback");
+            currentAgentSession = hasSession ? payload : null;
             if (activeChangeData) {
               activeChangeData.agentSession = currentAgentSession;
               renderChangeView(activeChangeData);
             }
-            if (!payload.active) {
+            if (!payload.active && payload.status === "idle") {
               showToast(t("agentUnlocked"));
             }
           }
@@ -794,11 +867,12 @@
       if (!res.ok) return;
 
       activeChangeData = await res.json();
-      renderChangeView(activeChangeData);
 
       if (!isBackgroundSync) {
         await loadDiffs(changeId, currentDiffScope);
       }
+
+      renderChangeView(activeChangeData);
     } catch (err) {
       console.error(`Error loading change ${changeId}`, err);
     }
@@ -806,7 +880,62 @@
 
   function isAgentWorking() {
     const session = activeChangeData?.agentSession || currentAgentSession;
-    return Boolean(session?.active);
+    const status = session?.status || (session?.active ? "working" : "idle");
+    return status === "working" || status === "processing_feedback";
+  }
+
+  function renderSessionPresence(session, status) {
+    if (!sessionHandoffBanner || !sessionHandoffIndicator || !sessionHandoffTitle || !sessionHandoffText) return;
+
+    if (!session || status === "idle" || (!session.active && status !== "waiting_human" && status !== "processing_feedback")) {
+      sessionHandoffBanner.classList.add("hidden");
+      if (agentWorkingPill) agentWorkingPill.classList.add("hidden");
+      return;
+    }
+
+    sessionHandoffBanner.classList.remove("hidden");
+    sessionHandoffIndicator.className = "handoff-indicator";
+
+    if (status === "waiting_human") {
+      sessionHandoffIndicator.classList.add("presence-waiting");
+      sessionHandoffTitle.textContent = t("agentWaitingHuman");
+      sessionHandoffText.textContent = t("agentWaitingHumanDesc");
+      if (agentWorkingPill) {
+        agentWorkingPill.className = "presence-pill presence-waiting";
+        agentWorkingPill.classList.remove("hidden");
+        if (agentWorkingText) agentWorkingText.textContent = t("agentWaitingHuman");
+      }
+      if (btnSessionHandoffAction) {
+        const pendingReviews = (activeChangeData?.reviews || []).filter((r) => !r.resolved);
+        if (pendingReviews.length > 0) {
+          btnSessionHandoffAction.classList.remove("hidden");
+          btnSessionHandoffAction.innerHTML = `<i class="ph-bold ph-arrows-clockwise"></i> <span>${t("dispatchReviewsBtn")} (${pendingReviews.length})</span>`;
+          btnSessionHandoffAction.onclick = handleUpdatePlan;
+        } else {
+          btnSessionHandoffAction.classList.add("hidden");
+        }
+      }
+    } else if (status === "processing_feedback") {
+      sessionHandoffIndicator.classList.add("presence-feedback");
+      sessionHandoffTitle.textContent = t("statusProcessingFeedback");
+      sessionHandoffText.textContent = t("feedbackDispatchedDesc");
+      if (agentWorkingPill) {
+        agentWorkingPill.className = "presence-pill presence-feedback";
+        agentWorkingPill.classList.remove("hidden");
+        if (agentWorkingText) agentWorkingText.textContent = t("statusProcessingFeedback");
+      }
+      if (btnSessionHandoffAction) btnSessionHandoffAction.classList.add("hidden");
+    } else {
+      sessionHandoffIndicator.classList.add("presence-working");
+      sessionHandoffTitle.textContent = session.agent ? `Asistente [${session.agent}]` : t("agentWorking");
+      sessionHandoffText.textContent = session.activity || t("agentWorkingDesc");
+      if (agentWorkingPill) {
+        agentWorkingPill.className = "presence-pill presence-working";
+        agentWorkingPill.classList.remove("hidden");
+        if (agentWorkingText) agentWorkingText.textContent = session.activity || t("agentWorking");
+      }
+      if (btnSessionHandoffAction) btnSessionHandoffAction.classList.add("hidden");
+    }
   }
 
   // Render Whole View
@@ -935,18 +1064,22 @@
     }
 
     // 2. Dynamic Primary Action Button
-    // 2.0 Agent Working Session Lock check
+    // 2.0 Agent Working / Feedback Session Lock check
     const agentSession = currentData?.agentSession || currentAgentSession;
-    const isAgentWorking = Boolean(agentSession?.active);
+    const sessionStatus = agentSession?.status || (agentSession?.active ? "working" : "idle");
 
-    if (agentWorkingPill) {
-      agentWorkingPill.classList.toggle("hidden", !isAgentWorking);
-      if (isAgentWorking && agentWorkingText) {
-        agentWorkingText.textContent = agentSession?.activity || t("agentWorking");
-      }
+    renderSessionPresence(agentSession, sessionStatus);
+
+    if (sessionStatus === "processing_feedback") {
+      btnApprove.className = "btn-primary btn-agent-feedback";
+      btnApprove.innerHTML = `<i class="ph-bold ph-spinner-gap ph-spin"></i> <span>${t("statusProcessingFeedback")}</span>`;
+      btnApprove.title = t("feedbackDispatchedDesc");
+      btnApprove.disabled = true;
+      btnApprove.onclick = null;
+      return;
     }
 
-    if (isAgentWorking) {
+    if (sessionStatus === "working") {
       btnApprove.className = "btn-primary btn-agent-working";
       btnApprove.innerHTML = `<i class="ph-bold ph-spinner-gap ph-spin"></i> <span>${agentSession?.activity || t("agentWorking")}</span>`;
       btnApprove.title = `${t("agentWorkingDesc")} (${agentSession?.activity || ""})`;
@@ -973,10 +1106,10 @@
     });
 
     if (userPendingReviews.length > 0) {
-      // Paso 1: Hay comentarios de usuario en el plan -> Actualizar Plan
+      // Paso 1: Hay comentarios de usuario en el plan -> Despachar / Actualizar Plan
       btnApprove.className = "btn-primary";
-      btnApprove.innerHTML = `<i class="ph-bold ph-arrows-clockwise"></i> <span>${t("updatePlanBtn")} (${userPendingReviews.length})</span>`;
-      btnApprove.title = `${t("updatePlanBtn")} (${userPendingReviews.length})`;
+      btnApprove.innerHTML = `<i class="ph-bold ph-arrows-clockwise"></i> <span>${t("dispatchReviewsBtn")} (${userPendingReviews.length})</span>`;
+      btnApprove.title = `${t("dispatchReviewsBtn")} (${userPendingReviews.length})`;
       btnApprove.disabled = false;
       btnApprove.onclick = handleUpdatePlan;
     } else if (normStatus === "archived") {
@@ -1176,6 +1309,10 @@
 
   async function handleRunVerification() {
     if (!currentChangeId) return;
+    if (isAgentWorking()) {
+      showToast(t("agentLockBlockedMsg"));
+      return;
+    }
     if (btnRunVerify) btnRunVerify.disabled = true;
     btnApprove.disabled = true;
     showToast(t("verifyingSpinner"), false);
@@ -1663,6 +1800,12 @@
       actions.appendChild(commentWrap);
       header.appendChild(titleWrap);
       header.appendChild(actions);
+
+      header.onclick = (e) => {
+        if (e.target.closest(".section-actions")) return;
+        card.classList.toggle("collapsed");
+      };
+
       card.appendChild(header);
 
       // Section Body (With Empty State Placeholder if no content)
@@ -1892,6 +2035,55 @@
       }
     }
 
+    if (!rev.resolved) {
+      const actionsRow = document.createElement("div");
+      actionsRow.className = "log-card-actions";
+
+      const btnResolve = document.createElement("button");
+      btnResolve.type = "button";
+      btnResolve.className = "btn-secondary btn-sm";
+      btnResolve.innerHTML = `<i class="ph-bold ph-check"></i> <span>${t("resolve")}</span>`;
+      btnResolve.onclick = async (e) => {
+        e.stopPropagation();
+        await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews/${rev.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resolved: true }),
+        });
+        await loadChange(currentChangeId);
+      };
+
+      const btnConvertToTask = document.createElement("button");
+      btnConvertToTask.type = "button";
+      btnConvertToTask.className = "btn-secondary btn-sm";
+      btnConvertToTask.innerHTML = `<i class="ph-bold ph-plus-circle"></i> <span>${t("btnConvertToTask")}</span>`;
+      btnConvertToTask.onclick = (e) => {
+        e.stopPropagation();
+        openAddTaskModal({
+          description: rev.comment,
+          files: rev.sectionTitle?.includes(".") ? rev.sectionTitle : "",
+        });
+      };
+
+      const btnDelete = document.createElement("button");
+      btnDelete.type = "button";
+      btnDelete.className = "btn-secondary btn-sm btn-danger";
+      btnDelete.innerHTML = `<i class="ph-bold ph-trash"></i> <span>${t("delete") || "Eliminar"}</span>`;
+      btnDelete.onclick = async (e) => {
+        e.stopPropagation();
+        if (!confirm(t("confirmDeleteReview") || "¿Eliminar este ajuste?")) return;
+        await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews/${rev.id}`, {
+          method: "DELETE",
+        });
+        await loadChange(currentChangeId);
+      };
+
+      actionsRow.appendChild(btnResolve);
+      actionsRow.appendChild(btnConvertToTask);
+      actionsRow.appendChild(btnDelete);
+      body.appendChild(actionsRow);
+    }
+
     card.appendChild(body);
 
     card.onclick = (e) => {
@@ -1903,6 +2095,16 @@
     };
 
     return card;
+  }
+
+  function openAddTaskModal({ description = "", role = "General", files = "", verifyCommand = "" } = {}) {
+    if (!modalAddTask) return;
+    if (taskDescInput) taskDescInput.value = description;
+    if (taskRoleSelect) taskRoleSelect.value = role;
+    if (taskFilesInput) taskFilesInput.value = files;
+    if (taskVerifyCmdInput) taskVerifyCmdInput.value = verifyCommand;
+    modalAddTask.classList.remove("hidden");
+    if (taskDescInput) setTimeout(() => taskDescInput.focus(), 50);
   }
 
   // Render Tasks Tab
@@ -2104,12 +2306,28 @@
   // Render Reviews Tab
   function renderReviewsTab(reviews) {
     reviewsListContainer.innerHTML = "";
-    if (!reviews || reviews.length === 0) {
+    const allReviews = reviews || [];
+
+    let filtered = allReviews;
+    if (currentReviewFilter === "pending") {
+      filtered = allReviews.filter((r) => !r.resolved);
+    } else if (currentReviewFilter === "applied") {
+      filtered = allReviews.filter((r) => r.resolved);
+    }
+
+    if (btnDispatchReviewsTab) {
+      const pendingReviews = allReviews.filter((r) => !r.resolved);
+      btnDispatchReviewsTab.disabled = pendingReviews.length === 0 || isAgentWorking();
+      btnDispatchReviewsTab.onclick = handleUpdatePlan;
+      btnDispatchReviewsTab.innerHTML = `<i class="ph-bold ph-paper-plane-tilt"></i> <span>${t("dispatchReviewsBtn")} (${pendingReviews.length})</span>`;
+    }
+
+    if (!filtered || filtered.length === 0) {
       reviewsListContainer.innerHTML = `<div class="empty-state">${t("emptyReviews")}</div>`;
       return;
     }
 
-    reviews.forEach((rev) => {
+    filtered.forEach((rev) => {
       const card = createCommentCard(rev);
       reviewsListContainer.appendChild(card);
     });
@@ -2493,6 +2711,17 @@
       await openFileInIde("");
     };
 
+    // Open Settings Button
+    if (btnOpenSettings) {
+      btnOpenSettings.onclick = () => {
+        if (settingsDropdown) {
+          settingsDropdown.classList.add("hidden");
+          btnSettingsToggle?.classList.remove("active");
+        }
+        window.location.assign("/settings");
+      };
+    }
+
     // Open Diff File in IDE
     btnOpenDiffFile.onclick = async () => {
       const file = activeDiffFiles[selectedDiffIndex];
@@ -2690,6 +2919,77 @@
           console.error("Clipboard copy failed", e);
         }
       };
+    }
+
+    // Add Task Modal Listeners
+    if (btnAddTaskModal) {
+      btnAddTaskModal.onclick = () => {
+        if (isAgentWorking()) {
+          showToast(t("agentLockBlockedMsg"));
+          return;
+        }
+        openAddTaskModal();
+      };
+    }
+    if (modalAddTaskClose) {
+      modalAddTaskClose.onclick = () => modalAddTask?.classList.add("hidden");
+    }
+    if (btnCancelAddTask) {
+      btnCancelAddTask.onclick = () => modalAddTask?.classList.add("hidden");
+    }
+    if (btnSaveAddTask) {
+      btnSaveAddTask.onclick = async () => {
+        const desc = taskDescInput?.value.trim();
+        if (!desc) {
+          alert(t("taskDescRequired") || "Por favor ingresa la descripción de la tarea");
+          return;
+        }
+        const role = taskRoleSelect?.value || "General";
+        const filesGlobs = taskFilesInput?.value.trim() ? [taskFilesInput.value.trim()] : [];
+        const verifyCommand = taskVerifyCmdInput?.value.trim() || undefined;
+
+        try {
+          btnSaveAddTask.disabled = true;
+          const res = await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/tasks`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              description: desc,
+              role,
+              filesGlobs,
+              verifyCommand,
+            }),
+          });
+          if (res.ok) {
+            modalAddTask.classList.add("hidden");
+            if (taskDescInput) taskDescInput.value = "";
+            if (taskFilesInput) taskFilesInput.value = "";
+            if (taskVerifyCmdInput) taskVerifyCmdInput.value = "";
+            showToast(t("taskAddedSuccess"));
+            await loadChange(currentChangeId);
+          } else {
+            const err = await res.json().catch(() => ({}));
+            alert(err.error || "Error al agregar la tarea");
+          }
+        } catch (err) {
+          console.error("Error creating task", err);
+        } finally {
+          btnSaveAddTask.disabled = false;
+        }
+      };
+    }
+
+    // Reviews Filter Buttons
+    if (reviewsFilterGroup) {
+      const filterBtns = reviewsFilterGroup.querySelectorAll(".btn-filter");
+      filterBtns.forEach((btn) => {
+        btn.onclick = () => {
+          filterBtns.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentReviewFilter = btn.dataset.filter || "all";
+          renderReviewsTab(activeChangeData?.reviews || []);
+        };
+      });
     }
   }
 

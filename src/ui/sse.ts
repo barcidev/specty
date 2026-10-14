@@ -12,6 +12,7 @@ export class SseHub {
   private clients: Set<http.ServerResponse> = new Set();
   private watchers: fs.FSWatcher[] = [];
   private debounceTimer: NodeJS.Timeout | null = null;
+  private repoRoot?: string;
 
   addClient(res: http.ServerResponse): void {
     res.writeHead(200, {
@@ -47,6 +48,7 @@ export class SseHub {
   }
 
   startWatching(repoRoot: string): void {
+    this.repoRoot = repoRoot;
     const watchDirs = [
       path.join(repoRoot, "openspec", "changes"),
       path.join(repoRoot, ".specty"),
@@ -60,7 +62,7 @@ export class SseHub {
           fs.mkdirSync(dir, { recursive: true });
         }
         const watcher = fs.watch(dir, { recursive: true }, (_eventType, filename) => {
-          if (!filename || filename.startsWith(".")) return;
+          if (!filename || (filename.startsWith(".") && !filename.includes("agent-session.json"))) return;
           this.triggerDebouncedUpdate(filename);
         });
         this.watchers.push(watcher);
@@ -76,8 +78,19 @@ export class SseHub {
     }
     this.debounceTimer = setTimeout(() => {
       this.broadcast("fs:change", { filename });
-      if (filename.includes("agent-session.json")) {
-        this.broadcast("agent:session", { filename });
+      if (filename.includes("agent-session.json") && this.repoRoot) {
+        try {
+          const sessionPath = path.join(this.repoRoot, ".specty", "agent-session.json");
+          if (fs.existsSync(sessionPath)) {
+            const raw = fs.readFileSync(sessionPath, "utf8");
+            const session = JSON.parse(raw);
+            this.broadcast("agent:session", session);
+          } else {
+            this.broadcast("agent:session", { active: false, status: "idle" });
+          }
+        } catch {
+          this.broadcast("agent:session", { active: false, status: "idle" });
+        }
       }
       this.debounceTimer = null;
     }, 200);

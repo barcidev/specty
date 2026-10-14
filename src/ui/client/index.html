@@ -67,6 +67,9 @@
             </label>
           </div>
           <div class="settings-dropdown-divider"></div>
+          <button type="button" id="btn-open-settings" class="settings-dropdown-item" title="Configuración & Métricas">
+            <i class="ph ph-gear"></i> <span data-i18n="openSettings">Configuración & Métricas</span>
+          </button>
           <button type="button" id="btn-open-ide" class="settings-dropdown-item" title="Abrir en el editor / IDE">
             <i class="ph ph-arrow-square-out"></i> <span data-i18n="openInIde">Abrir en IDE</span>
           </button>
@@ -109,6 +112,27 @@
           <span class="step-dot"><i class="ph-bold ph-archive"></i></span>
           <span class="step-label" data-i18n="stepArchived">Archived</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Session Presence / Handoff Banner -->
+    <div id="session-handoff-banner" class="session-handoff-banner hidden">
+      <div class="handoff-banner-content">
+        <div class="handoff-icon-wrap" id="handoff-banner-icon-wrap">
+          <i id="handoff-banner-icon" class="ph-bold ph-broadcast"></i>
+        </div>
+        <div class="handoff-text-group">
+          <div class="handoff-title-row">
+            <span id="handoff-banner-title" class="handoff-title">Asistente en Espera Reactiva (specty wait)</span>
+            <span id="handoff-agent-tag" class="handoff-agent-tag">AI Agent</span>
+          </div>
+          <p id="handoff-banner-desc" class="handoff-desc">El asistente está escuchando en terminal. Revisa las tareas y propuesta; al aprobar o enviar ajustes se reanudará automáticamente en el chat.</p>
+        </div>
+      </div>
+      <div class="handoff-actions" id="handoff-actions">
+        <button type="button" id="btn-handoff-action" class="btn-primary btn-xs">
+          <i class="ph-bold ph-check"></i> <span id="btn-handoff-action-label">Aprobar y Reanudar</span>
+        </button>
       </div>
     </div>
 
@@ -163,16 +187,21 @@
       <div class="pane-header">
         <div class="pane-title-group">
           <h2 data-i18n="tasksTitle">Lista de Tareas</h2>
-          <p class="sub-description" data-i18n="tasksDesc">Checklist interactiva sincronizada con <code>tasks.md</code>. Marca tareas con un clic.</p>
+          <p class="sub-description" data-i18n="tasksDesc">Checklist interactiva sincronizada con <code>tasks.md</code>. Tareas atómicas gobernadas con compuerta Git.</p>
         </div>
-        <div class="progress-box">
-          <div class="progress-stats">
-            <span id="tasks-progress-text">0 de 0 tareas completadas</span>
-            <span id="tasks-progress-percent">0%</span>
+        <div class="pane-actions-group">
+          <div class="progress-box">
+            <div class="progress-stats">
+              <span id="tasks-progress-text">0 de 0 tareas completadas</span>
+              <span id="tasks-progress-percent">0%</span>
+            </div>
+            <div class="progress-track">
+              <div id="tasks-progress-bar" class="progress-fill" style="width: 0%"></div>
+            </div>
           </div>
-          <div class="progress-track">
-            <div id="tasks-progress-bar" class="progress-fill" style="width: 0%"></div>
-          </div>
+          <button type="button" id="btn-add-task-modal" class="btn-primary btn-sm" title="Agregar tarea gobernada a tasks.md">
+            <i class="ph-bold ph-plus"></i> <span data-i18n="btnAddTask">Nueva Tarea</span>
+          </button>
         </div>
       </div>
 
@@ -229,7 +258,17 @@
       <div class="pane-header">
         <div class="pane-title-group">
           <h2 data-i18n="reviewsTitle">Historial de Ajustes</h2>
-          <p class="sub-description" data-i18n="reviewsDesc">Registro de auditoría (log) de todos los ajustes realizados al plan.</p>
+          <p class="sub-description" data-i18n="reviewsDesc">Registro de auditoría y ajustes entre el revisor humano y el asistente.</p>
+        </div>
+        <div class="pane-actions">
+          <div class="review-filter-group" id="reviews-filter-group">
+            <button type="button" class="scope-btn active" data-filter="all" data-i18n="filterAll">Todos</button>
+            <button type="button" class="scope-btn" data-filter="pending" data-i18n="filterPending">Pendientes</button>
+            <button type="button" class="scope-btn" data-filter="resolved" data-i18n="filterResolved">Aplicados</button>
+          </div>
+          <button type="button" id="btn-dispatch-reviews-tab" class="btn-primary btn-sm hidden" title="Enviar ajustes al asistente en el chat">
+            <i class="ph-bold ph-paper-plane-tilt"></i> <span data-i18n="btnDispatchReviews">Enviar al Asistente</span>
+          </button>
         </div>
       </div>
 
@@ -393,6 +432,51 @@
       <div class="modal-footer">
         <button type="button" id="btn-cancel-review" class="btn-secondary" data-i18n="btnCancel">Cancelar</button>
         <button type="button" id="btn-save-review" class="btn-primary" data-i18n="btnSaveComment">Guardar Comentario</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Agregar Nueva Tarea Gobernada -->
+  <div id="modal-add-task" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-add-task-title" data-i18n="modalAddTaskTitle">Agregar Nueva Tarea Gobernada</h3>
+        <button type="button" class="modal-close" id="modal-add-task-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="new-task-desc" data-i18n="taskDescLabel">Descripción de la Tarea:</label>
+          <input type="text" id="new-task-desc" class="form-control" placeholder="Ej. Implementar validación de error en cliente">
+        </div>
+        <div class="form-group">
+          <label for="new-task-role" data-i18n="taskRoleLabel">Rol de Agente ([agent: ...]):</label>
+          <select id="new-task-role" class="form-control">
+            <option value="frontend">frontend</option>
+            <option value="backend">backend</option>
+            <option value="testing">testing</option>
+            <option value="data">data</option>
+            <option value="security-review">security-review</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="new-task-files" data-i18n="taskFilesLabel">Alcance de Archivos Permitidos ([files: ...]):</label>
+          <input type="text" id="new-task-files" class="form-control mono" placeholder="src/ui/**/*.ts, src/client/app.js">
+          <span class="form-hint" data-i18n="taskFilesHint">Lista de globs separados por comas que el agente tendrá autorizado modificar.</span>
+        </div>
+        <div class="form-group">
+          <label for="new-task-verify" data-i18n="taskVerifyLabel">Comando de Verificación (verify:):</label>
+          <input type="text" id="new-task-verify" class="form-control mono" placeholder="npm test o comando específico">
+        </div>
+        <div class="approval-hint">
+          <p><i class="ph ph-shield-check"></i> <span data-i18n="taskGovernanceHint">Esta tarea se registrará en tasks.md y actualizará la compuerta de Git para autorizar cambios en el alcance especificado.</span></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-cancel-add-task" class="btn-secondary" data-i18n="btnCancel">Cancelar</button>
+        <button type="button" id="btn-confirm-add-task" class="btn-primary btn-success">
+          <i class="ph-bold ph-plus"></i> <span data-i18n="btnSaveTask">Crear Tarea Gobernada</span>
+        </button>
       </div>
     </div>
   </div>

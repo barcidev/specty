@@ -27,6 +27,7 @@ export interface GuardDecision {
     | "NO_ACTIVE_CHANGE"
     | "CHANGE_NOT_APPROVED"
     | "ALL_TASKS_COMPLETED"
+    | "NO_TASKS_DECLARED"
     | "OUT_OF_SCOPE";
   reason?: string;
   actionAdvice?: string;

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import type http from "node:http";
 import path from "node:path";
 import { execa } from "execa";
+import { z } from "zod";
 import { executeArchive } from "../cli/commands/archive.js";
 import {
   createDefaultConfig,
@@ -25,6 +26,7 @@ import { type CloseBranchResult, closeFeatureBranch } from "../governance/branch
 import { generateCiPipeline } from "../governance/ci-templates.js";
 import { generatePullRequest } from "../governance/pr-generator.js";
 import { transitionChangeState } from "../governance/state-machine.js";
+import { addTaskToChange, completeTaskInChange } from "../governance/task-manager.js";
 import { executeVerification } from "../governance/verifier.js";
 import { triggerCodebaseIndex } from "../mcp/indexer.js";
 import { computeGovernanceAnalytics, filterEventsByPeriod } from "../metrics/analytics.js";
@@ -39,8 +41,8 @@ import { getChangeDetail, toggleTaskStatus } from "./change-service.js";
 import { getChangeDiffSummary } from "./diff-service.js";
 import {
   addReviewComment,
-  applyReviewSuggestionsToSpec,
   deleteReviewComment,
+  dispatchReviewsToAgent,
   loadChangeReviews,
   updateReviewComment,
 } from "./reviews.js";
@@ -552,16 +554,81 @@ export class UiRouter {
         return;
       }
 
-      // 12. Apply Review Suggestions to Spec: POST /api/changes/:id/reviews/apply
+      // 12. Apply / Dispatch Review Suggestions to Spec: POST /api/changes/:id/reviews/apply
       const reviewApplyMatch = pathname.match(/^\/api\/changes\/([^/]+)\/reviews\/apply$/);
       if (reviewApplyMatch?.[1] && method === "POST") {
         const changeId = decodeURIComponent(reviewApplyMatch[1]);
         const body = await this.readJsonBody(req);
         const commentIds = Array.isArray(body.commentIds) ? body.commentIds.map(String) : undefined;
 
-        const result = await applyReviewSuggestionsToSpec(this.repoRoot, changeId, commentIds);
+        const result = await dispatchReviewsToAgent(this.repoRoot, changeId, commentIds);
         this.sseHub.broadcast("review:applied", { changeId, result });
+        const session = await getAgentSession(this.repoRoot, changeId);
+        if (session) {
+          this.sseHub.broadcast("agent:session", session as unknown as Record<string, unknown>);
+        }
         this.jsonResponse(res, 200, result);
+        return;
+      }
+
+      // 12.1 Add Governed Task: POST /api/changes/:id/tasks
+      const taskAddMatch = pathname.match(/^\/api\/changes\/([^/]+)\/tasks$/);
+      if (taskAddMatch?.[1] && method === "POST") {
+        const changeId = decodeURIComponent(taskAddMatch[1]);
+        const body = await this.readJsonBody(req);
+        const description = String(body.description || body.text || "").trim();
+        if (!description) {
+          this.jsonResponse(res, 400, { error: "Task description is required" });
+          return;
+        }
+
+        const filesGlobs = Array.isArray(body.filesGlobs)
+          ? body.filesGlobs.map(String)
+          : typeof body.filesGlobs === "string"
+            ? (body.filesGlobs as string)
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : undefined;
+
+        try {
+          const result = await addTaskToChange(this.repoRoot, changeId, {
+            description,
+            role: body.role ? String(body.role) : undefined,
+            filesGlobs,
+            verifyCommand: body.verifyCommand ? String(body.verifyCommand) : undefined,
+            phase: body.phase ? String(body.phase) : undefined,
+          });
+
+          this.sseHub.broadcast("task:added", { changeId, result });
+          this.sseHub.broadcast("change:status_changed", {
+            changeId,
+            status: "reapproval_required",
+          });
+          this.jsonResponse(res, 201, result);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.jsonResponse(res, 400, { error: msg });
+        }
+        return;
+      }
+
+      // 12.2 Complete Governed Task: PATCH /api/changes/:id/tasks/:taskId/complete
+      const taskCompleteMatch = pathname.match(
+        /^\/api\/changes\/([^/]+)\/tasks\/([^/]+)\/complete$/,
+      );
+      if (taskCompleteMatch?.[1] && taskCompleteMatch[2] && method === "PATCH") {
+        const changeId = decodeURIComponent(taskCompleteMatch[1]);
+        const taskId = decodeURIComponent(taskCompleteMatch[2]);
+
+        try {
+          const result = await completeTaskInChange(this.repoRoot, changeId, taskId);
+          this.sseHub.broadcast("task:completed", { changeId, result });
+          this.jsonResponse(res, 200, result);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          this.jsonResponse(res, 400, { error: msg });
+        }
         return;
       }
 
@@ -619,10 +686,24 @@ export class UiRouter {
       if (pathname === "/api/config" && method === "PUT") {
         const body = await this.readJsonBody(req);
         const configData = body.config && typeof body.config === "object" ? body.config : body;
-        const validatedConfig = SpectyConfigSchema.parse(configData);
-        await saveConfig(this.repoRoot, validatedConfig);
-        this.sseHub.broadcast("config:updated", { config: validatedConfig });
-        this.jsonResponse(res, 200, { success: true, config: validatedConfig });
+        try {
+          const validatedConfig = SpectyConfigSchema.parse(configData);
+          await saveConfig(this.repoRoot, validatedConfig);
+          this.sseHub.broadcast("config:updated", { config: validatedConfig });
+          this.jsonResponse(res, 200, { success: true, config: validatedConfig });
+        } catch (validationErr) {
+          if (validationErr instanceof z.ZodError) {
+            this.jsonResponse(res, 400, {
+              error: "Error de validación en la configuración",
+              issues: validationErr.issues.map((i) => ({
+                path: i.path.join("."),
+                message: i.message,
+              })),
+            });
+            return;
+          }
+          throw validationErr;
+        }
         return;
       }
 

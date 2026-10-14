@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Specty - Configuración y Métricas Globales</title>
-  <link rel="stylesheet" href="./settings.css?v=2.2.0">
+  <link rel="stylesheet" href="./settings.css?v=2.3.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -16,6 +16,9 @@
   <!-- Topbar -->
   <header class="topbar">
     <div class="topbar-left">
+      <button type="button" class="btn-subtle btn-back-dashboard" id="btn-back-dashboard" title="Volver al Tablero del Plan">
+        <i class="ph ph-arrow-left"></i> <span data-i18n="backToDashboard">Volver al Tablero</span>
+      </button>
       <div class="brand">
         <span class="brand-logo"><i class="ph-bold ph-lightning"></i></span>
         <span class="brand-title">specty</span>
@@ -50,10 +53,22 @@
     <nav class="tabs-nav">
       <div class="tabs-list">
         <button type="button" class="tab-btn active" data-tab="tab-metrics">
-          <i class="ph ph-chart-bar"></i> <span data-i18n="tabMetrics">Métricas & Historial Global</span>
+          <i class="ph ph-chart-bar"></i> <span data-i18n="tabMetrics">Métricas & Historial</span>
         </button>
         <button type="button" class="tab-btn" data-tab="tab-config">
-          <i class="ph ph-gear"></i> <span data-i18n="tabConfig">Configuración & Gobernanza</span>
+          <i class="ph ph-shield-check"></i> <span data-i18n="tabConfig">Gobernanza & Compuertas</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-git">
+          <i class="ph ph-git-branch"></i> <span data-i18n="tabGit">Flujo Git & Commits</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-project">
+          <i class="ph ph-folder-notch"></i> <span data-i18n="tabProject">Proyecto & Scopes</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-mcp">
+          <i class="ph ph-cpu"></i> <span data-i18n="tabMcp">Protocolo MCP & Grafo</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="tab-ui-style">
+          <i class="ph ph-palette"></i> <span data-i18n="tabUiStyle">Diseño & UI Style</span>
         </button>
         <button type="button" class="tab-btn" data-tab="tab-ai-rules">
           <i class="ph ph-robot"></i> <span data-i18n="tabAiRules">Herramientas IA & Reglas</span>
@@ -88,6 +103,17 @@
       </div>
 
       <div class="tab-content-scroll scroll-container">
+        <!-- Metrics Enabled Switch -->
+        <div class="metrics-banner-card">
+          <label class="toggle-card horizontal">
+            <input type="checkbox" id="cfg-metrics-enabled" class="form-checkbox">
+            <div class="toggle-content">
+              <span class="toggle-title" data-i18n="toggleMetrics">Auditoría y Telemetría de Eventos Activa</span>
+              <span class="toggle-desc" data-i18n="toggleMetricsDesc">Registra métricas del ciclo de vida y analítica ejecutiva en el repositorio (.specty/metrics/).</span>
+            </div>
+          </label>
+        </div>
+
         <!-- KPI Summary Cards -->
         <div class="kpi-grid">
           <div class="kpi-card">
@@ -281,6 +307,51 @@
               </div>
             </label>
           </div>
+
+          <div class="form-group coverage-group" style="margin-top: 1.25rem;">
+            <label for="cfg-gate-coverage" data-i18n="cfgCoverageMin">Cobertura Mínima de Pruebas Requerida (%):</label>
+            <div class="coverage-input-wrapper">
+              <input type="number" id="cfg-gate-coverage" class="form-input coverage-number-input" min="0" max="100" step="1" value="0">
+              <input type="range" id="cfg-gate-coverage-slider" min="0" max="100" step="1" value="0" class="form-range">
+              <span id="coverage-val-display" class="coverage-badge">0%</span>
+            </div>
+            <span class="field-hint">Umbral mínimo exigido por specty gate para pruebas de cobertura (0 desactiva la compuerta).</span>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <h3 data-i18n="bypassSectionTitle">Bypasses de Emergencia y Revisión Humana</h3>
+          <p class="section-desc" data-i18n="bypassSectionDesc">Reglas de excepción para commits urgentes y firmas de aprobación requeridas.</p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="cfg-bypass-env" data-i18n="cfgBypassEnv">Variable de Entorno de Bypass:</label>
+              <input type="text" id="cfg-bypass-env" class="form-input" placeholder="SPECTY_BYPASS">
+              <span class="field-hint">Variable que permite a scripts o CI omitir la compuerta en situaciones de contingencia.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-bypass-trailer" data-i18n="cfgBypassTrailer">Git Commit Trailer:</label>
+              <input type="text" id="cfg-bypass-trailer" class="form-input" placeholder="Specty-Bypass">
+              <span class="field-hint">Trailer en el mensaje de commit reconocido como excepción autorizada (ej. Specty-Bypass: hotfix).</span>
+            </div>
+
+            <div class="form-group form-group-full">
+              <label for="cfg-required-reviewers" data-i18n="cfgRequiredReviewers">Revisores Obligatorios (uno por línea o separados por coma):</label>
+              <textarea id="cfg-required-reviewers" class="form-textarea" rows="2" placeholder="octocat&#10;lead-dev@company.com"></textarea>
+              <span class="field-hint">Usuarios de GitHub/GitLab o correos cuya firma de aprobación es obligatoria.</span>
+            </div>
+
+            <div class="form-group form-group-full">
+              <label class="toggle-card horizontal">
+                <input type="checkbox" id="cfg-require-codeowners" class="form-checkbox">
+                <div class="toggle-content">
+                  <span class="toggle-title" data-i18n="toggleCodeowners">Exigir Revisión de CODEOWNERS</span>
+                  <span class="toggle-desc" data-i18n="toggleCodeownersDesc">Requiere que al menos un propietario del archivo en el archivo CODEOWNERS apruebe la especificación.</span>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
 
         <div class="config-actions-bar">
@@ -292,7 +363,284 @@
       </div>
     </section>
 
-    <!-- Tab 3: AI Tools & Rules Catalog -->
+    <!-- Tab 3: Git Workflow & Commits -->
+    <section id="tab-git" class="tab-pane">
+      <div class="config-layout scroll-container">
+        <div class="config-section">
+          <h3 data-i18n="gitWorkflowTitle">Estrategia de Ramas Git (Workflow)</h3>
+          <p class="section-desc" data-i18n="gitWorkflowDesc">Determina cómo la IA y el equipo estructuran, integran y ramifican las funcionalidades.</p>
+
+          <div class="workflow-grid" id="git-workflow-grid">
+            <!-- Dynamically populated workflow cards -->
+          </div>
+        </div>
+
+        <div class="config-section">
+          <h3 data-i18n="commitConventionTitle">Convención de Mensajes de Commit</h3>
+          <p class="section-desc" data-i18n="commitConventionDesc">Estandariza el formato semántico de los commits generados por agentes IA y desarrolladores.</p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="cfg-commit-convention" data-i18n="cfgCommitConvention">Convención Seleccionada:</label>
+              <select id="cfg-commit-convention" class="form-select">
+                <option value="conventional">Conventional Commits (feat(scope): ...)</option>
+                <option value="classic">Clásico (Capitalized imperative)</option>
+                <option value="gitmoji">Gitmoji (✨ feat: ...)</option>
+                <option value="ticket">Ticket ID ([PROJ-123] ...)</option>
+                <option value="gitmoji-conventional">Gitmoji + Conventional (✨ feat(scope): ...)</option>
+                <option value="conventional-ticket">Conventional + Ticket (feat(scope): [PROJ-123] ...)</option>
+                <option value="gitmoji-ticket">Gitmoji + Ticket (✨ [PROJ-123] ...)</option>
+                <option value="gitmoji-conventional-ticket">Gitmoji + Conventional + Ticket (✨ feat(scope): [PROJ-123] ...)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <span class="form-label" data-i18n="commitPreviewLabel">Simulador en Vivo de Commit:</span>
+              <div class="commit-preview-box" id="commit-preview-box">
+                <span class="commit-preview-tag">preview</span>
+                <code id="commit-preview-text">feat(auth): implement oauth2 authentication flow</code>
+              </div>
+              <span class="field-hint" id="commit-preview-hint">Ejemplo generado automáticamente según la regla semántica seleccionada.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Project Structure & Scopes -->
+    <section id="tab-project" class="tab-pane">
+      <div class="config-layout scroll-container">
+        <div class="config-section">
+          <h3 data-i18n="projectStructureTitle">Estructura y Arquitectura del Proyecto</h3>
+          <p class="section-desc" data-i18n="projectStructureDesc">Configura la topología del repositorio y los patrones arquitecturales para los agentes de IA.</p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="cfg-project-layout" data-i18n="cfgProjectLayout">Topología del Repositorio (Layout):</label>
+              <select id="cfg-project-layout" class="form-select">
+                <option value="single">Single Repository (Repositorio simple / monolito estándar)</option>
+                <option value="monorepo">Monorepo (Múltiples paquetes / apps coordinadas)</option>
+                <option value="multi-repo">Multi-repo (Parte de un ecosistema distribuido)</option>
+                <option value="workspace">Workspace (Espacio de trabajo modular)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-project-kind" data-i18n="cfgProjectKind">Estado del Proyecto:</label>
+              <select id="cfg-project-kind" class="form-select">
+                <option value="existing">Proyecto Existente (Brownfield con código previo)</option>
+                <option value="new">Proyecto Nuevo (Greenfield desde cero)</option>
+              </select>
+            </div>
+
+            <div class="form-group form-group-full">
+              <label for="cfg-project-architecture" data-i18n="cfgProjectArchitecture">Patrón Arquitectónico del Repositorio:</label>
+              <input type="text" id="cfg-project-architecture" class="form-input" list="architecture-suggestions" placeholder="ej. Clean Architecture / Hexagonal / Feature-First">
+              <datalist id="architecture-suggestions">
+                <option value="Clean Architecture (Domain, UseCases, Repositories, Presenters)"></option>
+                <option value="Hexagonal Architecture (Ports and Adapters)"></option>
+                <option value="Feature-First (Modular vertical slices por funcionalidad)"></option>
+                <option value="Modular Monolith (Módulos desacoplados en monorepo)"></option>
+                <option value="Layered / N-Tier Architecture (Controller, Service, Repository)"></option>
+                <option value="Event-Driven Architecture (CQRS / Event Sourcing)"></option>
+              </datalist>
+              <span class="field-hint">Esta especificación instruye a los asistentes sobre cómo organizar directorios y respetar las capas.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <div class="panel-header-clean">
+            <div>
+              <h3 data-i18n="scopesSectionTitle">Alcances y Stacks Tecnológicos (Scopes)</h3>
+              <p class="section-desc" data-i18n="scopesSectionDesc">Define paquetes, lenguajes, frameworks y comandos de verificación asociados.</p>
+            </div>
+            <button type="button" id="btn-add-scope" class="btn-secondary">
+              <i class="ph ph-plus"></i> <span data-i18n="btnAddScope">Añadir Scope</span>
+            </button>
+          </div>
+
+          <div class="scopes-container" id="scopes-container">
+            <!-- Dynamically populated scope cards -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: MCP Protocol & Semantic Graph -->
+    <section id="tab-mcp" class="tab-pane">
+      <div class="config-layout scroll-container">
+        <div class="config-section">
+          <h3 data-i18n="mcpSectionTitle">Model Context Protocol (MCP) & Memoria de Código</h3>
+          <p class="section-desc" data-i18n="mcpSectionDesc">Gestiona la integración de servidores de contexto y el grafo semántico del repositorio.</p>
+
+          <div class="toggles-grid">
+            <label class="toggle-card">
+              <input type="checkbox" id="cfg-mcp-enabled" class="form-checkbox">
+              <div class="toggle-content">
+                <span class="toggle-title" data-i18n="toggleMcpEnabled">Activar Protocolo MCP de Specty</span>
+                <span class="toggle-desc" data-i18n="toggleMcpEnabledDesc">Expone herramientas y recursos del proyecto a editores como Cursor, Antigravity y Claude.</span>
+              </div>
+            </label>
+
+            <label class="toggle-card">
+              <input type="checkbox" id="cfg-mcp-auto-index" class="form-checkbox">
+              <div class="toggle-content">
+                <span class="toggle-title" data-i18n="toggleMcpAutoIndex">Indexación Automática de Código</span>
+                <span class="toggle-desc" data-i18n="toggleMcpAutoIndexDesc">Re-indexa el grafo semántico automáticamente al guardar cambios en especificaciones.</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="form-grid" style="margin-top: 1rem;">
+            <div class="form-group">
+              <label for="cfg-mcp-provider" data-i18n="cfgMcpProvider">Proveedor de Grafo Semántico:</label>
+              <select id="cfg-mcp-provider" class="form-select">
+                <option value="codebase-memory">codebase-memory (Memoria de grafo vectorial local)</option>
+                <option value="builtin">Builtin (Grafo directo integrado)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-mcp-max-kb" data-i18n="cfgMcpMaxKb">Límite Máximo de Archivo en Grafo (KB):</label>
+              <input type="number" id="cfg-mcp-max-kb" class="form-input" min="64" max="8192" step="64" value="512">
+              <span class="field-hint">Archivos superiores a este tamaño se omiten para evitar saturar el contexto.</span>
+            </div>
+
+            <div class="form-group form-group-full">
+              <label for="cfg-mcp-exclude" data-i18n="cfgMcpExclude">Rutas Excluidas del Grafo (glob por línea):</label>
+              <textarea id="cfg-mcp-exclude" class="form-textarea" rows="2" placeholder="**/dist/**&#10;**/build/**&#10;**/*.min.js"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <div class="panel-header-clean">
+            <div>
+              <h3 data-i18n="customMcpServersTitle">Servidores MCP Personalizados del Proyecto</h3>
+              <p class="section-desc" data-i18n="customMcpServersDesc">Conecta fuentes de datos externas (Jira, Postgres, GitHub, Figma) con tus agentes.</p>
+            </div>
+            <button type="button" id="btn-add-custom-mcp" class="btn-secondary">
+              <i class="ph ph-plus"></i> <span data-i18n="btnAddCustomMcp">Añadir Servidor</span>
+            </button>
+          </div>
+
+          <!-- Quick Presets -->
+          <div class="mcp-presets-panel">
+            <span class="presets-label" data-i18n="mcpPresetsLabel">Presets Rápidos Oficiales:</span>
+            <div class="presets-buttons" id="mcp-presets-container">
+              <!-- Populated by JS: Postgres, Jira, Azure DevOps, Figma, GitHub -->
+            </div>
+          </div>
+
+          <div class="custom-servers-grid" id="custom-servers-grid">
+            <!-- Dynamically populated configured servers -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 6: UI Style & Design System -->
+    <section id="tab-ui-style" class="tab-pane">
+      <div class="config-layout scroll-container">
+        <div class="config-section">
+          <h3 data-i18n="uiStyleTitle">Sistema de Diseño & Reglas de Frontend</h3>
+          <p class="section-desc" data-i18n="uiStyleDesc">Define la personalidad visual y convenciones de UI para que los agentes construyan componentes coherentes.</p>
+
+          <div class="toggles-grid">
+            <label class="toggle-card">
+              <input type="checkbox" id="cfg-ui-has-gui" class="form-checkbox">
+              <div class="toggle-content">
+                <span class="toggle-title" data-i18n="toggleUiHasGui">El Proyecto Posee Interfaz Gráfica (GUI)</span>
+                <span class="toggle-desc" data-i18n="toggleUiHasGuiDesc">Activa la generación de pautas de diseño y tokens para los agentes de frontend.</span>
+              </div>
+            </label>
+
+            <label class="toggle-card">
+              <input type="checkbox" id="cfg-ui-customized" class="form-checkbox">
+              <div class="toggle-content">
+                <span class="toggle-title" data-i18n="toggleUiCustomized">Reglas de Diseño Personalizadas</span>
+                <span class="toggle-desc" data-i18n="toggleUiCustomizedDesc">Instruye a los agentes a priorizar tokens y patrones a medida sobre estilos neutros genéricos.</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="form-grid" style="margin-top: 1rem;">
+            <div class="form-group">
+              <label for="cfg-ui-purpose" data-i18n="cfgUiPurpose">Propósito Principal de la Interfaz:</label>
+              <select id="cfg-ui-purpose" class="form-select">
+                <option value="general-purpose">Propósito General / Neutro</option>
+                <option value="saas-dashboard">SaaS / Dashboard Administrativo</option>
+                <option value="ecommerce">E-Commerce / Tienda Online</option>
+                <option value="landing-marketing">Landing Page / Marketing</option>
+                <option value="mobile-social">App Móvil / Comunidad Social</option>
+                <option value="content-docs">Contenido / Documentación / Blog</option>
+                <option value="fintech">Fintech / Finanzas / Cripto</option>
+                <option value="health-wellness">Salud / Bienestar / Clínicas</option>
+                <option value="education">Educación / LMS / Cursos</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-ui-audience" data-i18n="cfgUiAudience">Público Objetivo (Audiencia):</label>
+              <select id="cfg-ui-audience" class="form-select">
+                <option value="general-public">Público General</option>
+                <option value="professionals">Profesionales / B2B</option>
+                <option value="developers">Desarrolladores / Técnicos</option>
+                <option value="youth-students">Jóvenes / Estudiantes</option>
+                <option value="elderly-accessible">Tercera Edad / Alta Accesibilidad</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-ui-radius" data-i18n="cfgUiRadius">Estilo de Bordes (Border Radius):</label>
+              <select id="cfg-ui-radius" class="form-select">
+                <option value="rounded">Rounded (Bordes redondeados y suaves)</option>
+                <option value="semi-rounded">Semi-Rounded (Intermedio elegante - default)</option>
+                <option value="sharp">Sharp (Bordes rectos, alta precisión)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-ui-effects" data-i18n="cfgUiEffects">Efectos Visuales:</label>
+              <select id="cfg-ui-effects" class="form-select">
+                <option value="subtle-elevation">Elevación Sutil (Sombras refinadas)</option>
+                <option value="glassmorphism">Glassmorphism (Efectos de desenfoque y translúcidos)</option>
+                <option value="hard-contrast">Alto Contraste (Bordes definidos sin sombras)</option>
+                <option value="minimal-flat">Minimalista Plano (Flat design moderno)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="cfg-ui-color-mode" data-i18n="cfgUiColorMode">Modo de Color Soportado:</label>
+              <select id="cfg-ui-color-mode" class="form-select">
+                <option value="both">Ambos (Modo Oscuro + Modo Claro)</option>
+                <option value="dark">Solo Modo Oscuro (Dark-first)</option>
+                <option value="light">Solo Modo Claro (Light-first)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <div class="panel-header-clean">
+            <div>
+              <h3 data-i18n="uiTokensTitle">Tokens de Diseño Personalizados</h3>
+              <p class="section-desc" data-i18n="uiTokensDesc">Variables CSS de paleta o tipografía comunicadas a los agentes en sus reglas.</p>
+            </div>
+            <button type="button" id="btn-add-token" class="btn-secondary">
+              <i class="ph ph-plus"></i> <span data-i18n="btnAddToken">Añadir Token</span>
+            </button>
+          </div>
+
+          <div class="tokens-table-wrapper" id="tokens-table-wrapper">
+            <!-- Dynamic tokens table -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 7: AI Tools & Rules Catalog -->
     <section id="tab-ai-rules" class="tab-pane">
       <div class="config-layout scroll-container">
         <div class="config-section">
@@ -301,13 +649,21 @@
               <h3 data-i18n="aiToolsTitle">Herramientas de IA y Editores Soportados</h3>
               <p class="section-desc" data-i18n="aiToolsDesc">Selecciona qué editores y asistentes sincronizarán las reglas y contexto de Specty.</p>
             </div>
-            <button type="button" id="btn-regenerate-tools" class="btn-secondary">
-              <i class="ph-bold ph-lightning"></i> <span data-i18n="regenerateAdapters">Regenerar Adaptadores</span>
-            </button>
+            <div class="btn-group">
+              <button type="button" id="btn-tools-select-all" class="btn-secondary btn-sm" title="Marcar todos los editores">
+                <i class="ph ph-check-square"></i> <span data-i18n="selectAll">Marcar Todos</span>
+              </button>
+              <button type="button" id="btn-tools-deselect-all" class="btn-secondary btn-sm" title="Desmarcar todos">
+                <i class="ph ph-square"></i> <span data-i18n="deselectAll">Desmarcar</span>
+              </button>
+              <button type="button" id="btn-regenerate-tools" class="btn-primary btn-sm">
+                <i class="ph-bold ph-lightning"></i> <span data-i18n="regenerateAdapters">Regenerar Adaptadores</span>
+              </button>
+            </div>
           </div>
 
           <div class="ai-tools-grid" id="ai-tools-grid">
-            <!-- Dynamically populated -->
+            <!-- Dynamically populated 17 tools -->
           </div>
         </div>
 
@@ -345,6 +701,6 @@
   <!-- Notification Toast -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="./settings.js?v=2.2.0"></script>
+  <script src="./settings.js?v=2.3.0"></script>
 </body>
 </html>
