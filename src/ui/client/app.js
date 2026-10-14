@@ -143,6 +143,8 @@
       btnPendingTasks: "Tareas Pendientes",
       pendingTasksDesc:
         "Existen tareas incompletas en tasks.md. El asistente debe culminar el desarrollo antes de verificar o finalizar.",
+      reapprovalRequired: "Re-aprobación Requerida",
+      btnApproveNewTasks: "Aprobar Nuevas Tareas",
     },
     en: {
       liveSync: "Live Sync",
@@ -274,6 +276,8 @@
       btnPendingTasks: "Pending Tasks",
       pendingTasksDesc:
         "There are incomplete tasks in tasks.md. The assistant must complete development before verifying or completing.",
+      reapprovalRequired: "Re-approval Required",
+      btnApproveNewTasks: "Approve New Tasks",
     },
   };
 
@@ -659,7 +663,7 @@
     changeIdSubEl.textContent = `openspec/changes/${data.id}`;
 
     // Lifecycle Stepper
-    updateLifecycleStepper(data.status);
+    updateLifecycleStepper(data.status, data.approval);
 
     // Approval Badge & Lifecycle Action Button
     updateApprovalBadge(data.approval, data.status, data.reviews || [], data);
@@ -685,8 +689,11 @@
 
   const LIFECYCLE_STAGES = ["draft", "approved", "in-progress", "verifying", "done", "archived"];
 
-  function updateLifecycleStepper(status) {
-    const normStatus = (status || "draft").toLowerCase();
+  function updateLifecycleStepper(status, approval = null) {
+    let normStatus = (status || "draft").toLowerCase();
+    if (approval && !approval.approved && normStatus !== "archived") {
+      normStatus = "draft";
+    }
     const currentIndex = LIFECYCLE_STAGES.indexOf(normStatus);
     const activeIndex = currentIndex !== -1 ? currentIndex : 0;
 
@@ -721,14 +728,26 @@
     });
   }
 
+  function openApproveModal() {
+    if (!modalApprove) return;
+    const modalChangeId = document.getElementById("modal-approve-change-id");
+    if (modalChangeId) modalChangeId.textContent = currentChangeId || "";
+    modalApprove.classList.remove("hidden");
+  }
+
   function updateApprovalBadge(approval, status, reviews = [], currentData = null) {
     approvalBadgeEl.className = "status-badge";
     const normStatus = (status || "draft").toLowerCase();
+    const isApproved = Boolean(approval?.approved);
+    const reapprovalRequired = approval?.code === "reapproval_required";
 
     // 1. Status Badge
     if (normStatus === "archived") {
       approvalBadgeEl.classList.add("status-archived");
       approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-archive"></i></span><span id="approval-status-text">${t("stepArchived")}</span>`;
+    } else if (reapprovalRequired) {
+      approvalBadgeEl.classList.add("status-warning");
+      approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-warning-circle"></i></span><span id="approval-status-text">${t("reapprovalRequired")}</span>`;
     } else if (normStatus === "done") {
       approvalBadgeEl.classList.add("status-done");
       approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-check-fat"></i></span><span id="approval-status-text">${t("stepDone")}</span>`;
@@ -738,7 +757,7 @@
     } else if (normStatus === "in-progress") {
       approvalBadgeEl.classList.add("status-in-progress");
       approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-gear-fine"></i></span><span id="approval-status-text">${t("stepInProgress")}</span>`;
-    } else if (approval?.approved || normStatus === "approved") {
+    } else if (isApproved || normStatus === "approved") {
       approvalBadgeEl.classList.add("status-approved");
       const shortHash = approval?.approvedHash ? `#${approval.approvedHash.slice(0, 8)}` : "OK";
       approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-check-circle"></i></span><span id="approval-status-text">${t("statusApproved")} (${shortHash})</span>`;
@@ -756,14 +775,21 @@
       btnApprove.title = `${t("updatePlanBtn")} (${activeReviews.length})`;
       btnApprove.disabled = false;
       btnApprove.onclick = handleUpdatePlan;
+    } else if (normStatus === "archived") {
+      btnApprove.className = "btn-secondary btn-archived-state";
+      btnApprove.innerHTML = `<i class="ph-bold ph-archive"></i> <span>${t("archivedFeature")}</span>`;
+      btnApprove.title = t("archivedFeature");
+      btnApprove.disabled = true;
+      btnApprove.onclick = null;
+    } else if (!isApproved || reapprovalRequired || normStatus === "draft") {
+      btnApprove.className = "btn-primary btn-success";
+      const btnLabel = reapprovalRequired ? t("btnApproveNewTasks") : t("approveSpec");
+      btnApprove.innerHTML = `<i class="ph-bold ph-check"></i> <span>${btnLabel}</span>`;
+      btnApprove.title = btnLabel;
+      btnApprove.disabled = false;
+      btnApprove.onclick = () => openApproveModal();
     } else {
-      if (normStatus === "archived") {
-        btnApprove.className = "btn-secondary btn-archived-state";
-        btnApprove.innerHTML = `<i class="ph-bold ph-archive"></i> <span>${t("archivedFeature")}</span>`;
-        btnApprove.title = t("archivedFeature");
-        btnApprove.disabled = true;
-        btnApprove.onclick = null;
-      } else if (normStatus === "done") {
+      if (normStatus === "done") {
         btnApprove.className = "btn-primary btn-archive";
         btnApprove.innerHTML = `<i class="ph-bold ph-archive"></i> <span>${t("btnArchiveFeature")}</span>`;
         btnApprove.title = t("btnArchiveFeature");
@@ -795,20 +821,12 @@
         btnApprove.title = t("btnRunVerify");
         btnApprove.disabled = false;
         btnApprove.onclick = handleRunVerification;
-      } else if (approval?.approved || normStatus === "approved") {
+      } else {
         btnApprove.className = "btn-primary btn-success";
         btnApprove.innerHTML = `<i class="ph-bold ph-play"></i> <span>${t("btnStartImpl")}</span>`;
         btnApprove.title = t("btnStartImpl");
         btnApprove.disabled = false;
         btnApprove.onclick = handleStartImplementation;
-      } else {
-        btnApprove.className = "btn-primary";
-        btnApprove.innerHTML = `<i class="ph-bold ph-check"></i> <span>${t("approveSpec")}</span>`;
-        btnApprove.title = t("approveSpec");
-        btnApprove.disabled = false;
-        btnApprove.onclick = () => {
-          modalApprove.classList.remove("hidden");
-        };
       }
     }
   }
