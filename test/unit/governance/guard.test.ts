@@ -219,5 +219,26 @@ describe("guard engine", () => {
       expect(inScope.allowed).toBe(true);
       expect(inScope.code).toBe("ALLOWED");
     });
+
+    it("blocks editing files reserved by other tasks when active task has no scope", async () => {
+      const changeDir = path.join(tmpDir, "openspec", "changes", "partially-scoped");
+      await fs.mkdir(changeDir, { recursive: true });
+      await fs.writeFile(path.join(changeDir, "proposal.md"), "# Proposal\n\nPartially scoped\n");
+      await fs.writeFile(
+        path.join(changeDir, "tasks.md"),
+        `# Tasks\n\n- [ ] 1.1 Unscoped task [agent: backend]\n      verify: npm test\n- [ ] 2.1 Frontend task [agent: frontend] [files: src/frontend/**]\n      verify: npm test\n`,
+      );
+
+      const { executeApprove } = await import("../../../src/cli/commands/approve.js");
+      await executeApprove("partially-scoped", { cwd: tmpDir, yes: true, force: true });
+
+      const reservedEdit = await evaluateGuard(tmpDir, {
+        toolName: "Edit",
+        filePath: "src/frontend/app.tsx",
+      });
+      expect(reservedEdit.allowed).toBe(false);
+      expect(reservedEdit.code).toBe("OUT_OF_SCOPE");
+      expect(reservedEdit.reason).toContain("reserved by another task's scope");
+    });
   });
 });

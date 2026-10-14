@@ -84,6 +84,24 @@ export interface SpectyStateTransitionResult {
   message?: string;
 }
 
+export interface SpectyTaskNextResult {
+  changeId: string;
+  activeTask: import("../governance/task-scope.js").ParsedTaskItem | null;
+  allCompleted: boolean;
+  message?: string;
+}
+
+export interface SpectyTaskListResult {
+  changeId: string;
+  total: number;
+  completed: number;
+  activeTaskId: string | null;
+  tasks: import("../governance/task-scope.js").ParsedTaskItem[];
+}
+
+export type SpectyTaskAddResult = import("../governance/task-manager.js").AddTaskResult;
+export type SpectyTaskCompleteResult = import("../governance/task-manager.js").CompleteTaskResult;
+
 export interface McpToolResultMap {
   specty_validate_change: SpectyValidateChangeResult;
   specty_get_active_change: SpectyGetActiveChangeResult;
@@ -96,4 +114,8 @@ export interface McpToolResultMap {
   specty_start_change: SpectyStateTransitionResult;
   specty_complete_change: SpectyStateTransitionResult;
   specty_wait_action: import("../governance/wait-action.js").WaitActionResult;
+  specty_task_next: SpectyTaskNextResult;
+  specty_task_list: SpectyTaskListResult;
+  specty_task_add: SpectyTaskAddResult;
+  specty_task_complete: SpectyTaskCompleteResult;
 }

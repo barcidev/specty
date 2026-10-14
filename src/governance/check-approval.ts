@@ -456,19 +456,29 @@ export async function checkApprovalGate(
       };
     }
 
-    // Active task exists! Allowed globs prioritize the active task's scope
-    const allowedGlobs =
-      activeTask && activeTask.filesGlobs.length > 0
-        ? activeTask.filesGlobs
-        : getAllTasksFileGlobs(parsedTasks);
+    // Active task exists! Scope is strictly restricted to active task
+    const activeGlobs = activeTask && activeTask.filesGlobs.length > 0 ? activeTask.filesGlobs : [];
+    const allDeclaredGlobs = getAllTasksFileGlobs(parsedTasks);
 
-    const outOfScopeFiles =
-      allowedGlobs.length > 0
-        ? modifiedSourceFiles.filter((file) => !isPathMatchingGlobs(file, allowedGlobs))
-        : [];
+    let outOfScopeFiles: string[] = [];
+    if (activeGlobs.length > 0) {
+      outOfScopeFiles = modifiedSourceFiles.filter(
+        (file) => !isPathMatchingGlobs(file, activeGlobs),
+      );
+    } else if (allDeclaredGlobs.length > 0) {
+      // Active task has no declared scope, but other tasks do declare scopes.
+      // Prevent touching files reserved for other tasks!
+      outOfScopeFiles = modifiedSourceFiles.filter((file) =>
+        isPathMatchingGlobs(file, allDeclaredGlobs),
+      );
+    }
 
     if (outOfScopeFiles.length > 0) {
       const taskScopeDesc = activeTask ? ` (active task ${activeTask.id})` : "";
+      const allowedDesc =
+        activeGlobs.length > 0
+          ? `\n\nAllowed file scopes for task ${activeTask?.id}:\n${activeGlobs.map((g) => `  [files: ${g}]`).join("\n")}`
+          : `\n\nActive task ${activeTask?.id} does not declare file scope, but the modified file(s) are reserved by other tasks in change "${targetSummary.id}".`;
       return {
         passed: false,
         bypassed: false,
@@ -480,7 +490,7 @@ export async function checkApprovalGate(
         allChanges: changeSummaries,
         outOfScopeFiles,
         errorCode: "out_of_scope",
-        reason: `Modified files outside the scope of approved change "${targetSummary.id}"${taskScopeDesc}:\n${outOfScopeFiles.map((f) => `  - ${f}`).join("\n")}\n\nAllowed file scopes${activeTask ? ` for task ${activeTask.id}` : ""}:\n${allowedGlobs.map((g) => `  [files: ${g}]`).join("\n")}\n\nTo modify these files, amend the change specification tasks and re-approve.`,
+        reason: `Modified files outside the scope of approved change "${targetSummary.id}"${taskScopeDesc}:\n${outOfScopeFiles.map((f) => `  - ${f}`).join("\n")}${allowedDesc}\n\nTo modify these files, amend the change specification tasks and re-approve.`,
       };
     }
 

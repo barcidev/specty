@@ -358,6 +358,74 @@ sessionCmd
     }
   });
 
+const taskCmd = program
+  .command("task")
+  .description("manage atomic specification tasks, file scopes, and lifecycle progression");
+
+taskCmd
+  .command("next [change]")
+  .description("display the active task and allowed file scope for a specification change")
+  .option("--json", "output active task details as JSON")
+  .option("--cwd <path>", "custom repository root directory")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeTaskNext } = await import("./commands/task.js");
+      await executeTaskNext(change, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+taskCmd
+  .command("list [change]")
+  .description("list all tasks and completion status for a specification change")
+  .option("--json", "output tasks list as JSON")
+  .option("--cwd <path>", "custom repository root directory")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeTaskList } = await import("./commands/task.js");
+      await executeTaskList(change, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+taskCmd
+  .command("add <description> [change]")
+  .description("add a new atomic task to tasks.md with file scopes (invalidates approval)")
+  .option("--files <globs>", "comma-separated glob patterns of files in scope for this task")
+  .option("--agent <role>", "agent role assigned to this task (e.g. frontend, backend, testing)")
+  .option("--verify <cmd>", "verification command to validate task completion")
+  .option("--phase <name>", "target phase section name in tasks.md")
+  .option("--json", "output result as JSON")
+  .option("--cwd <path>", "custom repository root directory")
+  .action(async (description: string, change: string | undefined, options) => {
+    try {
+      const { executeTaskAdd } = await import("./commands/task.js");
+      await executeTaskAdd(description, change, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+taskCmd
+  .command("complete <id> [change]")
+  .description("mark an active task as completed after verifying and committing")
+  .option("--json", "output result as JSON")
+  .option("--cwd <path>", "custom repository root directory")
+  .action(async (id: string, change: string | undefined, options) => {
+    try {
+      const { executeTaskComplete } = await import("./commands/task.js");
+      await executeTaskComplete(id, change, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 program
   .command("index")
   .description("build or update the codebase knowledge graph index")

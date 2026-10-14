@@ -256,6 +256,26 @@ describe("governance check-approval gate", () => {
     expect(result.passed).toBe(true);
     expect(result.reason).toContain("active task 1.1");
   });
+
+  it("fails with out_of_scope when active task has no declared scope but touches files reserved by subsequent tasks", async () => {
+    const changeDir = await engine.createChange(tmpDir, "unscoped-active", {
+      title: "Unscoped Active Task",
+    });
+
+    const tasks = `# Tasks: Unscoped Active\n\n## 1. Implementation\n- [ ] 1.1 Unscoped task [agent: backend]\n- [ ] 1.2 Scoped task [agent: frontend] [files: src/scoped.ts]\n`;
+    await fs.writeFile(path.join(changeDir, "tasks.md"), tasks, "utf8");
+    await approveChange(tmpDir, "unscoped-active", { approvedBy: "Lead" });
+
+    // Active task 1.1 has no scope, but touches src/scoped.ts which is reserved by task 1.2
+    await fs.writeFile(path.join(tmpDir, "src/scoped.ts"), "export const reserved = true;\n");
+    await execa("git", ["add", "src/scoped.ts"], { cwd: tmpDir });
+
+    const result = await checkApprovalGate(tmpDir, { stagedOnly: true });
+    expect(result.passed).toBe(false);
+    expect(result.errorCode).toBe("out_of_scope");
+    expect(result.outOfScopeFiles).toContain("src/scoped.ts");
+    expect(result.reason).toContain("reserved by other tasks");
+  });
 });
 
 describe("git hooks and CI templates", () => {

@@ -8,6 +8,12 @@ import { evaluateGuard } from "../governance/guard.js";
 import { determineNextAction } from "../governance/next-action.js";
 import { validateChangeSpecification } from "../governance/spec-validator.js";
 import { transitionChangeState } from "../governance/state-machine.js";
+import {
+  addTaskToChange,
+  completeTaskInChange,
+  getActiveChangeTask,
+  listChangeTasks,
+} from "../governance/task-manager.js";
 import { executeVerification } from "../governance/verifier.js";
 import { createHandoff, getLatestHandoff } from "../handoff/manager.js";
 import type { CodeGraph } from "./graph.js";
@@ -271,6 +277,89 @@ export function getMcpToolDefinitions(): McpToolDefinition[] {
             description: "Optional specific change identifier. If omitted, resolved automatically.",
           },
         },
+      },
+    },
+    {
+      name: "specty_task_next",
+      description:
+        "Retrieve the active incomplete task, agent role, and permitted file globs for the active specification change.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          changeId: {
+            type: "string",
+            description: "Optional change identifier override.",
+          },
+        },
+      },
+    },
+    {
+      name: "specty_task_list",
+      description:
+        "List all tasks, completion status, and file scopes for the active specification change.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          changeId: {
+            type: "string",
+            description: "Optional change identifier override.",
+          },
+        },
+      },
+    },
+    {
+      name: "specty_task_add",
+      description:
+        "Add a new atomic task with file scopes to tasks.md. Automatically invalidates approval and prescribes human re-approval before modifying code.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          description: {
+            type: "string",
+            description: "Description of the task to add.",
+          },
+          filesGlobs: {
+            type: "array",
+            items: { type: "string" },
+            description: "List of file globs permitted for this task.",
+          },
+          role: {
+            type: "string",
+            description: "Optional agent role for this task (e.g. frontend, backend, testing).",
+          },
+          verifyCommand: {
+            type: "string",
+            description: "Optional command to verify task completion.",
+          },
+          phase: {
+            type: "string",
+            description: "Optional phase section header name in tasks.md.",
+          },
+          changeId: {
+            type: "string",
+            description: "Optional change identifier override.",
+          },
+        },
+        required: ["description"],
+      },
+    },
+    {
+      name: "specty_task_complete",
+      description:
+        "Mark an active task as completed in tasks.md after verifying and committing the implementation.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          taskId: {
+            type: "string",
+            description: "Task identifier to mark completed (e.g. '1.1').",
+          },
+          changeId: {
+            type: "string",
+            description: "Optional change identifier override.",
+          },
+        },
+        required: ["taskId"],
       },
     },
   ];
@@ -589,6 +678,95 @@ export async function handleMcpToolCall(
         success,
         message: `Agent session ended for "${changeId || "repo"}". UI primary action unlocked.`,
       };
+    }
+
+    case "specty_task_next": {
+      const { resolveTargetChange } = await import("../governance/change-resolver.js");
+      const resolution = await resolveTargetChange(repoRoot, {
+        changeId: typeof args.changeId === "string" ? args.changeId : undefined,
+      });
+      const changeId = resolution.resolvedId;
+      if (!changeId) {
+        return {
+          changeId: "",
+          activeTask: null,
+          allCompleted: false,
+          message: "No active specification change resolved.",
+        };
+      }
+      const activeTask = await getActiveChangeTask(repoRoot, changeId);
+      return {
+        changeId,
+        activeTask,
+        allCompleted: !activeTask,
+        message: activeTask
+          ? `Active task: ${activeTask.id} - ${activeTask.description}`
+          : "All tasks completed.",
+      };
+    }
+
+    case "specty_task_list": {
+      const { resolveTargetChange } = await import("../governance/change-resolver.js");
+      const resolution = await resolveTargetChange(repoRoot, {
+        changeId: typeof args.changeId === "string" ? args.changeId : undefined,
+      });
+      const changeId = resolution.resolvedId;
+      if (!changeId) {
+        return {
+          changeId: "",
+          total: 0,
+          completed: 0,
+          activeTaskId: null,
+          tasks: [],
+        };
+      }
+      const { tasks, activeTask } = await listChangeTasks(repoRoot, changeId);
+      return {
+        changeId,
+        total: tasks.length,
+        completed: tasks.filter((t) => t.completed).length,
+        activeTaskId: activeTask?.id ?? null,
+        tasks,
+      };
+    }
+
+    case "specty_task_add": {
+      const { resolveTargetChange } = await import("../governance/change-resolver.js");
+      const resolution = await resolveTargetChange(repoRoot, {
+        changeId: typeof args.changeId === "string" ? args.changeId : undefined,
+      });
+      const changeId = resolution.resolvedId;
+      if (!changeId) {
+        throw new Error("No active specification change resolved.");
+      }
+      const description = typeof args.description === "string" ? args.description : "";
+      const filesGlobs = Array.isArray(args.filesGlobs)
+        ? (args.filesGlobs.filter((g) => typeof g === "string") as string[])
+        : [];
+      const role = typeof args.role === "string" ? args.role : undefined;
+      const verifyCommand = typeof args.verifyCommand === "string" ? args.verifyCommand : undefined;
+      const phase = typeof args.phase === "string" ? args.phase : undefined;
+
+      return await addTaskToChange(repoRoot, changeId, {
+        description,
+        filesGlobs,
+        role,
+        verifyCommand,
+        phase,
+      });
+    }
+
+    case "specty_task_complete": {
+      const { resolveTargetChange } = await import("../governance/change-resolver.js");
+      const resolution = await resolveTargetChange(repoRoot, {
+        changeId: typeof args.changeId === "string" ? args.changeId : undefined,
+      });
+      const changeId = resolution.resolvedId;
+      if (!changeId) {
+        throw new Error("No active specification change resolved.");
+      }
+      const taskId = typeof args.taskId === "string" ? args.taskId : "";
+      return await completeTaskInChange(repoRoot, changeId, taskId);
     }
 
     default:

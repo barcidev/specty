@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createDefaultConfig, loadConfig, type SpectyConfig } from "../core/config.js";
+import { getHeadCommitSha } from "../core/git.js";
 import { readChangeState, writeChangeState } from "../engines/change-state.js";
 import { getSpecEngine } from "../engines/factory.js";
 import type { ChangeStatus } from "../engines/types.js";
@@ -164,6 +165,17 @@ export async function transitionChangeState(
           fromStatus: currentStatus,
           toStatus: targetStatus,
           reason: `Cannot transition to "done": Latest verification report for change "${changeId}" failed.`,
+        };
+      }
+
+      const currentHeadSha = await getHeadCommitSha(repoRoot);
+      if (verifReport.commitSha && currentHeadSha && verifReport.commitSha !== currentHeadSha) {
+        return {
+          success: false,
+          changeId,
+          fromStatus: currentStatus,
+          toStatus: targetStatus,
+          reason: `Cannot transition to "done": Verification evidence is stale. Last verification was performed on commit ${verifReport.commitSha.slice(0, 7)}, but current HEAD is ${currentHeadSha.slice(0, 7)}.\nRun 'specty verify ${changeId}' to generate fresh verification evidence.`,
         };
       }
 

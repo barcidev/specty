@@ -294,26 +294,41 @@ export async function evaluateGuard(repoRoot: string, input: GuardInput): Promis
       };
     }
 
-    // Check if relPath matches active task files scope
-    const allowedGlobs =
-      activeTask.filesGlobs.length > 0 ? activeTask.filesGlobs : getAllTasksFileGlobs(parsedTasks);
+    // Check if relPath matches active task files scope strictly
+    const activeGlobs = activeTask.filesGlobs;
+    const allDeclaredGlobs = getAllTasksFileGlobs(parsedTasks);
 
-    if (allowedGlobs.length > 0 && !isPathMatchingGlobs(relPath, allowedGlobs)) {
-      return {
-        allowed: false,
-        code: "OUT_OF_SCOPE",
-        activeTaskId: activeTask.id,
-        allowedFiles: allowedGlobs,
-        reason: `Cannot edit '${relPath}'. File is outside the active task ${activeTask.id} scope: [files: ${allowedGlobs.join(", ")}].`,
-        actionAdvice: `Only edit files matching [files: ${allowedGlobs.join(", ")}] or amend the change specification.`,
-      };
+    if (activeGlobs.length > 0) {
+      if (!isPathMatchingGlobs(relPath, activeGlobs)) {
+        return {
+          allowed: false,
+          code: "OUT_OF_SCOPE",
+          activeTaskId: activeTask.id,
+          allowedFiles: activeGlobs,
+          reason: `Cannot edit '${relPath}'. File is outside the active task ${activeTask.id} scope: [files: ${activeGlobs.join(", ")}].`,
+          actionAdvice: `Only edit files matching [files: ${activeGlobs.join(", ")}] or amend the change specification.`,
+        };
+      }
+    } else if (allDeclaredGlobs.length > 0) {
+      // Active task has no declared scope, but other tasks in the change do.
+      // Editing files reserved for other tasks is forbidden!
+      if (isPathMatchingGlobs(relPath, allDeclaredGlobs)) {
+        return {
+          allowed: false,
+          code: "OUT_OF_SCOPE",
+          activeTaskId: activeTask.id,
+          allowedFiles: [],
+          reason: `Cannot edit '${relPath}'. File is reserved by another task's scope in change '${targetChange.id}'. Active task ${activeTask.id} does not declare this scope.`,
+          actionAdvice: `Amend task ${activeTask.id} in tasks.md with [files: ...] or complete the current task before modifying other tasks.`,
+        };
+      }
     }
 
     return {
       allowed: true,
       code: "ALLOWED",
       activeTaskId: activeTask.id,
-      allowedFiles: allowedGlobs,
+      allowedFiles: activeGlobs,
     };
   }
 
