@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import type http from "node:http";
 import path from "node:path";
 import { execa } from "execa";
+import { z } from "zod";
 import { executeArchive } from "../cli/commands/archive.js";
 import {
   createDefaultConfig,
@@ -25,6 +26,7 @@ import { type CloseBranchResult, closeFeatureBranch } from "../governance/branch
 import { generateCiPipeline } from "../governance/ci-templates.js";
 import { generatePullRequest } from "../governance/pr-generator.js";
 import { transitionChangeState } from "../governance/state-machine.js";
+import { addTaskToChange, completeTaskInChange } from "../governance/task-manager.js";
 import { executeVerification } from "../governance/verifier.js";
 import { triggerCodebaseIndex } from "../mcp/indexer.js";
 import { computeGovernanceAnalytics, filterEventsByPeriod } from "../metrics/analytics.js";
@@ -35,10 +37,6 @@ import {
   type ReportPeriod,
   readMetricEvents,
 } from "../metrics/index.js";
-import {
-  addTaskToChange,
-  completeTaskInChange,
-} from "../governance/task-manager.js";
 import { getChangeDetail, toggleTaskStatus } from "./change-service.js";
 import { getChangeDiffSummary } from "./diff-service.js";
 import {
@@ -603,7 +601,10 @@ export class UiRouter {
           });
 
           this.sseHub.broadcast("task:added", { changeId, result });
-          this.sseHub.broadcast("change:status_changed", { changeId, status: "reapproval_required" });
+          this.sseHub.broadcast("change:status_changed", {
+            changeId,
+            status: "reapproval_required",
+          });
           this.jsonResponse(res, 201, result);
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
@@ -613,7 +614,9 @@ export class UiRouter {
       }
 
       // 12.2 Complete Governed Task: PATCH /api/changes/:id/tasks/:taskId/complete
-      const taskCompleteMatch = pathname.match(/^\/api\/changes\/([^/]+)\/tasks\/([^/]+)\/complete$/);
+      const taskCompleteMatch = pathname.match(
+        /^\/api\/changes\/([^/]+)\/tasks\/([^/]+)\/complete$/,
+      );
       if (taskCompleteMatch?.[1] && taskCompleteMatch[2] && method === "PATCH") {
         const changeId = decodeURIComponent(taskCompleteMatch[1]);
         const taskId = decodeURIComponent(taskCompleteMatch[2]);
@@ -683,10 +686,24 @@ export class UiRouter {
       if (pathname === "/api/config" && method === "PUT") {
         const body = await this.readJsonBody(req);
         const configData = body.config && typeof body.config === "object" ? body.config : body;
-        const validatedConfig = SpectyConfigSchema.parse(configData);
-        await saveConfig(this.repoRoot, validatedConfig);
-        this.sseHub.broadcast("config:updated", { config: validatedConfig });
-        this.jsonResponse(res, 200, { success: true, config: validatedConfig });
+        try {
+          const validatedConfig = SpectyConfigSchema.parse(configData);
+          await saveConfig(this.repoRoot, validatedConfig);
+          this.sseHub.broadcast("config:updated", { config: validatedConfig });
+          this.jsonResponse(res, 200, { success: true, config: validatedConfig });
+        } catch (validationErr) {
+          if (validationErr instanceof z.ZodError) {
+            this.jsonResponse(res, 400, {
+              error: "Error de validación en la configuración",
+              issues: validationErr.issues.map((i) => ({
+                path: i.path.join("."),
+                message: i.message,
+              })),
+            });
+            return;
+          }
+          throw validationErr;
+        }
         return;
       }
 

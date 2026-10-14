@@ -610,6 +610,7 @@
   // Top Action Buttons
   const btnApprove = document.getElementById("btn-approve");
   const btnOpenIde = document.getElementById("btn-open-ide");
+  const btnOpenSettings = document.getElementById("btn-open-settings");
   const btnQuickReviews = document.getElementById("btn-quick-reviews");
   const btnAddGeneralReview = document.getElementById("btn-add-general-review");
 
@@ -2709,6 +2710,17 @@
       }
       await openFileInIde("");
     };
+
+    // Open Settings Button
+    if (btnOpenSettings) {
+      btnOpenSettings.onclick = () => {
+        if (settingsDropdown) {
+          settingsDropdown.classList.add("hidden");
+          btnSettingsToggle?.classList.remove("active");
+        }
+        window.location.assign("/settings");
+      };
+    }
 
     // Open Diff File in IDE
     btnOpenDiffFile.onclick = async () => {
