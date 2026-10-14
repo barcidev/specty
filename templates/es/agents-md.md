@@ -28,6 +28,10 @@
     - Está ESTRICTAMENTE PROHIBIDO editar descripciones de tareas, alterar rutas `[files: ...]` o agregar/eliminar tareas en `tasks.md` mientras se esté codificando o en estado `in-progress`.
     - La ÚNICA modificación permitida en `tasks.md` durante la codificación es marcar las casillas de tareas completadas pasando de `- [ ]` a `- [x]` (la normalización de specty asegura que marcar `- [x]` no invalida el hash de aprobación).
     - Si durante la codificación se requiere un archivo de soporte o surge un detalle de implementación imprevisto, resuélvelo en el código fuente dentro del scope de la tarea activa sin alterar la especificación. Solo se permite modificar el plan si el usuario humano solicita explícitamente un cambio en los requerimientos funcionales.
+13. **Mandato de Planificación Obligatoria ante Ajustes o Feedback Post-Ejecución:**
+    - Al terminar de codificar un plan o durante las fases de verificación y revisión (`verifying`), si el usuario solicita ajustes, calibraciones, correcciones o mejoras, queda TERMINANTEMENTE PROHIBIDO modificar archivos de código de producción directamente sin un plan previo visible.
+    - Todo ajuste o corrección post-ejecución REQUIERE OBLIGATORIAMENTE agregar primero la(s) nueva(s) tarea(s) correspondiente(s) en `tasks.md` (o registrar un nuevo cambio si excede el alcance del change activo), delimitando su alcance exacto de archivos `[files: ...]`.
+    - El asistente DEBE presentar al usuario la propuesta del plan de ajustes y obtener aprobación humana explícita antes de editar cualquier archivo de producción, sin importar la cantidad de líneas o si involucra menos de 3 archivos (esta directiva de gobernanza prevalece sobre cualquier regla general de edición directa).
 <!-- specty:end id=orchestrator -->
 
 <!-- specty:begin id=project -->

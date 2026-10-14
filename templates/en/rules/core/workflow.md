@@ -29,6 +29,7 @@ draft ──► approved ──► in-progress ──► verifying ──► don
 4. **Phase 4: verifying (Verification)**
    - Test and lint verification commands run via `specty verify <change>`.
    - On failure, the change transitions back to `in-progress` for fixes.
+   - **Handling post-execution feedback and adjustments:** If during or after verification the user requests adjustments, visual tweaks, or fixes, modifying production code directly is strictly forbidden. The scope must be reopened by adding corresponding tasks to `tasks.md` (or creating a new change if scope is exceeded), presenting the proposal to the user, and waiting for explicit approval before touching production files. This directive overrides any generic direct-edit rule.
 
 5. **Phase 5: done (Completion & Archive)**
    - When all checks pass, the change is archived and consolidated into `openspec/specs/`.

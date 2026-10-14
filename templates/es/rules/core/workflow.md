@@ -29,6 +29,7 @@ draft ──► approved ──► in-progress ──► verifying ──► don
 4. **Fase 4: verifying (Verificación)**
    - Se ejecutan los comandos de prueba y linter con `specty verify <change>`.
    - Si fallan, el change vuelve a `in-progress` para corrección.
+   - **Manejo de feedback y ajustes post-ejecución:** Si durante o después de la verificación el usuario solicita ajustes, mejoras visuales o correcciones, queda terminantemente prohibido modificar código de producción directamente. Se debe reabrir el alcance agregando las tareas correspondientes a `tasks.md` (o en un nuevo change si excede el alcance activo), presentar la propuesta al usuario y esperar su aprobación explícita antes de editar archivos. Esta directiva prevalece sobre cualquier regla general de edición directa.
 
 5. **Fase 5: done (Cierre y Archivo)**
    - Si todas las verificaciones pasan, el change se archiva y consolida en `openspec/specs/`.
