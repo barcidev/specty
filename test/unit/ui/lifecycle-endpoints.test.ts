@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createDefaultConfig, saveConfig } from "../../../src/core/config.js";
 import { writeChangeState } from "../../../src/engines/change-state.js";
 import { approveChange } from "../../../src/governance/approvals.js";
+import { transitionChangeState } from "../../../src/governance/state-machine.js";
 import { startUiServer } from "../../../src/ui/server.js";
 
 describe("ui/router lifecycle endpoints", () => {
@@ -118,6 +119,39 @@ describe("ui/router lifecycle endpoints", () => {
       const archiveJson = await archiveRes.json();
       expect(archiveJson.success).toBe(true);
       expect(archiveJson.changeId).toBe(changeId);
+    } finally {
+      await serverInstance.close();
+    }
+  }, 15000);
+
+  it("handles complete-and-archive unified 1-click operation", async () => {
+    const serverInstance = await startUiServer({
+      repoRoot: tempDir,
+      port: 0,
+    });
+
+    const headers = {
+      "Content-Type": "application/json",
+      "X-Specty-Token": serverInstance.sessionToken,
+    };
+
+    try {
+      await approveChange(tempDir, changeId, { approvedBy: "tester" });
+      await transitionChangeState(tempDir, changeId, "in-progress");
+
+      const res = await fetch(
+        `${serverInstance.url}/api/changes/${changeId}/complete-and-archive`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ force: true }),
+        },
+      );
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      expect(json.status).toBe("archived");
+      expect(json.changeId).toBe(changeId);
     } finally {
       await serverInstance.close();
     }

@@ -39,6 +39,7 @@ export interface ParsedTaskItem {
   text: string;
   completed: boolean;
   role?: string;
+  isAdjustment?: boolean;
 }
 
 export interface ParsedTasksData {

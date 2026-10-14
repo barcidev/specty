@@ -58,6 +58,7 @@ export function parseTasksData(markdown: string): ParsedTasksData {
   const rolesSet = new Set<string>();
 
   let currentRole: string | undefined;
+  let isAdjustmentSection = false;
   let total = 0;
   let completed = 0;
 
@@ -65,11 +66,16 @@ export function parseTasksData(markdown: string): ParsedTasksData {
     const line = lines[i] ?? "";
     const trimmed = line.trim();
 
-    // Check for role headers, e.g. "## [rol: frontend]" or "## Role: backend"
-    const roleMatch = trimmed.match(/^#{1,4}\s+\[?rol(?:e)?:\s*([a-zA-Z0-9_-]+)\]?/i);
-    if (roleMatch?.[1]) {
-      currentRole = roleMatch[1].toLowerCase();
-      rolesSet.add(currentRole);
+    // Check for section headers (e.g. roles, adjustments, phases)
+    const headerMatch = trimmed.match(/^#{1,4}\s+(.+)$/);
+    if (headerMatch?.[1]) {
+      const headerTitle = headerMatch[1].trim().toLowerCase();
+      const roleMatch = headerTitle.match(/\[?rol(?:e)?:\s*([a-zA-Z0-9_-]+)\]?/i);
+      if (roleMatch?.[1]) {
+        currentRole = roleMatch[1].toLowerCase();
+        rolesSet.add(currentRole);
+      }
+      isAdjustmentSection = /(?:ajuste|correcci|fix|patch|adjustment)/i.test(headerTitle);
       continue;
     }
 
@@ -77,22 +83,26 @@ export function parseTasksData(markdown: string): ParsedTasksData {
       total++;
       completed++;
       const text = trimmed.replace(/^-\s*\[[xX]\]\s*/, "");
+      const hasAdjustmentTag = /\[(?:ajuste|adjustment|fix)\]/i.test(text);
       items.push({
         id: `task-${i}`,
         lineIndex: i,
         text,
         completed: true,
         role: currentRole,
+        isAdjustment: isAdjustmentSection || hasAdjustmentTag,
       });
     } else if (trimmed.startsWith("- [ ]")) {
       total++;
       const text = trimmed.replace(/^-\s*\[\s*\]\s*/, "");
+      const hasAdjustmentTag = /\[(?:ajuste|adjustment|fix)\]/i.test(text);
       items.push({
         id: `task-${i}`,
         lineIndex: i,
         text,
         completed: false,
         role: currentRole,
+        isAdjustment: isAdjustmentSection || hasAdjustmentTag,
       });
     }
   }

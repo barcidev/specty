@@ -445,6 +445,48 @@
     </div>
   </div>
 
+  <!-- Modal: Completar y Archivar Unificado (1-Click) -->
+  <div id="modal-complete-archive" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 data-i18n="modalCompleteArchiveTitle">Completar y Archivar Feature</h3>
+        <button type="button" class="modal-close" id="modal-complete-archive-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro"><span data-i18n="modalCompleteArchiveIntro">Has completado con éxito la construcción y verificación de</span> <strong id="modal-complete-archive-change-id"></strong>.</p>
+        
+        <div class="done-preconditions-box">
+          <div class="precondition-item valid">
+            <i class="ph-bold ph-check-circle"></i>
+            <span data-i18n="precondTasksAllDone">Todas las tareas completadas (100%)</span>
+          </div>
+          <div class="precondition-item valid">
+            <i class="ph-bold ph-check-circle"></i>
+            <span data-i18n="precondVerifyPassed">Verificación técnica superada en HEAD</span>
+          </div>
+        </div>
+
+        <div class="archive-warning-box">
+          <i class="ph-bold ph-archive"></i>
+          <p data-i18n="archiveWarningText">El directorio se moverá a openspec/changes/archive/ y se actualizará el índice del grafo de código MCP. La especificación quedará en modo histórico de solo lectura.</p>
+        </div>
+
+        <div class="form-group-checkbox mt-4">
+          <label class="checkbox-label" for="chk-complete-archive-force">
+            <input type="checkbox" id="chk-complete-archive-force" class="form-checkbox">
+            <span data-i18n="chkCompleteArchiveForce">Forzar archivado sin bloqueos (--force)</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-cancel-complete-archive" class="btn-secondary" data-i18n="btnCancel">Cancelar</button>
+        <button type="button" id="btn-confirm-complete-archive" class="btn-primary btn-archive">
+          <i class="ph-bold ph-check-fat"></i> <span data-i18n="btnConfirmCompleteArchive">Confirmar y Archivar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast" class="toast hidden"></div>
 

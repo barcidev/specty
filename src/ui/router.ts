@@ -297,6 +297,58 @@ export class UiRouter {
         return;
       }
 
+      // 5.6 Complete and Archive Change (Unified 1-click): POST /api/changes/:id/complete-and-archive
+      const completeAndArchiveMatch = pathname.match(
+        /^\/api\/changes\/([^/]+)\/complete-and-archive$/,
+      );
+      if (completeAndArchiveMatch?.[1] && method === "POST") {
+        const changeId = decodeURIComponent(completeAndArchiveMatch[1]);
+        const body = ((await this.readJsonBody(req).catch(() => ({}))) || {}) as {
+          force?: boolean;
+          dryRun?: boolean;
+        };
+
+        // 1. Transition to done
+        const doneResult = await transitionChangeState(this.repoRoot, changeId, "done", {
+          force: Boolean(body?.force),
+        });
+
+        if (!doneResult.success) {
+          this.jsonResponse(res, 400, { error: doneResult.reason, result: doneResult });
+          return;
+        }
+
+        // 2. Execute archive
+        const archiveSuccess = await executeArchive(changeId, {
+          cwd: this.repoRoot,
+          force: Boolean(body?.force),
+          dryRun: Boolean(body?.dryRun),
+        });
+
+        if (!archiveSuccess) {
+          this.jsonResponse(res, 400, {
+            error: `Failed to archive change "${changeId}" after completing.`,
+          });
+          return;
+        }
+
+        await triggerCodebaseIndex(this.repoRoot).catch(() => false);
+        this.sseHub.broadcast("change:status_changed", {
+          changeId,
+          status: "done",
+          result: doneResult,
+        });
+        this.sseHub.broadcast("change:archived", { changeId });
+
+        this.jsonResponse(res, 200, {
+          success: true,
+          changeId,
+          status: "archived",
+          doneResult,
+        });
+        return;
+      }
+
       // 6. Toggle Task: POST /api/changes/:id/tasks/toggle
       const taskToggleMatch = pathname.match(/^\/api\/changes\/([^/]+)\/tasks\/toggle$/);
       if (taskToggleMatch?.[1] && method === "POST") {

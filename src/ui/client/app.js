@@ -145,6 +145,19 @@
         "Existen tareas incompletas en tasks.md. El asistente debe culminar el desarrollo antes de verificar o finalizar.",
       reapprovalRequired: "Re-aprobación Requerida",
       btnApproveNewTasks: "Aprobar Nuevas Tareas",
+      badgeAdjustment: "Ajuste al Plan",
+      btnApproveConstructionAndVerify: "Aprobar Construcción y Verificar",
+      btnCompleteAndArchive: "Completar y Archivar Feature",
+      modalCompleteArchiveTitle: "Completar y Archivar Feature",
+      modalCompleteArchiveIntro: "Has completado con éxito la construcción y verificación de",
+      precondTasksAllDone: "Todas las tareas completadas (100%)",
+      precondVerifyPassed: "Verificación técnica superada en HEAD",
+      chkCompleteArchiveForce: "Forzar archivado sin bloqueos (--force)",
+      btnConfirmCompleteArchive: "Confirmar y Archivar",
+      completeArchiveSuccessToast: "Feature completado y archivado exitosamente.",
+      btnApproveAdjustments: "Aprobar Ajustes al Plan",
+      reapprovalRequiredBadge: "Ajustes al Plan Pendientes",
+      btnVerifyFailedFix: "Verificación Fallida (Generar Correcciones)",
     },
     en: {
       liveSync: "Live Sync",
@@ -278,6 +291,20 @@
         "There are incomplete tasks in tasks.md. The assistant must complete development before verifying or completing.",
       reapprovalRequired: "Re-approval Required",
       btnApproveNewTasks: "Approve New Tasks",
+      badgeAdjustment: "Plan Adjustment",
+      btnApproveConstructionAndVerify: "Approve Build & Verify",
+      btnCompleteAndArchive: "Complete & Archive Feature",
+      modalCompleteArchiveTitle: "Complete & Archive Feature",
+      modalCompleteArchiveIntro:
+        "You have successfully completed implementation and verification of",
+      precondTasksAllDone: "All tasks completed (100%)",
+      precondVerifyPassed: "Technical verification passed on HEAD",
+      chkCompleteArchiveForce: "Force archiving without blockers (--force)",
+      btnConfirmCompleteArchive: "Confirm & Archive",
+      completeArchiveSuccessToast: "Feature completed and archived successfully.",
+      btnApproveAdjustments: "Approve Plan Adjustments",
+      reapprovalRequiredBadge: "Plan Adjustments Pending",
+      btnVerifyFailedFix: "Verification Failed (Generate Fixes)",
     },
   };
 
@@ -500,6 +527,13 @@
 
   const btnRunVerify = document.getElementById("btn-run-verify");
   const tabVerifyBadge = document.getElementById("tab-verify-badge");
+
+  const modalCompleteArchive = document.getElementById("modal-complete-archive");
+  const modalCompleteArchiveClose = document.getElementById("modal-complete-archive-close");
+  const btnCancelCompleteArchive = document.getElementById("btn-cancel-complete-archive");
+  const btnConfirmCompleteArchive = document.getElementById("btn-confirm-complete-archive");
+  const modalCompleteArchiveChangeId = document.getElementById("modal-complete-archive-change-id");
+  const chkCompleteArchiveForce = document.getElementById("chk-complete-archive-force");
 
   // Initialize
   async function init() {
@@ -740,6 +774,12 @@
     const normStatus = (status || "draft").toLowerCase();
     const isApproved = Boolean(approval?.approved);
     const reapprovalRequired = approval?.code === "reapproval_required";
+    const totalTasks = currentData?.tasksData?.total || 0;
+    const completedTasks = currentData?.tasksData?.completed || 0;
+    const allTasksDone = totalTasks > 0 && completedTasks === totalTasks;
+    const hasPendingTasks = totalTasks > 0 && completedTasks < totalTasks;
+    const verifReport = currentData?.verification;
+    const isVerified = Boolean(verifReport?.passed);
 
     // 1. Status Badge
     if (normStatus === "archived") {
@@ -747,7 +787,7 @@
       approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-archive"></i></span><span id="approval-status-text">${t("stepArchived")}</span>`;
     } else if (reapprovalRequired) {
       approvalBadgeEl.classList.add("status-warning");
-      approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-warning-circle"></i></span><span id="approval-status-text">${t("reapprovalRequired")}</span>`;
+      approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-warning-circle"></i></span><span id="approval-status-text">${t("reapprovalRequiredBadge")}</span>`;
     } else if (normStatus === "done") {
       approvalBadgeEl.classList.add("status-done");
       approvalBadgeEl.innerHTML = `<span class="status-icon"><i class="ph-bold ph-check-fat"></i></span><span id="approval-status-text">${t("stepDone")}</span>`;
@@ -770,6 +810,7 @@
     const activeReviews = (reviews || []).filter((r) => !r.resolved);
 
     if (activeReviews.length > 0) {
+      // Paso 1: Hay comentarios en el plan -> Actualizar Plan
       btnApprove.className = "btn-primary";
       btnApprove.innerHTML = `<i class="ph-bold ph-arrows-clockwise"></i> <span>${t("updatePlanBtn")} (${activeReviews.length})</span>`;
       btnApprove.title = `${t("updatePlanBtn")} (${activeReviews.length})`;
@@ -781,46 +822,62 @@
       btnApprove.title = t("archivedFeature");
       btnApprove.disabled = true;
       btnApprove.onclick = null;
-    } else if (!isApproved || reapprovalRequired || normStatus === "draft") {
+    } else if (reapprovalRequired) {
+      // Paso 2: Ajustes al plan pendientes de aprobación
       btnApprove.className = "btn-primary btn-success";
-      const btnLabel = reapprovalRequired ? t("btnApproveNewTasks") : t("approveSpec");
-      btnApprove.innerHTML = `<i class="ph-bold ph-check"></i> <span>${btnLabel}</span>`;
-      btnApprove.title = btnLabel;
+      btnApprove.innerHTML = `<i class="ph-bold ph-check"></i> <span>${t("btnApproveAdjustments")}</span>`;
+      btnApprove.title = t("btnApproveAdjustments");
+      btnApprove.disabled = false;
+      btnApprove.onclick = () => openApproveModal();
+    } else if (!isApproved || normStatus === "draft") {
+      // Paso 3: Plan inicial listo para aprobar
+      btnApprove.className = "btn-primary btn-success";
+      btnApprove.innerHTML = `<i class="ph-bold ph-check"></i> <span>${t("approveSpec")}</span>`;
+      btnApprove.title = t("approveSpec");
       btnApprove.disabled = false;
       btnApprove.onclick = () => openApproveModal();
     } else {
-      if (normStatus === "done") {
-        btnApprove.className = "btn-primary btn-archive";
-        btnApprove.innerHTML = `<i class="ph-bold ph-archive"></i> <span>${t("btnArchiveFeature")}</span>`;
-        btnApprove.title = t("btnArchiveFeature");
-        btnApprove.disabled = false;
-        btnApprove.onclick = () => openArchiveModal();
-      } else if (normStatus === "verifying") {
-        const hasPendingTasks = Boolean(
-          currentData?.tasksData?.total > 0 &&
-            currentData?.tasksData?.completed < currentData?.tasksData?.total,
-        );
-
-        if (hasPendingTasks) {
-          const pendingCount = currentData.tasksData.total - currentData.tasksData.completed;
+      // Paso 4: Plan aprobado
+      if (hasPendingTasks) {
+        const pendingCount = totalTasks - completedTasks;
+        if (normStatus === "approved") {
+          btnApprove.className = "btn-primary btn-success";
+          btnApprove.innerHTML = `<i class="ph-bold ph-play"></i> <span>${t("btnStartImpl")}</span>`;
+          btnApprove.title = t("btnStartImpl");
+          btnApprove.disabled = false;
+          btnApprove.onclick = handleStartImplementation;
+        } else {
           btnApprove.className = "btn-secondary";
           btnApprove.innerHTML = `<i class="ph-bold ph-gear-fine"></i> <span>${t("btnPendingTasks")} (${pendingCount})</span>`;
           btnApprove.title = `${pendingCount} ${t("pendingTasksDesc")}`;
           btnApprove.disabled = true;
           btnApprove.onclick = null;
-        } else {
-          btnApprove.className = "btn-primary btn-success";
-          btnApprove.innerHTML = `<i class="ph-bold ph-check-fat"></i> <span>${t("btnCompleteDone")}</span>`;
-          btnApprove.title = t("btnCompleteDone");
-          btnApprove.disabled = false;
-          btnApprove.onclick = () => openDoneModal(currentData);
         }
-      } else if (normStatus === "in-progress") {
-        btnApprove.className = "btn-primary";
-        btnApprove.innerHTML = `<i class="ph-bold ph-shield-check"></i> <span>${t("btnRunVerify")}</span>`;
-        btnApprove.title = t("btnRunVerify");
+      } else if (allTasksDone) {
+        if (isVerified) {
+          // Todo OK y verificado: Completar y Archivar en 1 clic
+          btnApprove.className = "btn-primary btn-success";
+          btnApprove.innerHTML = `<i class="ph-bold ph-check-fat"></i> <span>${t("btnCompleteAndArchive")}</span>`;
+          btnApprove.title = t("btnCompleteAndArchive");
+          btnApprove.disabled = false;
+          btnApprove.onclick = () => openCompleteArchiveModal();
+        } else {
+          // Construcción finalizada: Aprobar Construcción y Verificar
+          btnApprove.className = "btn-primary";
+          btnApprove.innerHTML = `<i class="ph-bold ph-shield-check"></i> <span>${t("btnApproveConstructionAndVerify")}</span>`;
+          btnApprove.title = t("btnApproveConstructionAndVerify");
+          btnApprove.disabled = false;
+          btnApprove.onclick = async () => {
+            switchTab("tab-verify");
+            await handleRunVerification();
+          };
+        }
+      } else if (normStatus === "done") {
+        btnApprove.className = "btn-primary btn-archive";
+        btnApprove.innerHTML = `<i class="ph-bold ph-archive"></i> <span>${t("btnArchiveFeature")}</span>`;
+        btnApprove.title = t("btnArchiveFeature");
         btnApprove.disabled = false;
-        btnApprove.onclick = handleRunVerification;
+        btnApprove.onclick = () => openArchiveModal();
       } else {
         btnApprove.className = "btn-primary btn-success";
         btnApprove.innerHTML = `<i class="ph-bold ph-play"></i> <span>${t("btnStartImpl")}</span>`;
@@ -996,7 +1053,7 @@
     }
   }
 
-  function openDoneModal(currentData) {
+  function _openDoneModal(currentData) {
     if (!modalDone) return;
     modalDoneChangeId.textContent = currentChangeId || "";
     chkDoneForce.checked = false;
@@ -1088,6 +1145,46 @@
       showToast("Error archiving change", true);
     } finally {
       btnConfirmArchive.disabled = false;
+    }
+  }
+
+  function openCompleteArchiveModal() {
+    if (!modalCompleteArchive) return;
+    if (modalCompleteArchiveChangeId) {
+      modalCompleteArchiveChangeId.textContent = currentChangeId || "";
+    }
+    if (chkCompleteArchiveForce) {
+      chkCompleteArchiveForce.checked = false;
+    }
+    modalCompleteArchive.classList.remove("hidden");
+  }
+
+  async function handleConfirmCompleteAndArchive() {
+    if (!currentChangeId) return;
+    if (btnConfirmCompleteArchive) btnConfirmCompleteArchive.disabled = true;
+    try {
+      const force = Boolean(chkCompleteArchiveForce?.checked);
+      const res = await authFetch(
+        `/api/changes/${encodeURIComponent(currentChangeId)}/complete-and-archive`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ force }),
+        },
+      );
+      if (res.ok) {
+        modalCompleteArchive.classList.add("hidden");
+        showToast(t("completeArchiveSuccessToast"), false);
+        await refreshChangesList(true);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || "Error al completar y archivar", true);
+      }
+    } catch (err) {
+      console.error("Error completing and archiving change", err);
+      showToast("Error al completar y archivar", true);
+    } finally {
+      if (btnConfirmCompleteArchive) btnConfirmCompleteArchive.disabled = false;
     }
   }
 
@@ -1447,7 +1544,13 @@
 
         const span = document.createElement("span");
         span.className = "task-label";
-        span.textContent = task.text;
+        if (task.isAdjustment) {
+          const adjBadge = document.createElement("span");
+          adjBadge.className = "task-adjustment-badge";
+          adjBadge.innerHTML = `<i class="ph-bold ph-pencil-simple-line"></i> ${escapeHtml(t("badgeAdjustment"))}`;
+          span.appendChild(adjBadge);
+        }
+        span.appendChild(document.createTextNode(task.text));
 
         li.appendChild(checkbox);
         li.appendChild(span);
@@ -1800,6 +1903,17 @@
     if (modalArchiveClose) modalArchiveClose.onclick = () => modalArchive.classList.add("hidden");
     if (btnCancelArchive) btnCancelArchive.onclick = () => modalArchive.classList.add("hidden");
     if (btnConfirmArchive) btnConfirmArchive.onclick = () => handleConfirmArchive();
+
+    // Complete & Archive Unified Modal
+    if (modalCompleteArchiveClose) {
+      modalCompleteArchiveClose.onclick = () => modalCompleteArchive.classList.add("hidden");
+    }
+    if (btnCancelCompleteArchive) {
+      btnCancelCompleteArchive.onclick = () => modalCompleteArchive.classList.add("hidden");
+    }
+    if (btnConfirmCompleteArchive) {
+      btnConfirmCompleteArchive.onclick = () => handleConfirmCompleteAndArchive();
+    }
   }
 
   // Tabs Switching
