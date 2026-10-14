@@ -226,10 +226,26 @@ export async function getChangeDetail(
     // no verification evidence yet
   }
 
+  let effectiveStatus = state?.status ?? "draft";
+  if (
+    (effectiveStatus === "verifying" || effectiveStatus === "done") &&
+    tasksData.total > 0 &&
+    tasksData.completed < tasksData.total
+  ) {
+    effectiveStatus = "in-progress";
+    if (state && state.status !== "in-progress") {
+      await writeChangeState(changeDir, {
+        ...state,
+        status: "in-progress",
+        verification_passed: false,
+      }).catch(() => {});
+    }
+  }
+
   return {
     id: changeId,
     title: extractTitleFromProposal(proposalRaw, changeId),
-    status: state?.status ?? "draft",
+    status: effectiveStatus,
     path: changeDir,
     isArchived: isArchived || Boolean(state?.status === "archived"),
     proposalRaw,

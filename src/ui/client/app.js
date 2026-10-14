@@ -140,6 +140,9 @@
       btnConfirmArchive: "Confirmar y Archivar",
       archiveSuccessToast: "Feature archivado exitosamente.",
       startImplToast: "Feature transicionado a 'in-progress'. Asistente habilitado para codificar.",
+      btnPendingTasks: "Tareas Pendientes",
+      pendingTasksDesc:
+        "Existen tareas incompletas en tasks.md. El asistente debe culminar el desarrollo antes de verificar o finalizar.",
     },
     en: {
       liveSync: "Live Sync",
@@ -268,6 +271,9 @@
       btnConfirmArchive: "Confirm & Archive",
       archiveSuccessToast: "Feature archived successfully.",
       startImplToast: "Feature transitioned to 'in-progress'. Assistant enabled to code.",
+      btnPendingTasks: "Pending Tasks",
+      pendingTasksDesc:
+        "There are incomplete tasks in tasks.md. The assistant must complete development before verifying or completing.",
     },
   };
 
@@ -764,11 +770,25 @@
         btnApprove.disabled = false;
         btnApprove.onclick = () => openArchiveModal();
       } else if (normStatus === "verifying") {
-        btnApprove.className = "btn-primary btn-success";
-        btnApprove.innerHTML = `<i class="ph-bold ph-check-fat"></i> <span>${t("btnCompleteDone")}</span>`;
-        btnApprove.title = t("btnCompleteDone");
-        btnApprove.disabled = false;
-        btnApprove.onclick = () => openDoneModal(currentData);
+        const hasPendingTasks = Boolean(
+          currentData?.tasksData?.total > 0 &&
+            currentData?.tasksData?.completed < currentData?.tasksData?.total,
+        );
+
+        if (hasPendingTasks) {
+          const pendingCount = currentData.tasksData.total - currentData.tasksData.completed;
+          btnApprove.className = "btn-secondary";
+          btnApprove.innerHTML = `<i class="ph-bold ph-gear-fine"></i> <span>${t("btnPendingTasks")} (${pendingCount})</span>`;
+          btnApprove.title = `${pendingCount} ${t("pendingTasksDesc")}`;
+          btnApprove.disabled = true;
+          btnApprove.onclick = null;
+        } else {
+          btnApprove.className = "btn-primary btn-success";
+          btnApprove.innerHTML = `<i class="ph-bold ph-check-fat"></i> <span>${t("btnCompleteDone")}</span>`;
+          btnApprove.title = t("btnCompleteDone");
+          btnApprove.disabled = false;
+          btnApprove.onclick = () => openDoneModal(currentData);
+        }
       } else if (normStatus === "in-progress") {
         btnApprove.className = "btn-primary";
         btnApprove.innerHTML = `<i class="ph-bold ph-shield-check"></i> <span>${t("btnRunVerify")}</span>`;
