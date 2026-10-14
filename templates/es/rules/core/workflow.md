@@ -1,43 +1,30 @@
 # Regla Core: Flujo de Trabajo (Workflow)
 
-El desarrollo en specty sigue estrictamente 5 estados versionados:
+El desarrollo en specty sigue un autómata determinista de 5 estados:
 
 ```text
 draft ──► approved ──► in-progress ──► verifying ──► done
-             │
-             ▼
-          (reaprobación si el spec cambia)
+             │              │             │
+             ▲              └─────────────┘ (ajustes reabren plan y exigen re-aprobación)
 ```
 
-1. **Fase 1: draft (Planificación)**
-   - El agente orquestador redacta `proposal.md`, `design.md`, deltas en `specs/` y tareas en `tasks.md`.
-   - Se prohíbe escribir código en esta fase.
-   - Estado en `specty.yaml`: `status: draft`.
+## 1. Matriz de Estados y Acciones
+| Fase | Estado | Código de Producción | Plan (`tasks.md`) | Acción Clave |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Planificación** | `draft` | **Bloqueado** | Redacción inicial con `[files: ...]` | `specty view <change> --web && specty wait <change>` |
+| **2. Aprobación** | `approved` | Permitido en tarea activa | Congelado | `specty approve <change>` (solo humano) |
+| **3. Ejecución** | `in-progress` | Restringido a `[files: ...]` activo | Congelado (solo marcar `- [x]`) | `specty verify <change>` |
+| **4. Verificación** | `verifying` | **Bloqueado** sin tarea abierta | **Reabierto** para tareas de ajuste | `specty verify <change>` / `specty approve <change>` |
+| **5. Cierre** | `done` | **Bloqueado** | Consolidado | `specty done <change>` |
 
-2. **Fase 2: approved (Aprobación Humana)**
-   - El humano revisa y aprueba con `specty approve <change>`.
-   - El asistente de IA tiene estrictamente prohibido autoaprobarse o alterar el estado en `specty.yaml`.
-   - Se registra el autor, fecha y hash criptográfico de los artefactos.
-   - Si cualquier archivo de especificación es editado posteriormente, el hash cambia y el estado vuelve a exigir reaprobación.
+## 2. Ciclo Atómico por Tarea
+Cada tarea en `tasks.md` se ejecuta bajo secuencia estricta:
+1. **Implementar:** Modificar únicamente archivos del scope `[files: ...]`.
+2. **Verificar:** Ejecutar pruebas del stack en verde (`specty verify <change>`).
+3. **Commit:** Crear un commit git atómico (Conventional Commits) dejando árbol limpio.
+4. **Avanzar:** Marcar `- [x]` y pasar a la siguiente tarea activa.
+*Prohibido acumular múltiples tareas en un commit o avanzar sin verificar la previa.*
 
-3. **Fase 3: in-progress (Implementación)**
-   - El agente ejecuta las tareas una a una respetando roles y alcance de archivos.
-   - **Inmutabilidad estricta del plan:** Durante la codificación, `tasks.md`, `proposal.md` y `specs/**` están congelados. Queda terminantemente prohibido agregar, quitar o editar tareas para evitar invalidar el hash de aprobación; la única edición admitida sobre `tasks.md` es marcar casillas `- [x]`.
-   - **Ciclo atómico obligatorio por tarea:** `Implementar tarea -> Verificar -> Hacer commit de la tarea -> Marcar - [x] -> Pasar a la siguiente tarea`.
-   - Está estrictamente prohibido acumular múltiples tareas en un commit o avanzar a la siguiente tarea sin haber verificado y commiteado la tarea previa.
-
-4. **Fase 4: verifying (Verificación)**
-   - Se ejecutan los comandos de prueba y linter con `specty verify <change>`.
-   - Si fallan, el change vuelve a `in-progress` para corrección.
-   - **Manejo de feedback y ajustes post-ejecución:** Si durante o después de la verificación el usuario solicita ajustes, mejoras visuales o correcciones, queda terminantemente prohibido modificar código de producción directamente. Se debe reabrir el alcance agregando las tareas correspondientes a `tasks.md` (o en un nuevo change si excede el alcance activo), presentar la propuesta al usuario y esperar su aprobación explícita antes de editar archivos. Esta directiva prevalece sobre cualquier regla general de edición directa.
-
-5. **Fase 5: done (Cierre y Archivo)**
-   - Si todas las verificaciones pasan, el change se archiva y consolida en `openspec/specs/`.
-
-## Orientación Continua al Usuario (Paso Siguiente Obligatorio)
-En CADA respuesta o intervención, el asistente DEBE indicar de manera explícita el paso siguiente a seguir para que el usuario nunca quede desorientado:
-- **Al finalizar Fase 1 (draft):** Solicitar al usuario la revisión de la propuesta e instruirlo a aprobar con `specty approve <change>`.
-- **En Fase 2 (approved):** Confirmar que el change fue aprobado e indicar el inicio de la implementación señalando la primera tarea activa (`- [ ]`).
-- **En Fase 3 (in-progress):** Al culminar cada turno o tarea, indicar qué tarea se completó, cuál es la siguiente tarea activa y su alcance de archivos `[files: ...]`.
-- **En Fase 4 (verifying):** Indicar los resultados de verificación (`specty verify <change>`) y qué acción correctiva o de cierre procede.
-- **En Fase 5 (done):** Indicar al usuario que el cambio está completamente verificado y listo para consolidarse mediante `specty done <change>`.
+## 3. Protocolo de Ajustes Post-Ejecución
+- Si en `verifying` o tras completar el plan se requieren ajustes, el código queda bloqueado.
+- Agrega la nueva tarea con su scope `[files: ...]` a `tasks.md`. Esto invalida el hash y exige ejecutar `specty approve <change>` antes de modificar archivos.

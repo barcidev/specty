@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createDefaultConfig, saveConfig } from "../../../src/core/config.js";
 import { initGitRepo } from "../../../src/core/git.js";
 import { BuiltinSpecEngine } from "../../../src/engines/builtin.js";
+import { readChangeState, writeChangeState } from "../../../src/engines/change-state.js";
 import { approveChange } from "../../../src/governance/approvals.js";
 import {
   BYPASS_AUDIT_FILENAME,
@@ -171,6 +172,127 @@ describe("governance check-approval gate", () => {
     await expect(() => checkApprovalGate(tmpDir, { baseRef: "main; echo pwned" })).rejects.toThrow(
       /Invalid git reference/,
     );
+  });
+
+  it("fails with all_tasks_completed when all tasks in tasks.md are marked - [x] (Sqadra Incident Reproduction)", async () => {
+    const changeDir = await engine.createChange(tmpDir, "adaptive-grid", {
+      title: "Adaptive Grid",
+    });
+
+    // Both tasks completed
+    const tasks = `# Tasks: Adaptive Grid\n\n## 1. Implementation\n- [x] 1.1 Task 1 [agent: frontend] [files: src/grid.ts]\n- [x] 1.2 Task 2 [agent: frontend] [files: src/scene.ts]\n`;
+    await fs.writeFile(path.join(changeDir, "tasks.md"), tasks, "utf8");
+    await approveChange(tmpDir, "adaptive-grid", { approvedBy: "Lead" });
+
+    // Simulate post-execution adjustment on src/scene.ts without new task
+    await fs.writeFile(path.join(tmpDir, "src/scene.ts"), "export const scene = 'modified';\n");
+    await execa("git", ["add", "src/scene.ts"], { cwd: tmpDir });
+
+    const result = await checkApprovalGate(tmpDir, { stagedOnly: true });
+    expect(result.passed).toBe(false);
+    expect(result.errorCode).toBe("all_tasks_completed");
+    expect(result.reason).toContain('All tasks in change "adaptive-grid" are marked completed');
+  });
+
+  it("fails with no_tasks_declared when tasks.md has no tasks declared", async () => {
+    const changeDir = await engine.createChange(tmpDir, "empty-tasks-change", {
+      title: "Empty Tasks Change",
+    });
+
+    const tasks = `# Tasks: Empty Tasks Change\n\n## 1. Implementation\n<!-- No tasks yet -->\n`;
+    await fs.writeFile(path.join(changeDir, "tasks.md"), tasks, "utf8");
+    await approveChange(tmpDir, "empty-tasks-change", { approvedBy: "Lead" });
+
+    await fs.writeFile(path.join(tmpDir, "src/scene.ts"), "export const scene = 'unplanned';\n");
+    await execa("git", ["add", "src/scene.ts"], { cwd: tmpDir });
+
+    const result = await checkApprovalGate(tmpDir, { stagedOnly: true });
+    expect(result.passed).toBe(false);
+    expect(result.errorCode).toBe("no_tasks_declared");
+    expect(result.reason).toContain('does not declare any tasks in tasks.md');
+  });
+
+  it("fails with all_tasks_completed when change status is verifying", async () => {
+    const changeDir = await engine.createChange(tmpDir, "verifying-change", {
+      title: "Verifying Change",
+    });
+    await approveChange(tmpDir, "verifying-change");
+
+    // Move state to verifying while preserving approval fields
+    const existing = await readChangeState(changeDir);
+    await writeChangeState(changeDir, {
+      ...existing,
+      change_id: "verifying-change",
+      status: "verifying",
+    });
+
+    await fs.writeFile(path.join(tmpDir, "src/index.ts"), "export const tweaked = true;\n");
+    await execa("git", ["add", "src/index.ts"], { cwd: tmpDir });
+
+    const result = await checkApprovalGate(tmpDir, { stagedOnly: true });
+    expect(result.passed).toBe(false);
+    expect(result.errorCode).toBe("all_tasks_completed");
+    expect(result.reason).toContain("verifying");
+  });
+
+  it("fails with out_of_scope when modifying file belonging to a subsequent pending task", async () => {
+    const changeDir = await engine.createChange(tmpDir, "multi-step", {
+      title: "Multi Step Feature",
+    });
+
+    const tasks = `# Tasks: Multi Step\n\n## 1. Implementation\n- [ ] 1.1 Task 1 [agent: frontend] [files: src/step1.ts]\n- [ ] 1.2 Task 2 [agent: frontend] [files: src/step2.ts]\n`;
+    await fs.writeFile(path.join(changeDir, "tasks.md"), tasks, "utf8");
+    await approveChange(tmpDir, "multi-step", { approvedBy: "Lead" });
+
+    // Task 1.1 is active (files: src/step1.ts), but agent touches src/step2.ts
+    await fs.writeFile(path.join(tmpDir, "src/step2.ts"), "export const step2 = true;\n");
+    await execa("git", ["add", "src/step2.ts"], { cwd: tmpDir });
+
+    const result = await checkApprovalGate(tmpDir, { stagedOnly: true });
+    expect(result.passed).toBe(false);
+    expect(result.errorCode).toBe("out_of_scope");
+    expect(result.outOfScopeFiles).toContain("src/step2.ts");
+    expect(result.reason).toContain(
+      'outside the scope of approved change "multi-step" (active task 1.1)',
+    );
+  });
+
+  it("passes when modifying file strictly matching active task scope", async () => {
+    const changeDir = await engine.createChange(tmpDir, "atomic-task", {
+      title: "Atomic Task",
+    });
+
+    const tasks = `# Tasks: Atomic Task\n\n## 1. Implementation\n- [ ] 1.1 Task 1 [agent: frontend] [files: src/step1.ts]\n- [ ] 1.2 Task 2 [agent: frontend] [files: src/step2.ts]\n`;
+    await fs.writeFile(path.join(changeDir, "tasks.md"), tasks, "utf8");
+    await approveChange(tmpDir, "atomic-task", { approvedBy: "Lead" });
+
+    // Modify file belonging to active task 1.1
+    await fs.writeFile(path.join(tmpDir, "src/step1.ts"), "export const step1 = 'done';\n");
+    await execa("git", ["add", "src/step1.ts"], { cwd: tmpDir });
+
+    const result = await checkApprovalGate(tmpDir, { stagedOnly: true });
+    expect(result.passed).toBe(true);
+    expect(result.reason).toContain("active task 1.1");
+  });
+
+  it("fails with out_of_scope when active task has no declared scope but touches files reserved by subsequent tasks", async () => {
+    const changeDir = await engine.createChange(tmpDir, "unscoped-active", {
+      title: "Unscoped Active Task",
+    });
+
+    const tasks = `# Tasks: Unscoped Active\n\n## 1. Implementation\n- [ ] 1.1 Unscoped task [agent: backend]\n- [ ] 1.2 Scoped task [agent: frontend] [files: src/scoped.ts]\n`;
+    await fs.writeFile(path.join(changeDir, "tasks.md"), tasks, "utf8");
+    await approveChange(tmpDir, "unscoped-active", { approvedBy: "Lead" });
+
+    // Active task 1.1 has no scope, but touches src/scoped.ts which is reserved by task 1.2
+    await fs.writeFile(path.join(tmpDir, "src/scoped.ts"), "export const reserved = true;\n");
+    await execa("git", ["add", "src/scoped.ts"], { cwd: tmpDir });
+
+    const result = await checkApprovalGate(tmpDir, { stagedOnly: true });
+    expect(result.passed).toBe(false);
+    expect(result.errorCode).toBe("out_of_scope");
+    expect(result.outOfScopeFiles).toContain("src/scoped.ts");
+    expect(result.reason).toContain("reserved by other tasks");
   });
 });
 

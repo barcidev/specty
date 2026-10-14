@@ -38,12 +38,24 @@ describe("individual tool adapter generation", () => {
     enableMcp: true,
   };
 
-  it("generates expected files for Antigravity", async () => {
+  it("generates expected files for Antigravity with hooks, skills, and MCP", async () => {
     const adapter = getAdapter("antigravity");
     const files = await adapter.generateFiles(dummyCtx);
-    expect(files).toHaveLength(1);
-    expect(files[0]?.relativePath).toBe(".agents/rules/specty.md");
-    expect(files[0]?.content).toContain("AGENTS.md");
+    const relPaths = files.map((f) => f.relativePath);
+
+    expect(relPaths).toContain(".agents/rules/specty.md");
+    expect(relPaths).toContain(".agents/hooks.json");
+    expect(relPaths).toContain(".agents/skills/specty/SKILL.md");
+    expect(relPaths).toContain(".agents/mcp_config.json");
+
+    const hookFile = files.find((f) => f.relativePath === ".agents/hooks.json");
+    expect(hookFile?.content).toContain("PreToolUse");
+    expect(hookFile?.content).toContain("replace_file_content");
+
+    const skillFile = files.find((f) => f.relativePath === ".agents/skills/specty/SKILL.md");
+    expect(skillFile?.content).toContain("name: specty");
+
+    expect(adapter.getExpectedFilePaths(dummyCtx)).toContain(".agents/hooks.json");
     expect(adapter.getMcpInstructions?.("es")).toContain("Antigravity");
   });
 
@@ -103,6 +115,7 @@ describe("individual tool adapter generation", () => {
     const adapter = getAdapter("windsurf");
     const files = await adapter.generateFiles(dummyCtx);
     expect(files[0]?.relativePath).toBe(".windsurf/rules/specty.md");
+    expect(files.some((f) => f.relativePath === ".windsurf/mcp.json")).toBe(true);
     expect(adapter.getMcpInstructions?.("es")).toContain("Windsurf");
   });
 
@@ -123,12 +136,14 @@ describe("individual tool adapter generation", () => {
     const adapter = getAdapter("cline");
     const files = await adapter.generateFiles(dummyCtx);
     expect(files[0]?.relativePath).toBe(".clinerules/specty.md");
+    expect(files.some((f) => f.relativePath === ".cline/mcp_settings.json")).toBe(true);
   });
 
   it("generates expected files for Roo Code", async () => {
     const adapter = getAdapter("roo");
     const files = await adapter.generateFiles(dummyCtx);
     expect(files[0]?.relativePath).toBe(".roo/rules/specty.md");
+    expect(files.some((f) => f.relativePath === ".roo/mcp.json")).toBe(true);
   });
 
   it("generates expected files for Continue", async () => {

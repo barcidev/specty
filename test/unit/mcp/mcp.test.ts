@@ -90,9 +90,9 @@ describe("MCP tools definitions and dispatch", () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it("exposes all 15 core MCP tools with schemas", () => {
+  it("exposes all 19 core MCP tools with schemas", () => {
     const tools = getMcpToolDefinitions();
-    expect(tools).toHaveLength(15);
+    expect(tools).toHaveLength(19);
 
     const names = tools.map((t) => t.name);
     expect(names).toContain("specty_guard");
@@ -110,6 +110,10 @@ describe("MCP tools definitions and dispatch", () => {
     expect(names).toContain("specty_wait_action");
     expect(names).toContain("specty_start_agent_session");
     expect(names).toContain("specty_end_agent_session");
+    expect(names).toContain("specty_task_next");
+    expect(names).toContain("specty_task_list");
+    expect(names).toContain("specty_task_add");
+    expect(names).toContain("specty_task_complete");
   });
 
   it("handles specty_guard and specty_next_action", async () => {

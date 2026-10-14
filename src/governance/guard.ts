@@ -88,13 +88,31 @@ export function parseGuardPayload(payload: unknown): GuardInput {
   }
 
   const p = payload as Record<string, unknown>;
+  const toolCall =
+    p.toolCall && typeof p.toolCall === "object"
+      ? (p.toolCall as Record<string, unknown>)
+      : undefined;
+
+  const toolCallArgs =
+    toolCall?.args && typeof toolCall.args === "object"
+      ? (toolCall.args as Record<string, unknown>)
+      : undefined;
+
   const toolName =
-    typeof p.tool_name === "string" ? p.tool_name : typeof p.tool === "string" ? p.tool : undefined;
+    typeof p.tool_name === "string"
+      ? p.tool_name
+      : typeof p.tool === "string"
+        ? p.tool
+        : typeof toolCall?.name === "string"
+          ? toolCall.name
+          : undefined;
 
   const toolInput =
     p.tool_input && typeof p.tool_input === "object"
       ? (p.tool_input as Record<string, unknown>)
-      : p;
+      : toolCallArgs
+        ? toolCallArgs
+        : p;
 
   const filePath =
     typeof toolInput.file_path === "string"
@@ -105,7 +123,9 @@ export function parseGuardPayload(payload: unknown): GuardInput {
           ? toolInput.file
           : typeof toolInput.TargetFile === "string"
             ? toolInput.TargetFile
-            : undefined;
+            : typeof toolInput.targetFile === "string"
+              ? toolInput.targetFile
+              : undefined;
 
   const command =
     typeof toolInput.command === "string"
@@ -114,7 +134,9 @@ export function parseGuardPayload(payload: unknown): GuardInput {
         ? toolInput.cmd
         : typeof toolInput.CommandLine === "string"
           ? toolInput.CommandLine
-          : undefined;
+          : typeof toolInput.commandLine === "string"
+            ? toolInput.commandLine
+            : undefined;
 
   return {
     toolName,
@@ -263,6 +285,15 @@ export async function evaluateGuard(repoRoot: string, input: GuardInput): Promis
     const parsedTasks = parseTasksWithScope(tasksContent);
     const activeTask = getActiveTask(parsedTasks);
 
+    if (parsedTasks.length === 0) {
+      return {
+        allowed: false,
+        code: "NO_TASKS_DECLARED",
+        reason: `Cannot edit source file '${relPath}'. Change '${targetChange.id}' has no tasks declared in tasks.md.`,
+        actionAdvice: `Add implementation tasks using 'specty task add <description> --files <globs>' before implementing code.`,
+      };
+    }
+
     if (!activeTask) {
       return {
         allowed: false,
@@ -272,26 +303,41 @@ export async function evaluateGuard(repoRoot: string, input: GuardInput): Promis
       };
     }
 
-    // Check if relPath matches active task files scope
-    const allowedGlobs =
-      activeTask.filesGlobs.length > 0 ? activeTask.filesGlobs : getAllTasksFileGlobs(parsedTasks);
+    // Check if relPath matches active task files scope strictly
+    const activeGlobs = activeTask.filesGlobs;
+    const allDeclaredGlobs = getAllTasksFileGlobs(parsedTasks);
 
-    if (allowedGlobs.length > 0 && !isPathMatchingGlobs(relPath, allowedGlobs)) {
-      return {
-        allowed: false,
-        code: "OUT_OF_SCOPE",
-        activeTaskId: activeTask.id,
-        allowedFiles: allowedGlobs,
-        reason: `Cannot edit '${relPath}'. File is outside the active task ${activeTask.id} scope: [files: ${allowedGlobs.join(", ")}].`,
-        actionAdvice: `Only edit files matching [files: ${allowedGlobs.join(", ")}] or amend the change specification.`,
-      };
+    if (activeGlobs.length > 0) {
+      if (!isPathMatchingGlobs(relPath, activeGlobs)) {
+        return {
+          allowed: false,
+          code: "OUT_OF_SCOPE",
+          activeTaskId: activeTask.id,
+          allowedFiles: activeGlobs,
+          reason: `Cannot edit '${relPath}'. File is outside the active task ${activeTask.id} scope: [files: ${activeGlobs.join(", ")}].`,
+          actionAdvice: `Only edit files matching [files: ${activeGlobs.join(", ")}] or amend the change specification.`,
+        };
+      }
+    } else if (allDeclaredGlobs.length > 0) {
+      // Active task has no declared scope, but other tasks in the change do.
+      // Editing files reserved for other tasks is forbidden!
+      if (isPathMatchingGlobs(relPath, allDeclaredGlobs)) {
+        return {
+          allowed: false,
+          code: "OUT_OF_SCOPE",
+          activeTaskId: activeTask.id,
+          allowedFiles: [],
+          reason: `Cannot edit '${relPath}'. File is reserved by another task's scope in change '${targetChange.id}'. Active task ${activeTask.id} does not declare this scope.`,
+          actionAdvice: `Amend task ${activeTask.id} in tasks.md with [files: ...] or complete the current task before modifying other tasks.`,
+        };
+      }
     }
 
     return {
       allowed: true,
       code: "ALLOWED",
       activeTaskId: activeTask.id,
-      allowedFiles: allowedGlobs,
+      allowedFiles: activeGlobs,
     };
   }
 

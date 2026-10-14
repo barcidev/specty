@@ -6,47 +6,33 @@ import type { AdapterContext } from "./types.js";
  */
 export function createThinDirective(toolName: string, lang: SupportedLanguage): string {
   if (lang === "es") {
-    return `# Directivas de ${toolName}
+    return `# Directivas de ${toolName} (specty)
 
-Este proyecto sigue gobernanza de desarrollo asistido por IA guiada por especificaciones gestionada por **specty**.
+Este repositorio opera bajo desarrollo guiado por especificaciones con gobernanza de **specty**.
 
 ## Regla Soberana
-La unica fuente de verdad para directivas, flujos, roles y restricciones es **[AGENTS.md](./AGENTS.md)**.
+La única fuente de verdad para directivas, flujos, roles y restricciones es **[AGENTS.md](./AGENTS.md)**.
 
-## Flujo de Trabajo Obligatorio
-1. **Nunca escribas codigo** en este proyecto sin un cambio (*change*) aprobado por un humano en \`openspec/changes/<change>/\`.
-2. Consulta la matriz de enrutamiento en \`[.specty/routing.md](./.specty/routing.md)\` para adoptar el rol adecuado antes de actuar.
-3. Carga progresivamente las reglas modulares desde \`[.specty/rules/](./.specty/rules/)\`.
-4. Ejecuta siempre los comandos de verificacion definidos en \`[.specty/config.yaml](./.specty/config.yaml)\` antes de dar por concluida una tarea.
-5. En cada intervencion o respuesta, indica siempre al usuario el paso siguiente claro o la accion requerida de su parte (ej. comando a ejecutar o revision) para guiarlo de forma continua y evitar que quede desorientado.
-6. Para revision y aprobacion de planes o cambios:
-   - Si el IDE dispone de visor webview / Simple Browser, ejecuta o sugiere \`specty view <change>\` para abrir la interfaz grafica interactiva.
-   - En caso contrario o al interactuar en el chat, presenta un dashboard detallado de la especificacion (estado, metricas, propuesta y tareas) e incluye explicitamente las opciones de accion manual (\`specty approve <change>\`, rechazo con solicitudes de ajuste, \`specty validate <change>\`).
-7. Para ajustes o feedback post-ejecucion:
-   - Al terminar de codificar un plan o durante revisiones, si el usuario solicita ajustes o correcciones, NUNCA edites codigo directamente.
-   - Agrega siempre las nuevas tareas a \`tasks.md\` o presenta primero el plan de ajuste para su aprobacion explicita antes de modificar archivos, sin importar el tamano del cambio.
+## Directivas Nucleares
+1. **Sin código sin aprobación:** Prohibido modificar código de producción sin un cambio aprobado en \`openspec/changes/<change>/\`.
+2. **Contexto y tarea activa:** Ejecuta \`specty next --card\` para conocer el estado y la tarea activa antes de actuar.
+3. **Alcance delimitado:** Modifica exclusivamente los archivos dentro del patrón \`[files: ...]\` de la tarea activa.
+4. **Verificación ejecutable:** Verifica cada tarea con pruebas reales antes de marcarla como completada (\`- [x]\`).
 `;
   }
 
-  return `# Directives for ${toolName}
+  return `# Directives for ${toolName} (specty)
 
-This project follows specification-driven AI assistant governance managed by **specty**.
+This repository operates under specification-driven development governed by **specty**.
 
 ## Sovereign Rule
 The single source of truth for directives, workflows, roles, and boundaries is **[AGENTS.md](./AGENTS.md)**.
 
-## Mandatory Workflow
-1. **Never write code** in this project without a human-approved change specification in \`openspec/changes/<change>/\`.
-2. Consult the routing matrix at \`[.specty/routing.md](./.specty/routing.md)\` to adopt the proper role before acting.
-3. Progressively load modular rules from \`[.specty/rules/](./.specty/rules/)\`.
-4. Always execute designated verification commands defined in \`[.specty/config.yaml](./.specty/config.yaml)\` before concluding tasks.
-5. In every response or intervention, always provide the user with clear next steps or the next required action (command to run, file review, or approval) to maintain continuous guidance and prevent disorientation.
-6. For reviewing and approving specification plans:
-   - If the IDE supports an internal webview / Simple Browser, run or suggest \`specty view <change>\` to open the local graphical interface.
-   - Otherwise, or directly in the chat, present a detailed specification dashboard (status, metrics, proposal, tasks) and explicitly list the manual action options (\`specty approve <change>\`, reject/request changes, \`specty validate <change>\`).
-7. For post-execution adjustments or feedback:
-   - After completing a plan or during reviews, if the user requests adjustments or fixes, NEVER edit code directly.
-   - Always add new tasks to \`tasks.md\` or present the adjustment plan for explicit approval before modifying files, regardless of change size.
+## Core Directives
+1. **No code without approval:** Modifying production code without an approved change in \`openspec/changes/<change>/\` is forbidden.
+2. **Context & active task:** Run \`specty next --card\` to inspect current status and the active task before acting.
+3. **Strict file scope:** Edit only files within the \`[files: ...]\` pattern of the active task.
+4. **Executable verification:** Verify each task with real tests before marking it completed (\`- [x]\`).
 `;
 }
 

@@ -136,6 +136,36 @@ describe("state machine and lifecycle transitions (in-progress, verifying, done)
     expect(change?.status).toBe("done");
   });
 
+  it("rejects transition to done if verification evidence is stale relative to git HEAD", async () => {
+    const changeDir = await engine.createChange(tmpDir, "stale-verif", {
+      title: "Stale Verification Feature",
+    });
+    await fs.writeFile(
+      path.join(changeDir, "tasks.md"),
+      "# Tasks\n\n## 1. Implementation\n- [x] 1.1 Done [agent: backend] [files: src/**]\n",
+      "utf8",
+    );
+    await approveChange(tmpDir, "stale-verif", { approvedBy: "Lead" });
+    await transitionChangeState(tmpDir, "stale-verif", "in-progress");
+
+    // Commit change to git
+    await execa("git", ["add", "."], { cwd: tmpDir });
+    await execa("git", ["commit", "-m", "implement stale feature"], { cwd: tmpDir });
+
+    // Run verification to generate verification.json matching current commit
+    await executeVerification(tmpDir, { changeId: "stale-verif" });
+
+    // Make an unverified additional commit in git
+    await fs.writeFile(path.join(tmpDir, "src/unverified.ts"), "export const extra = 1;\n");
+    await execa("git", ["add", "src/unverified.ts"], { cwd: tmpDir });
+    await execa("git", ["commit", "-m", "unverified extra commit"], { cwd: tmpDir });
+
+    // Transition to done must be rejected because verification report SHA is stale
+    const result = await transitionChangeState(tmpDir, "stale-verif", "done");
+    expect(result.success).toBe(false);
+    expect(result.reason).toContain("Verification evidence is stale");
+  });
+
   it("transitions from done to archived", async () => {
     const changeDir = await engine.createChange(tmpDir, "ready-to-archive", {
       title: "Archive Me",

@@ -1,43 +1,30 @@
 # Core Rule: Workflow
 
-Development in specty strictly follows 5 versioned states:
+Development in specty follows a deterministic 5-state automaton:
 
 ```text
 draft ──► approved ──► in-progress ──► verifying ──► done
-             │
-             ▼
-      (re-approval if spec changes)
+             │              │             │
+             ▲              └─────────────┘ (adjustments reopen plan and require re-approval)
 ```
 
-1. **Phase 1: draft (Planning)**
-   - The orchestrator drafts `proposal.md`, `design.md`, spec deltas in `specs/`, and tasks in `tasks.md`.
-   - Production code modifications are forbidden in this phase.
-   - State in `specty.yaml`: `status: draft`.
+## 1. State and Action Matrix
+| Phase | Status | Production Code | Plan (`tasks.md`) | Key Action |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Planning** | `draft` | **Forbidden** | Initial authoring with `[files: ...]` | `specty view <change> --web && specty wait <change>` |
+| **2. Approval** | `approved` | Allowed on active task | Frozen | `specty approve <change>` (human only) |
+| **3. Execution** | `in-progress` | Restricted to active `[files: ...]` | Frozen (only check `- [x]`) | `specty verify <change>` |
+| **4. Verification** | `verifying` | **Forbidden** without open task | **Reopened** for adjustment tasks | `specty verify <change>` / `specty approve <change>` |
+| **5. Closure** | `done` | **Forbidden** | Consolidated | `specty done <change>` |
 
-2. **Phase 2: approved (Human Approval)**
-   - The human reviews and approves via `specty approve <change>`.
-   - The AI assistant is strictly forbidden from self-approving or modifying `specty.yaml` status.
-   - Records approver, timestamp, and cryptographic content hash.
-   - If any spec artifact is edited subsequently, the hash invalidates and re-approval is required.
+## 2. Atomic Task Lifecycle
+Each task in `tasks.md` follows a strict sequence:
+1. **Implement:** Edit only files within active `[files: ...]` scope.
+2. **Verify:** Run stack tests ensuring green status (`specty verify <change>`).
+3. **Commit:** Create an atomic git commit (Conventional Commits) leaving a clean tree.
+4. **Advance:** Mark `- [x]` and proceed to next active task.
+*Batching multiple tasks into one commit or skipping verification is strictly forbidden.*
 
-3. **Phase 3: in-progress (Implementation)**
-   - The agent executes tasks sequentially respecting roles and file scopes.
-   - **Strict plan immutability:** During coding, `tasks.md`, `proposal.md`, and `specs/**` are frozen. Adding, removing, or editing tasks is strictly forbidden to prevent invalidating the approval hash; the only allowed edit on `tasks.md` is marking `- [x]`.
-   - **Mandatory atomic task cycle:** `Implement task -> Verify -> Commit task -> Mark - [x] -> Advance to next task`.
-   - Batching multiple tasks into a single commit or advancing to the next task without verifying and committing the previous one is strictly forbidden.
-
-4. **Phase 4: verifying (Verification)**
-   - Test and lint verification commands run via `specty verify <change>`.
-   - On failure, the change transitions back to `in-progress` for fixes.
-   - **Handling post-execution feedback and adjustments:** If during or after verification the user requests adjustments, visual tweaks, or fixes, modifying production code directly is strictly forbidden. The scope must be reopened by adding corresponding tasks to `tasks.md` (or creating a new change if scope is exceeded), presenting the proposal to the user, and waiting for explicit approval before touching production files. This directive overrides any generic direct-edit rule.
-
-5. **Phase 5: done (Completion & Archive)**
-   - When all checks pass, the change is archived and consolidated into `openspec/specs/`.
-
-## Continuous User Guidance (Mandatory Next Steps)
-In EVERY interaction or response, the assistant MUST explicitly state the next step so the user is never left without clear direction:
-- **Concluding Phase 1 (draft):** Request user review of the specification artifacts and instruct them to approve with `specty approve <change>`.
-- **In Phase 2 (approved):** Confirm that the change is approved and announce the start of implementation, highlighting the first active task (`- [ ]`).
-- **In Phase 3 (in-progress):** At the end of each turn or task, report which task completed, which task is active next, and its allowed file scope `[files: ...]`.
-- **In Phase 4 (verifying):** Report verification command results (`specty verify <change>`) and next corrective or closing action.
-- **In Phase 5 (done):** Inform the user that the change is verified and ready for consolidation via `specty done <change>`.
+## 3. Post-Execution Adjustment Protocol
+- If in `verifying` or after all tasks are completed adjustments are requested, code edits are blocked.
+- Append the new task with its `[files: ...]` scope to `tasks.md`. This invalidates the approval hash and requires running `specty approve <change>` before editing source code.

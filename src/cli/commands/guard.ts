@@ -52,12 +52,17 @@ export async function executeGuard(options: GuardCliOptions = {}): Promise<boole
     changeId: options.change,
   };
 
+  let isAntigravityFormat = false;
+
   // If no direct flags provided, attempt to parse JSON from piped stdin
   if (!input.toolName && !input.filePath && !input.command) {
     const rawStdin = await readStdin();
     if (rawStdin) {
       try {
         const parsedJson = JSON.parse(rawStdin);
+        if (parsedJson && typeof parsedJson === "object" && "toolCall" in parsedJson) {
+          isAntigravityFormat = true;
+        }
         input = {
           ...parseGuardPayload(parsedJson),
           changeId: options.change,
@@ -69,6 +74,16 @@ export async function executeGuard(options: GuardCliOptions = {}): Promise<boole
   }
 
   const decision: GuardDecision = await evaluateGuard(repoRoot, input);
+
+  if (isAntigravityFormat) {
+    // Antigravity PreToolUse hook expects output on stdout: { decision: "allow" | "deny", reason?: string }
+    const agyResponse = {
+      decision: decision.allowed ? "allow" : "deny",
+      ...(decision.reason ? { reason: `[specty guard DENIED] ${decision.reason}` } : {}),
+    };
+    console.log(JSON.stringify(agyResponse));
+    return true; // Exit code 0 so IDE cleanly processes the JSON response
+  }
 
   if (options.json) {
     console.log(JSON.stringify(decision, null, 2));
