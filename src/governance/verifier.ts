@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { loadConfig } from "../core/config.js";
+import { createDefaultConfig, loadConfig, type SpectyConfig } from "../core/config.js";
 import { executeCommand } from "../core/exec.js";
 import { getHeadCommitSha } from "../core/git.js";
 import { readChangeState, writeChangeState } from "../engines/change-state.js";
@@ -119,7 +119,12 @@ export async function executeVerification(
   repoRoot: string,
   options: VerificationOptions = {},
 ): Promise<VerificationReport> {
-  const config = await loadConfig(repoRoot);
+  let config: SpectyConfig;
+  try {
+    config = await loadConfig(repoRoot);
+  } catch {
+    config = createDefaultConfig();
+  }
   const commitSha = await getHeadCommitSha(repoRoot);
   const engine = getSpecEngine(config.spec_engine);
 

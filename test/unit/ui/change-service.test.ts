@@ -110,4 +110,25 @@ describe("ui/change-service", () => {
     expect(detail?.proposalSections).toHaveLength(2);
     expect(detail?.tasksData.total).toBe(1);
   });
+
+  it("detects adjustment tasks under adjustment sections or with adjustment tags", () => {
+    const tasksMarkdown = [
+      "# Tasks",
+      "",
+      "## Implementation",
+      "- [x] 1.1 First task",
+      "- [ ] 1.2 [ajuste] Immediate hotfix task",
+      "",
+      "## Ajustes al Plan",
+      "- [ ] 2.1 Refactor solid model",
+      "- [ ] 2.2 Correct viewport behavior",
+    ].join("\n");
+
+    const parsed = parseTasksData(tasksMarkdown);
+    expect(parsed.total).toBe(4);
+    expect(parsed.items[0].isAdjustment).toBe(false);
+    expect(parsed.items[1].isAdjustment).toBe(true);
+    expect(parsed.items[2].isAdjustment).toBe(true);
+    expect(parsed.items[3].isAdjustment).toBe(true);
+  });
 });

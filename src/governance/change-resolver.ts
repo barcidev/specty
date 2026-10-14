@@ -1,4 +1,4 @@
-import { loadConfig } from "../core/config.js";
+import { createDefaultConfig, loadConfig, type SpectyConfig } from "../core/config.js";
 import { executeFile } from "../core/exec.js";
 import { getCurrentBranch } from "../core/git.js";
 import { getSpecEngine } from "../engines/factory.js";
@@ -106,7 +106,12 @@ export async function resolveTargetChange(
   repoRoot: string,
   options?: ResolveChangeOptions,
 ): Promise<TargetChangeResolution> {
-  const config = await loadConfig(repoRoot);
+  let config: SpectyConfig;
+  try {
+    config = await loadConfig(repoRoot);
+  } catch {
+    config = createDefaultConfig();
+  }
   const engine = getSpecEngine(config.spec_engine);
   const activeChanges = await engine.listChanges(repoRoot);
 

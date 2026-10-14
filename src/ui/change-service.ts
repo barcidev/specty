@@ -4,6 +4,7 @@ import fg from "fast-glob";
 import { parseTasksSummary, readChangeState, writeChangeState } from "../engines/change-state.js";
 import { checkApprovalStatus } from "../governance/approvals.js";
 import { validateChangeSpecification } from "../governance/spec-validator.js";
+import type { VerificationReport } from "../governance/verifier.js";
 import { loadChangeReviews } from "./reviews.js";
 import type {
   ChangeDetailPayload,
@@ -57,6 +58,7 @@ export function parseTasksData(markdown: string): ParsedTasksData {
   const rolesSet = new Set<string>();
 
   let currentRole: string | undefined;
+  let isAdjustmentSection = false;
   let total = 0;
   let completed = 0;
 
@@ -64,11 +66,16 @@ export function parseTasksData(markdown: string): ParsedTasksData {
     const line = lines[i] ?? "";
     const trimmed = line.trim();
 
-    // Check for role headers, e.g. "## [rol: frontend]" or "## Role: backend"
-    const roleMatch = trimmed.match(/^#{1,4}\s+\[?rol(?:e)?:\s*([a-zA-Z0-9_-]+)\]?/i);
-    if (roleMatch?.[1]) {
-      currentRole = roleMatch[1].toLowerCase();
-      rolesSet.add(currentRole);
+    // Check for section headers (e.g. roles, adjustments, phases)
+    const headerMatch = trimmed.match(/^#{1,4}\s+(.+)$/);
+    if (headerMatch?.[1]) {
+      const headerTitle = headerMatch[1].trim().toLowerCase();
+      const roleMatch = headerTitle.match(/\[?rol(?:e)?:\s*([a-zA-Z0-9_-]+)\]?/i);
+      if (roleMatch?.[1]) {
+        currentRole = roleMatch[1].toLowerCase();
+        rolesSet.add(currentRole);
+      }
+      isAdjustmentSection = /(?:ajuste|correcci|fix|patch|adjustment)/i.test(headerTitle);
       continue;
     }
 
@@ -76,22 +83,26 @@ export function parseTasksData(markdown: string): ParsedTasksData {
       total++;
       completed++;
       const text = trimmed.replace(/^-\s*\[[xX]\]\s*/, "");
+      const hasAdjustmentTag = /\[(?:ajuste|adjustment|fix)\]/i.test(text);
       items.push({
         id: `task-${i}`,
         lineIndex: i,
         text,
         completed: true,
         role: currentRole,
+        isAdjustment: isAdjustmentSection || hasAdjustmentTag,
       });
     } else if (trimmed.startsWith("- [ ]")) {
       total++;
       const text = trimmed.replace(/^-\s*\[\s*\]\s*/, "");
+      const hasAdjustmentTag = /\[(?:ajuste|adjustment|fix)\]/i.test(text);
       items.push({
         id: `task-${i}`,
         lineIndex: i,
         text,
         completed: false,
         role: currentRole,
+        isAdjustment: isAdjustmentSection || hasAdjustmentTag,
       });
     }
   }
@@ -217,10 +228,34 @@ export async function getChangeDetail(
     // ignore
   }
 
+  let verification: VerificationReport | null = null;
+  try {
+    const rawVerif = await fs.readFile(path.join(changeDir, "verification.json"), "utf8");
+    verification = JSON.parse(rawVerif) as VerificationReport;
+  } catch {
+    // no verification evidence yet
+  }
+
+  let effectiveStatus = state?.status ?? "draft";
+  if (
+    (effectiveStatus === "verifying" || effectiveStatus === "done") &&
+    tasksData.total > 0 &&
+    tasksData.completed < tasksData.total
+  ) {
+    effectiveStatus = "in-progress";
+    if (state && state.status !== "in-progress") {
+      await writeChangeState(changeDir, {
+        ...state,
+        status: "in-progress",
+        verification_passed: false,
+      }).catch(() => {});
+    }
+  }
+
   return {
     id: changeId,
     title: extractTitleFromProposal(proposalRaw, changeId),
-    status: state?.status ?? "draft",
+    status: effectiveStatus,
     path: changeDir,
     isArchived: isArchived || Boolean(state?.status === "archived"),
     proposalRaw,
@@ -231,6 +266,7 @@ export async function getChangeDetail(
     validation,
     reviews,
     specFiles,
+    verification,
   };
 }
 

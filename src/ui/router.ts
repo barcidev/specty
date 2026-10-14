@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import type http from "node:http";
 import path from "node:path";
 import { execa } from "execa";
+import { executeArchive } from "../cli/commands/archive.js";
 import {
   createDefaultConfig,
   loadConfig,
@@ -15,6 +16,9 @@ import { getSpecEngine } from "../engines/factory.js";
 import { generateProjectInfrastructure } from "../generate/generator.js";
 import { approveChange } from "../governance/approvals.js";
 import { generateCiPipeline } from "../governance/ci-templates.js";
+import { transitionChangeState } from "../governance/state-machine.js";
+import { executeVerification } from "../governance/verifier.js";
+import { triggerCodebaseIndex } from "../mcp/indexer.js";
 import { computeGovernanceAnalytics, filterEventsByPeriod } from "../metrics/analytics.js";
 import {
   computeMetricsSummary,
@@ -163,6 +167,185 @@ export class UiRouter {
 
         this.sseHub.broadcast("change:approved", { changeId, approval: approvalResult });
         this.jsonResponse(res, 200, { success: true, approval: approvalResult });
+        return;
+      }
+
+      // 5.1 Start Implementation: POST /api/changes/:id/start
+      const startMatch = pathname.match(/^\/api\/changes\/([^/]+)\/start$/);
+      if (startMatch?.[1] && method === "POST") {
+        const changeId = decodeURIComponent(startMatch[1]);
+        const body = ((await this.readJsonBody(req).catch(() => ({}))) || {}) as {
+          force?: boolean;
+        };
+        const result = await transitionChangeState(this.repoRoot, changeId, "in-progress", {
+          force: Boolean(body?.force),
+        });
+
+        if (!result.success) {
+          this.jsonResponse(res, 400, { error: result.reason, result });
+          return;
+        }
+
+        this.sseHub.broadcast("change:status_changed", {
+          changeId,
+          status: "in-progress",
+          result,
+        });
+        this.jsonResponse(res, 200, { success: true, result });
+        return;
+      }
+
+      // 5.2 Execute Verification: POST /api/changes/:id/verify
+      const verifyMatch = pathname.match(/^\/api\/changes\/([^/]+)\/verify$/);
+      if (verifyMatch?.[1] && method === "POST") {
+        const changeId = decodeURIComponent(verifyMatch[1]);
+        const body = ((await this.readJsonBody(req).catch(() => ({}))) || {}) as {
+          strict?: boolean;
+          scope?: string;
+          commandType?: string;
+        };
+
+        const report = await executeVerification(this.repoRoot, {
+          changeId,
+          strict: body?.strict,
+          scope: body?.scope,
+          commandType: body?.commandType,
+        });
+
+        if (report.passed) {
+          try {
+            await transitionChangeState(this.repoRoot, changeId, "verifying");
+          } catch {
+            // ignore transition if not in eligible state
+          }
+        }
+
+        this.sseHub.broadcast("change:verified", { changeId, report });
+        this.jsonResponse(res, 200, { success: true, report });
+        return;
+      }
+
+      // 5.3 Get Verification Report: GET /api/changes/:id/verification
+      const verificationMatch = pathname.match(/^\/api\/changes\/([^/]+)\/verification$/);
+      if (verificationMatch?.[1] && method === "GET") {
+        const changeId = decodeURIComponent(verificationMatch[1]);
+        const verifPath = path.join(
+          this.repoRoot,
+          "openspec",
+          "changes",
+          changeId,
+          "verification.json",
+        );
+        try {
+          const raw = await fs.readFile(verifPath, "utf8");
+          const report = JSON.parse(raw);
+          this.jsonResponse(res, 200, { report });
+        } catch {
+          this.jsonResponse(res, 404, { error: "No verification report found" });
+        }
+        return;
+      }
+
+      // 5.4 Complete Change: POST /api/changes/:id/done
+      const doneMatch = pathname.match(/^\/api\/changes\/([^/]+)\/done$/);
+      if (doneMatch?.[1] && method === "POST") {
+        const changeId = decodeURIComponent(doneMatch[1]);
+        const body = ((await this.readJsonBody(req).catch(() => ({}))) || {}) as {
+          force?: boolean;
+        };
+        const result = await transitionChangeState(this.repoRoot, changeId, "done", {
+          force: Boolean(body?.force),
+        });
+
+        if (!result.success) {
+          this.jsonResponse(res, 400, { error: result.reason, result });
+          return;
+        }
+
+        await triggerCodebaseIndex(this.repoRoot).catch(() => false);
+        this.sseHub.broadcast("change:status_changed", {
+          changeId,
+          status: "done",
+          result,
+        });
+        this.jsonResponse(res, 200, { success: true, result });
+        return;
+      }
+
+      // 5.5 Archive Change: POST /api/changes/:id/archive
+      const archiveMatch = pathname.match(/^\/api\/changes\/([^/]+)\/archive$/);
+      if (archiveMatch?.[1] && method === "POST") {
+        const changeId = decodeURIComponent(archiveMatch[1]);
+        const body = ((await this.readJsonBody(req).catch(() => ({}))) || {}) as {
+          force?: boolean;
+          dryRun?: boolean;
+        };
+
+        const success = await executeArchive(changeId, {
+          cwd: this.repoRoot,
+          force: Boolean(body?.force),
+          dryRun: Boolean(body?.dryRun),
+        });
+
+        if (!success) {
+          this.jsonResponse(res, 400, { error: `Failed to archive change "${changeId}".` });
+          return;
+        }
+
+        this.sseHub.broadcast("change:archived", { changeId });
+        this.jsonResponse(res, 200, { success: true, changeId });
+        return;
+      }
+
+      // 5.6 Complete and Archive Change (Unified 1-click): POST /api/changes/:id/complete-and-archive
+      const completeAndArchiveMatch = pathname.match(
+        /^\/api\/changes\/([^/]+)\/complete-and-archive$/,
+      );
+      if (completeAndArchiveMatch?.[1] && method === "POST") {
+        const changeId = decodeURIComponent(completeAndArchiveMatch[1]);
+        const body = ((await this.readJsonBody(req).catch(() => ({}))) || {}) as {
+          force?: boolean;
+          dryRun?: boolean;
+        };
+
+        // 1. Transition to done
+        const doneResult = await transitionChangeState(this.repoRoot, changeId, "done", {
+          force: Boolean(body?.force),
+        });
+
+        if (!doneResult.success) {
+          this.jsonResponse(res, 400, { error: doneResult.reason, result: doneResult });
+          return;
+        }
+
+        // 2. Execute archive
+        const archiveSuccess = await executeArchive(changeId, {
+          cwd: this.repoRoot,
+          force: Boolean(body?.force),
+          dryRun: Boolean(body?.dryRun),
+        });
+
+        if (!archiveSuccess) {
+          this.jsonResponse(res, 400, {
+            error: `Failed to archive change "${changeId}" after completing.`,
+          });
+          return;
+        }
+
+        await triggerCodebaseIndex(this.repoRoot).catch(() => false);
+        this.sseHub.broadcast("change:status_changed", {
+          changeId,
+          status: "done",
+          result: doneResult,
+        });
+        this.sseHub.broadcast("change:archived", { changeId });
+
+        this.jsonResponse(res, 200, {
+          success: true,
+          changeId,
+          status: "archived",
+          doneResult,
+        });
         return;
       }
 

@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { loadConfig } from "../core/config.js";
+import { createDefaultConfig, loadConfig, type SpectyConfig } from "../core/config.js";
 import { getHeadCommitSha } from "../core/git.js";
 import { readChangeState, writeChangeState } from "../engines/change-state.js";
 import { getSpecEngine } from "../engines/factory.js";
@@ -44,7 +44,12 @@ export async function transitionChangeState(
   targetStatus: ChangeStatus,
   options: StateTransitionOptions = {},
 ): Promise<StateTransitionResult> {
-  const config = await loadConfig(repoRoot);
+  let config: SpectyConfig;
+  try {
+    config = await loadConfig(repoRoot);
+  } catch {
+    config = createDefaultConfig();
+  }
   const engine = getSpecEngine(config.spec_engine);
   const change = await engine.getChange(repoRoot, changeId);
 
