@@ -236,6 +236,43 @@ export function getMcpToolDefinitions(): McpToolDefinition[] {
         },
       },
     },
+    {
+      name: "specty_start_agent_session",
+      description:
+        "Notify Specty that the AI agent is actively working on the specification change (e.g. drafting or adjusting initial plan, coding, testing). Temporarily locks the primary action button in the UI to prevent race conditions.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          changeId: {
+            type: "string",
+            description: "Optional specific change identifier. If omitted, resolved automatically.",
+          },
+          activity: {
+            type: "string",
+            description:
+              "Description of current agent activity (e.g. 'Ajustando plan inicial', 'Implementando tarea 1.2').",
+          },
+          role: {
+            type: "string",
+            description: "Agent role (e.g. orchestrator, architect, frontend, backend).",
+          },
+        },
+      },
+    },
+    {
+      name: "specty_end_agent_session",
+      description:
+        "Notify Specty that the AI agent has finished its working session on the specification change. Re-enables the primary action button in the UI for the user.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          changeId: {
+            type: "string",
+            description: "Optional specific change identifier. If omitted, resolved automatically.",
+          },
+        },
+      },
+    },
   ];
 }
 
@@ -517,6 +554,41 @@ export async function handleMcpToolCall(
         { timeoutMs: timeoutSeconds * 1000 },
       );
       return res;
+    }
+
+    case "specty_start_agent_session": {
+      const { startAgentSession } = await import("../governance/agent-session.js");
+      const { resolveTargetChange } = await import("../governance/change-resolver.js");
+      const resolution = await resolveTargetChange(repoRoot, {
+        changeId: typeof args.changeId === "string" ? args.changeId : undefined,
+      });
+      const changeId =
+        resolution.resolvedId ?? (typeof args.changeId === "string" ? args.changeId : undefined);
+      const session = await startAgentSession(repoRoot, {
+        changeId,
+        activity: typeof args.activity === "string" ? args.activity : "Ajustando plan inicial",
+        role: typeof args.role === "string" ? args.role : "orchestrator",
+      });
+      return {
+        success: true,
+        message: `Agent session started for "${changeId || "repo"}": ${session.activity}. UI primary action locked.`,
+        session,
+      };
+    }
+
+    case "specty_end_agent_session": {
+      const { endAgentSession } = await import("../governance/agent-session.js");
+      const { resolveTargetChange } = await import("../governance/change-resolver.js");
+      const resolution = await resolveTargetChange(repoRoot, {
+        changeId: typeof args.changeId === "string" ? args.changeId : undefined,
+      });
+      const changeId =
+        resolution.resolvedId ?? (typeof args.changeId === "string" ? args.changeId : undefined);
+      const success = await endAgentSession(repoRoot, changeId);
+      return {
+        success,
+        message: `Agent session ended for "${changeId || "repo"}". UI primary action unlocked.`,
+      };
     }
 
     default:

@@ -49,6 +49,7 @@ export class SseHub {
   startWatching(repoRoot: string): void {
     const watchDirs = [
       path.join(repoRoot, "openspec", "changes"),
+      path.join(repoRoot, ".specty"),
       path.join(repoRoot, ".specty", "reviews"),
       path.join(repoRoot, ".specty", "audit"),
     ];
@@ -75,6 +76,9 @@ export class SseHub {
     }
     this.debounceTimer = setTimeout(() => {
       this.broadcast("fs:change", { filename });
+      if (filename.includes("agent-session.json")) {
+        this.broadcast("agent:session", { filename });
+      }
       this.debounceTimer = null;
     }, 200);
   }

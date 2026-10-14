@@ -43,7 +43,9 @@ export interface TargetChangeResolution {
 export function extractChangeIdFromBranch(branch: string): string | null {
   if (!branch) return null;
   const clean = branch.trim();
-  const prefixMatch = clean.match(/^(?:feature|change|feat|fix|task)\/([a-zA-Z0-9._-]+)$/i);
+  const prefixMatch = clean.match(
+    /^(?:feature|change|feat|fix|hotfix|bugfix|chore|refactor|task|release)\/([a-zA-Z0-9._-]+)$/i,
+  );
   if (prefixMatch?.[1]) {
     return prefixMatch[1];
   }

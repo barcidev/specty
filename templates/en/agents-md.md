@@ -24,6 +24,10 @@
     3. **Commit the task:** Create an atomic git commit for that specific task using Conventional Commits (`feat(...)`, `fix(...)`, `refactor(...)`, etc.), leaving a clean working tree.
     4. **Mark and advance:** Mark the task completed (`- [x]`) and proceed to the next active task.
     It is STRICTLY FORBIDDEN to batch multiple tasks into a single commit or start the next task without verifying and committing the previous one.
+12. **Plan Immutability during Implementation (`in-progress`):** During the implementation and coding phase, the task plan (`tasks.md`), proposal (`proposal.md`), and specifications (`specs/**`) are strictly FROZEN.
+    - It is STRICTLY FORBIDDEN to edit task descriptions, alter `[files: ...]` globs, or add/remove tasks in `tasks.md` while coding or in `in-progress` state.
+    - The ONLY permitted modification to `tasks.md` during coding is marking completed tasks from `- [ ]` to `- [x]` (specty's hashing normalization ensures that `- [x]` does not invalidate the approval hash).
+    - If an auxiliary support file or unexpected implementation detail arises, address it directly in source code within the active task's scope without altering the specification. Modifying the plan is only permitted if the human user explicitly requests a functional requirement change.
 <!-- specty:end id=orchestrator -->
 
 <!-- specty:begin id=project -->

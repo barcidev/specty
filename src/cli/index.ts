@@ -306,6 +306,58 @@ handoffCmd
     }
   });
 
+const sessionCmd = program
+  .command("session")
+  .description("manage agent working sessions and UI action locks");
+
+sessionCmd
+  .command("start [change]")
+  .description("start an agent working session and lock UI primary actions")
+  .option(
+    "--activity <activity>",
+    "description of current agent activity (e.g. 'Ajustando plan inicial')",
+  )
+  .option("--agent <name>", "agent identifier (e.g. Antigravity, Cursor, Claude)")
+  .option("--role <role>", "agent role (e.g. orchestrator, architect, frontend)")
+  .option("--json", "output session result as JSON")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeSessionStart } = await import("./commands/session.js");
+      await executeSessionStart(change, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+sessionCmd
+  .command("end [change]")
+  .description("end the agent working session and unlock UI primary actions")
+  .option("--json", "output session result as JSON")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeSessionEnd } = await import("./commands/session.js");
+      await executeSessionEnd(change, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
+sessionCmd
+  .command("status [change]")
+  .description("check the current agent working session lock status")
+  .option("--json", "output session status as JSON")
+  .action(async (change: string | undefined, options) => {
+    try {
+      const { executeSessionStatus } = await import("./commands/session.js");
+      await executeSessionStatus(change, options);
+    } catch (err: unknown) {
+      console.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+  });
+
 program
   .command("index")
   .description("build or update the codebase knowledge graph index")

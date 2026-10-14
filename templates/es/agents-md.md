@@ -24,6 +24,10 @@
     3. **Hacer commit de la tarea:** Crear un commit git atómico para esa tarea específica utilizando Conventional Commits (`feat(...)`, `fix(...)`, `refactor(...)`, etc.), dejando el árbol de trabajo limpio.
     4. **Marcar y avanzar:** Marcar la tarea como completada (`- [x]`) y pasar a la siguiente tarea activa.
     Está ESTRICTAMENTE PROHIBIDO acumular múltiples tareas en un solo commit o avanzar a la siguiente tarea sin haber verificado y commiteado la tarea previa.
+12. **Inmutabilidad del Plan durante la Codificación (`in-progress`):** Durante la fase de desarrollo e implementación, el plan de tareas (`tasks.md`), la propuesta (`proposal.md`) y las especificaciones (`specs/**`) quedan estrictamente CONGELADOS.
+    - Está ESTRICTAMENTE PROHIBIDO editar descripciones de tareas, alterar rutas `[files: ...]` o agregar/eliminar tareas en `tasks.md` mientras se esté codificando o en estado `in-progress`.
+    - La ÚNICA modificación permitida en `tasks.md` durante la codificación es marcar las casillas de tareas completadas pasando de `- [ ]` a `- [x]` (la normalización de specty asegura que marcar `- [x]` no invalida el hash de aprobación).
+    - Si durante la codificación se requiere un archivo de soporte o surge un detalle de implementación imprevisto, resuélvelo en el código fuente dentro del scope de la tarea activa sin alterar la especificación. Solo se permite modificar el plan si el usuario humano solicita explícitamente un cambio en los requerimientos funcionales.
 <!-- specty:end id=orchestrator -->
 
 <!-- specty:begin id=project -->

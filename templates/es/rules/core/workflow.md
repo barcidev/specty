@@ -22,6 +22,7 @@ draft ──► approved ──► in-progress ──► verifying ──► don
 
 3. **Fase 3: in-progress (Implementación)**
    - El agente ejecuta las tareas una a una respetando roles y alcance de archivos.
+   - **Inmutabilidad estricta del plan:** Durante la codificación, `tasks.md`, `proposal.md` y `specs/**` están congelados. Queda terminantemente prohibido agregar, quitar o editar tareas para evitar invalidar el hash de aprobación; la única edición admitida sobre `tasks.md` es marcar casillas `- [x]`.
    - **Ciclo atómico obligatorio por tarea:** `Implementar tarea -> Verificar -> Hacer commit de la tarea -> Marcar - [x] -> Pasar a la siguiente tarea`.
    - Está estrictamente prohibido acumular múltiples tareas en un commit o avanzar a la siguiente tarea sin haber verificado y commiteado la tarea previa.
 

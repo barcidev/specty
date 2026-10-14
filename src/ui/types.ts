@@ -1,4 +1,5 @@
 import type { ValidationResult } from "../engines/types.js";
+import type { AgentSessionState } from "../governance/agent-session.js";
 import type { ApprovalStatusResult } from "../governance/approvals.js";
 import type { VerificationReport } from "../governance/verifier.js";
 
@@ -17,6 +18,7 @@ export interface ReviewComment {
   createdAt: string;
   resolved: boolean;
   resolvedAt?: string;
+  diffs?: FileDiffItem[];
 }
 
 export interface ChangeReviewsData {
@@ -40,6 +42,7 @@ export interface ParsedTaskItem {
   completed: boolean;
   role?: string;
   isAdjustment?: boolean;
+  isNew?: boolean;
 }
 
 export interface ParsedTasksData {
@@ -79,6 +82,7 @@ export interface ChangeDetailPayload {
   reviews: ReviewComment[];
   specFiles: string[];
   verification?: VerificationReport | null;
+  agentSession?: AgentSessionState | null;
 }
 
 export interface UiServerOptions {

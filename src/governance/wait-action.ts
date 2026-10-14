@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { loadChangeReviews } from "../ui/reviews.js";
+import { endAgentSession } from "./agent-session.js";
 import { checkApprovalStatus } from "./approvals.js";
 import { resolveTargetChange } from "./change-resolver.js";
 
@@ -35,6 +36,9 @@ export async function waitForChangeAction(
   if (!changeId) {
     throw new Error("No active change specified or found to wait for.");
   }
+
+  // Al entrar a la espera reactiva, se libera la sesion del agente para permitir la accion humana en UI
+  await endAgentSession(repoRoot, changeId);
 
   const timeoutMs = options.timeoutMs ?? 0; // 0 significa indefinido por defecto
   const isInfinite = timeoutMs <= 0 || !Number.isFinite(timeoutMs);

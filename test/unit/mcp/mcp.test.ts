@@ -90,9 +90,9 @@ describe("MCP tools definitions and dispatch", () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it("exposes all 13 core MCP tools with schemas", () => {
+  it("exposes all 15 core MCP tools with schemas", () => {
     const tools = getMcpToolDefinitions();
-    expect(tools).toHaveLength(13);
+    expect(tools).toHaveLength(15);
 
     const names = tools.map((t) => t.name);
     expect(names).toContain("specty_guard");
@@ -108,6 +108,8 @@ describe("MCP tools definitions and dispatch", () => {
     expect(names).toContain("specty_get_code_graph");
     expect(names).toContain("specty_verify");
     expect(names).toContain("specty_wait_action");
+    expect(names).toContain("specty_start_agent_session");
+    expect(names).toContain("specty_end_agent_session");
   });
 
   it("handles specty_guard and specty_next_action", async () => {
@@ -207,6 +209,25 @@ describe("MCP tools definitions and dispatch", () => {
     expect(res.symbols).toHaveLength(1);
     expect(res.symbols[0]?.name).toBe("start");
     expect(res.dependencies).toContain("./lib.js");
+  });
+
+  it("handles specty_start_agent_session and specty_end_agent_session", async () => {
+    const startRes = (await handleMcpToolCall(
+      "specty_start_agent_session",
+      { changeId: "mcp-feat", activity: "Ajustando plan inicial", role: "architect" },
+      tmpDir,
+      graph,
+    )) as Record<string, unknown>;
+    expect(startRes.success).toBe(true);
+    expect(startRes.session).toBeDefined();
+
+    const endRes = (await handleMcpToolCall(
+      "specty_end_agent_session",
+      { changeId: "mcp-feat" },
+      tmpDir,
+      graph,
+    )) as Record<string, unknown>;
+    expect(endRes.success).toBe(true);
   });
 
   it("throws on unknown tool", async () => {

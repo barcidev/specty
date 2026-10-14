@@ -156,4 +156,84 @@ describe("ui/router lifecycle endpoints", () => {
       await serverInstance.close();
     }
   }, 15000);
+
+  it("locks plan approval while agent session is active and unlocks when ended", async () => {
+    const serverInstance = await startUiServer({
+      repoRoot: tempDir,
+      port: 0,
+    });
+
+    const headers = {
+      "Content-Type": "application/json",
+      "X-Specty-Token": serverInstance.sessionToken,
+    };
+
+    try {
+      // 1. Iniciar sesión de trabajo del agente
+      const startSessionRes = await fetch(
+        `${serverInstance.url}/api/changes/${changeId}/agent-session/start`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            activity: "Ajustando plan inicial",
+            agent: "Antigravity",
+            role: "orchestrator",
+          }),
+        },
+      );
+      expect(startSessionRes.status).toBe(200);
+      const startSessionJson = await startSessionRes.json();
+      expect(startSessionJson.success).toBe(true);
+      expect(startSessionJson.session.active).toBe(true);
+
+      // 2. Verificar que el detalle del change incluye la sesión activa
+      const detailRes = await fetch(`${serverInstance.url}/api/changes/${changeId}`, {
+        headers,
+      });
+      const detailJson = await detailRes.json();
+      expect(detailJson.agentSession?.active).toBe(true);
+      expect(detailJson.agentSession?.activity).toBe("Ajustando plan inicial");
+
+      // 3. Intentar aprobar mientras el agente está trabajando debe ser rechazado con 409
+      const approveRes = await fetch(`${serverInstance.url}/api/changes/${changeId}/approve`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({}),
+      });
+      expect(approveRes.status).toBe(409);
+      const approveErr = await approveRes.json();
+      expect(approveErr.locked).toBe(true);
+
+      // 4. Finalizar sesión de trabajo del agente
+      const endSessionRes = await fetch(
+        `${serverInstance.url}/api/changes/${changeId}/agent-session/end`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({}),
+        },
+      );
+      expect(endSessionRes.status).toBe(200);
+      const endSessionJson = await endSessionRes.json();
+      expect(endSessionJson.active).toBe(false);
+
+      // 5. Ahora la aprobación del plan debe completarse exitosamente
+      const approveAfterEndRes = await fetch(
+        `${serverInstance.url}/api/changes/${changeId}/approve`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({}),
+        },
+      );
+      expect(approveAfterEndRes.status).toBe(200);
+      const approveOk = await approveAfterEndRes.json();
+      expect(approveOk.success).toBe(true);
+      expect(approveOk.approval.contentHash).toBeDefined();
+      expect(approveOk.approval.changeId).toBe(changeId);
+    } finally {
+      await serverInstance.close();
+    }
+  }, 15000);
 });

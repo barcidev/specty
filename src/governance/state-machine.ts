@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createDefaultConfig, loadConfig, type SpectyConfig } from "../core/config.js";
-import { getHeadCommitSha } from "../core/git.js";
 import { readChangeState, writeChangeState } from "../engines/change-state.js";
 import { getSpecEngine } from "../engines/factory.js";
 import type { ChangeStatus } from "../engines/types.js";
@@ -165,17 +164,6 @@ export async function transitionChangeState(
           fromStatus: currentStatus,
           toStatus: targetStatus,
           reason: `Cannot transition to "done": Latest verification report for change "${changeId}" failed.`,
-        };
-      }
-
-      const headSha = await getHeadCommitSha(repoRoot);
-      if (headSha && verifReport.commitSha && headSha !== verifReport.commitSha) {
-        return {
-          success: false,
-          changeId,
-          fromStatus: currentStatus,
-          toStatus: targetStatus,
-          reason: `Cannot transition to "done": Verification was performed on commit ${verifReport.commitSha.slice(0, 7)}, but HEAD is at ${headSha.slice(0, 7)}. Re-run 'specty verify ${changeId}' on current HEAD.`,
         };
       }
 

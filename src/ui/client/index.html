@@ -28,6 +28,11 @@
     </div>
 
     <div class="topbar-right">
+      <div id="agent-working-pill" class="agent-working-indicator hidden">
+        <i class="ph-bold ph-spinner-gap ph-spin"></i>
+        <span id="agent-working-text">Agente trabajando...</span>
+        <button type="button" id="btn-force-unlock" class="btn-unlock-subtle" title="Desbloquear manualmente si la sesión del agente finalizó">Desbloquear</button>
+      </div>
       <div class="approval-badge-wrapper">
         <div id="approval-status-badge" class="status-badge status-draft">
           <span class="status-icon"><i class="ph-bold ph-circle"></i></span>
@@ -124,6 +129,9 @@
         </button>
         <button type="button" class="tab-btn tab-btn-verify" data-tab="tab-verify">
           <i class="ph ph-shield-check"></i> <span data-i18n="tabVerify">Verificación</span> <span id="tab-verify-badge" class="pill-badge pill-blue">Pending</span>
+        </button>
+        <button type="button" class="tab-btn tab-btn-pr hidden" id="tab-btn-pr" data-tab="tab-pr">
+          <i class="ph-bold ph-git-pull-request"></i> <span data-i18n="tabPr">Pull Request</span> <span id="tab-pr-badge" class="pill-badge pill-purple">PR</span>
         </button>
       </div>
       <div class="tabs-actions">
@@ -293,6 +301,54 @@
         </div>
       </div>
     </section>
+
+    <!-- Tab 6: Pull Request View (Enabled when archived) -->
+    <section id="tab-pr" class="tab-pane">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2 id="pr-tab-title" data-i18n="prTabHeading">Solicitud de Pull Request</h2>
+          <p class="sub-description" id="pr-tab-branches">feature/... → main</p>
+        </div>
+        <div class="pane-actions">
+          <button type="button" id="btn-copy-pr-tab-markdown" class="btn-primary btn-sm">
+            <i class="ph-bold ph-copy"></i> <span data-i18n="btnCopyPrMarkdown">Copiar Markdown del PR</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="pr-tab-layout scroll-container">
+        <!-- PR Summary Banner -->
+        <div class="pr-tab-banner">
+          <div class="pr-tab-banner-status">
+            <span class="badge badge-success"><i class="ph-bold ph-check"></i> <span data-i18n="prReadyToMerge">Archivado & Listo para Fusión</span></span>
+            <span class="pr-branches-badge">
+              <i class="ph-bold ph-git-branch"></i>
+              <strong id="pr-tab-source-branch">feature/...</strong>
+              <i class="ph-bold ph-arrow-right"></i>
+              <strong id="pr-tab-target-branch">main</strong>
+            </span>
+          </div>
+          <div class="pr-tab-cmd-row">
+            <span class="pr-tab-cmd-label"><i class="ph-bold ph-terminal"></i> <span data-i18n="modalPrGhCmdLabel">Comando GitHub CLI:</span></span>
+            <code id="pr-tab-gh-cmd" class="pr-tab-cmd-code">gh pr create ...</code>
+            <button type="button" id="btn-copy-pr-tab-cmd" class="btn-copy-small" title="Copiar comando">
+              <i class="ph-bold ph-copy"></i> <span data-i18n="modalPrCopyCmd">Copiar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- PR Markdown Viewer -->
+        <div class="pr-tab-viewer-card">
+          <div class="pr-tab-viewer-header">
+            <span class="pr-card-label"><i class="ph-bold ph-article"></i> <span data-i18n="prPreviewTitle">Vista Previa de la Especificación del PR</span></span>
+            <span class="pr-file-path-sub" id="pr-tab-filepath">.specty/pull-requests/...</span>
+          </div>
+          <div id="pr-tab-rendered-view" class="pr-markdown-rendered-view markdown-body">
+            <!-- Rendered Markdown Content -->
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- Modal: Crear Comentario / Review -->
@@ -449,11 +505,11 @@
   <div id="modal-complete-archive" class="modal-backdrop hidden">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 data-i18n="modalCompleteArchiveTitle">Completar y Archivar Feature</h3>
+        <h3 data-i18n="modalCompleteArchiveTitle">Aprobar Construcción y Archivar</h3>
         <button type="button" class="modal-close" id="modal-complete-archive-close" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="modal-intro"><span data-i18n="modalCompleteArchiveIntro">Has completado con éxito la construcción y verificación de</span> <strong id="modal-complete-archive-change-id"></strong>.</p>
+        <p class="modal-intro"><span data-i18n="modalCompleteArchiveIntro">Has completado la construcción de la funcionalidad</span> <strong id="modal-complete-archive-change-id"></strong>.</p>
         
         <div class="done-preconditions-box">
           <div class="precondition-item valid">
@@ -462,13 +518,17 @@
           </div>
           <div class="precondition-item valid">
             <i class="ph-bold ph-check-circle"></i>
-            <span data-i18n="precondVerifyPassed">Verificación técnica superada en HEAD</span>
+            <span data-i18n="precondVerifyPassed">Verificación realizada por el asistente al codificar</span>
+          </div>
+          <div class="precondition-item valid">
+            <i class="ph-bold ph-check-circle"></i>
+            <span data-i18n="precondBranchClosed">Cierre automático de la rama según la política de onboarding</span>
           </div>
         </div>
 
         <div class="archive-warning-box">
-          <i class="ph-bold ph-archive"></i>
-          <p data-i18n="archiveWarningText">El directorio se moverá a openspec/changes/archive/ y se actualizará el índice del grafo de código MCP. La especificación quedará en modo histórico de solo lectura.</p>
+          <i class="ph-bold ph-git-branch"></i>
+          <p data-i18n="archiveWarningText">Al aprobar, la especificación se marcará como completada (done), se archivará en openspec/changes/archive/ y se cerrará la rama de Git según la política del onboarding.</p>
         </div>
 
         <div class="form-group-checkbox mt-4">
@@ -480,8 +540,66 @@
       </div>
       <div class="modal-footer">
         <button type="button" id="btn-cancel-complete-archive" class="btn-secondary" data-i18n="btnCancel">Cancelar</button>
-        <button type="button" id="btn-confirm-complete-archive" class="btn-primary btn-archive">
-          <i class="ph-bold ph-check-fat"></i> <span data-i18n="btnConfirmCompleteArchive">Confirmar y Archivar</span>
+        <button type="button" id="btn-confirm-complete-archive" class="btn-primary btn-success">
+          <i class="ph-bold ph-check-fat"></i> <span data-i18n="btnConfirmCompleteArchive">Aprobar Construcción y Cerrar Rama</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Solicitud de Pull Request Generada -->
+  <div id="modal-pr-created" class="modal-backdrop hidden">
+    <div class="modal-dialog modal-dialog-pr">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <h3 data-i18n="modalPrTitle">Solicitud de Pull Request Generada</h3>
+          <p class="modal-subtitle" data-i18n="modalPrSubtitle">Documento detallado de fusión generado automáticamente</p>
+        </div>
+        <button type="button" class="modal-close" id="modal-pr-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="pr-banner">
+          <div class="pr-badge-wrap">
+            <span class="badge badge-success"><i class="ph-bold ph-check"></i> Listo para Fusión</span>
+            <span class="pr-branches-badge">
+              <i class="ph-bold ph-git-branch"></i>
+              <strong id="modal-pr-source-branch">feature/...</strong>
+              <i class="ph-bold ph-arrow-right"></i>
+              <strong id="modal-pr-target-branch">main</strong>
+            </span>
+          </div>
+          <h4 id="modal-pr-title" class="pr-title-display">feat: ...</h4>
+        </div>
+
+        <div class="pr-cmd-card">
+          <div class="pr-cmd-header">
+            <span class="pr-card-label"><i class="ph-bold ph-terminal"></i> <span data-i18n="modalPrGhCmdLabel">Comando GitHub CLI</span></span>
+            <button type="button" id="btn-copy-pr-cmd" class="btn-copy-small">
+              <i class="ph-bold ph-copy"></i> <span data-i18n="modalPrCopyCmd">Copiar Comando</span>
+            </button>
+          </div>
+          <pre class="pr-code-snippet"><code id="modal-pr-cmd">gh pr create ...</code></pre>
+        </div>
+
+        <div class="pr-file-info">
+          <i class="ph-bold ph-file-text"></i>
+          <span data-i18n="modalPrFileLabel">Archivo guardado en:</span>
+          <code id="modal-pr-file-path">.specty/pull-requests/...</code>
+        </div>
+
+        <div class="pr-markdown-card">
+          <div class="pr-markdown-header">
+            <span class="pr-card-label"><i class="ph-bold ph-article"></i> <span data-i18n="modalPrMarkdownLabel">Descripción Detallada del PR</span></span>
+            <button type="button" id="btn-copy-pr-markdown" class="btn-copy-small">
+              <i class="ph-bold ph-copy"></i> <span data-i18n="modalPrCopyMarkdown">Copiar Descripción</span>
+            </button>
+          </div>
+          <textarea id="modal-pr-markdown" class="pr-markdown-preview" readonly></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-close-pr-modal" class="btn-primary" data-i18n="modalPrClose">
+          <i class="ph-bold ph-check"></i> <span>Entendido / Finalizar</span>
         </button>
       </div>
     </div>
@@ -490,6 +608,6 @@
   <!-- Toast Notification -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="./app.js?v=2.8.0"></script>
+  <script src="./app.js?v=2.8.1"></script>
 </body>
 </html>

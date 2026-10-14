@@ -40,6 +40,8 @@ describe("Branch, PR and Change Linking", () => {
   describe("Extractors", () => {
     it("extracts change id from branch name conventions", () => {
       expect(extractChangeIdFromBranch("feature/user-auth")).toBe("user-auth");
+      expect(extractChangeIdFromBranch("hotfix/security-patch")).toBe("security-patch");
+      expect(extractChangeIdFromBranch("bugfix/crash-fix")).toBe("crash-fix");
       expect(extractChangeIdFromBranch("change/billing-fix")).toBe("billing-fix");
       expect(extractChangeIdFromBranch("feat/oauth-v2")).toBe("oauth-v2");
       expect(extractChangeIdFromBranch("fix/null-pointer")).toBe("null-pointer");

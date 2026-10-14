@@ -133,3 +133,172 @@ export async function checkoutBranch(
     };
   }
 }
+
+export async function deleteBranch(
+  cwd: string,
+  branch: string,
+  force = false,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const flag = force ? "-D" : "-d";
+    await execa("git", ["branch", flag, branch], { cwd });
+    return { success: true };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+export async function mergeBranch(
+  cwd: string,
+  branch: string,
+  options: { noFf?: boolean; message?: string } = {},
+): Promise<{ success: boolean; error?: string }> {
+  const args = ["merge"];
+  if (options.noFf) {
+    args.push("--no-ff");
+  }
+  if (options.message) {
+    args.push("-m", options.message);
+  }
+  args.push(branch);
+
+  try {
+    await execa("git", args, { cwd });
+    return { success: true };
+  } catch (err: unknown) {
+    try {
+      await execa("git", ["merge", "--abort"], { cwd });
+    } catch {
+      // ignore abort error if merge hadn't started
+    }
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+export async function commitWorkingTree(
+  cwd: string,
+  message: string,
+): Promise<{ success: boolean; committed: boolean; error?: string }> {
+  try {
+    const status = await execa("git", ["status", "--porcelain"], { cwd });
+    if (!status.stdout.trim()) {
+      return { success: true, committed: false };
+    }
+    await execa("git", ["add", "-A"], { cwd });
+    await execa("git", ["commit", "-m", message], { cwd });
+    return { success: true, committed: true };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      committed: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+export interface BranchDiffFile {
+  status: "A" | "M" | "D" | "R" | "C" | "U" | "?";
+  file: string;
+  raw: string;
+}
+
+export async function getBranchDiffFiles(
+  cwd: string,
+  baseBranch: string,
+  headBranch: string,
+): Promise<BranchDiffFile[]> {
+  try {
+    const result = await execa("git", ["diff", "--name-status", `${baseBranch}...${headBranch}`], {
+      cwd,
+    });
+    const lines = result.stdout
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+
+    return lines.map((line) => {
+      const parts = line.split(/\s+/);
+      const status = (parts[0]?.[0]?.toUpperCase() ?? "M") as BranchDiffFile["status"];
+      const file = parts.slice(1).join(" ").replace(/\\/g, "/");
+      return { status, file, raw: line };
+    });
+  } catch {
+    try {
+      // Fallback to two-dot diff
+      const result = await execa("git", ["diff", "--name-status", `${baseBranch}..${headBranch}`], {
+        cwd,
+      });
+      return result.stdout
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0)
+        .map((line) => {
+          const parts = line.split(/\s+/);
+          const status = (parts[0]?.[0]?.toUpperCase() ?? "M") as BranchDiffFile["status"];
+          const file = parts.slice(1).join(" ").replace(/\\/g, "/");
+          return { status, file, raw: line };
+        });
+    } catch {
+      return [];
+    }
+  }
+}
+
+export async function getBranchDiffSummary(
+  cwd: string,
+  baseBranch: string,
+  headBranch: string,
+): Promise<string> {
+  try {
+    const result = await execa("git", ["diff", "--stat", `${baseBranch}...${headBranch}`], {
+      cwd,
+    });
+    return result.stdout.trim();
+  } catch {
+    try {
+      const result = await execa("git", ["diff", "--stat", `${baseBranch}..${headBranch}`], {
+        cwd,
+      });
+      return result.stdout.trim();
+    } catch {
+      return "";
+    }
+  }
+}
+
+export async function getBranchCommits(
+  cwd: string,
+  baseBranch: string,
+  headBranch: string,
+): Promise<Array<{ sha: string; message: string }>> {
+  try {
+    const result = await execa(
+      "git",
+      ["log", "--oneline", "--no-merges", `${baseBranch}..${headBranch}`],
+      { cwd },
+    );
+    const lines = result.stdout
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+
+    return lines.map((line) => {
+      const spaceIdx = line.indexOf(" ");
+      if (spaceIdx === -1) {
+        return { sha: line, message: "" };
+      }
+      return {
+        sha: line.slice(0, spaceIdx),
+        message: line.slice(spaceIdx + 1),
+      };
+    });
+  } catch {
+    return [];
+  }
+}

@@ -22,6 +22,7 @@ draft ──► approved ──► in-progress ──► verifying ──► don
 
 3. **Phase 3: in-progress (Implementation)**
    - The agent executes tasks sequentially respecting roles and file scopes.
+   - **Strict plan immutability:** During coding, `tasks.md`, `proposal.md`, and `specs/**` are frozen. Adding, removing, or editing tasks is strictly forbidden to prevent invalidating the approval hash; the only allowed edit on `tasks.md` is marking `- [x]`.
    - **Mandatory atomic task cycle:** `Implement task -> Verify -> Commit task -> Mark - [x] -> Advance to next task`.
    - Batching multiple tasks into a single commit or advancing to the next task without verifying and committing the previous one is strictly forbidden.
 

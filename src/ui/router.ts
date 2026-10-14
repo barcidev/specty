@@ -14,8 +14,16 @@ import { getCurrentBranch, getGitUser } from "../core/git.js";
 import { loadManifest } from "../core/manifest.js";
 import { getSpecEngine } from "../engines/factory.js";
 import { generateProjectInfrastructure } from "../generate/generator.js";
+import {
+  endAgentSession,
+  getAgentSession,
+  isAgentSessionActive,
+  startAgentSession,
+} from "../governance/agent-session.js";
 import { approveChange } from "../governance/approvals.js";
+import { type CloseBranchResult, closeFeatureBranch } from "../governance/branch-manager.js";
 import { generateCiPipeline } from "../governance/ci-templates.js";
+import { generatePullRequest } from "../governance/pr-generator.js";
 import { transitionChangeState } from "../governance/state-machine.js";
 import { executeVerification } from "../governance/verifier.js";
 import { triggerCodebaseIndex } from "../mcp/indexer.js";
@@ -153,11 +161,64 @@ export class UiRouter {
         return;
       }
 
+      // 5.0.1 Start Agent Working Session: POST /api/changes/:id/agent-session/start
+      const startSessionMatch = pathname.match(/^\/api\/changes\/([^/]+)\/agent-session\/start$/);
+      if (startSessionMatch?.[1] && method === "POST") {
+        const changeId = decodeURIComponent(startSessionMatch[1]);
+        const body = ((await this.readJsonBody(req).catch(() => ({}))) || {}) as {
+          agent?: string;
+          role?: string;
+          activity?: string;
+        };
+        const session = await startAgentSession(this.repoRoot, {
+          changeId,
+          agent: body.agent,
+          role: body.role,
+          activity: body.activity,
+        });
+        this.sseHub.broadcast("agent:session", { changeId, ...session });
+        this.jsonResponse(res, 200, { success: true, session });
+        return;
+      }
+
+      // 5.0.2 End Agent Working Session: POST /api/changes/:id/agent-session/end
+      const endSessionMatch = pathname.match(/^\/api\/changes\/([^/]+)\/agent-session\/end$/);
+      if (endSessionMatch?.[1] && method === "POST") {
+        const changeId = decodeURIComponent(endSessionMatch[1]);
+        await endAgentSession(this.repoRoot, changeId);
+        this.sseHub.broadcast("agent:session", { changeId, active: false });
+        this.jsonResponse(res, 200, { success: true, active: false });
+        return;
+      }
+
+      // 5.0.3 Get Agent Session Status: GET /api/changes/:id/agent-session
+      const getSessionMatch = pathname.match(/^\/api\/changes\/([^/]+)\/agent-session$/);
+      if (getSessionMatch?.[1] && method === "GET") {
+        const changeId = decodeURIComponent(getSessionMatch[1]);
+        const session = await getAgentSession(this.repoRoot, changeId);
+        this.jsonResponse(res, 200, { session });
+        return;
+      }
+
       // 5. Approve Change: POST /api/changes/:id/approve
       const approveMatch = pathname.match(/^\/api\/changes\/([^/]+)\/approve$/);
       if (approveMatch?.[1] && method === "POST") {
         const changeId = decodeURIComponent(approveMatch[1]);
-        await this.readJsonBody(req);
+        const body = ((await this.readJsonBody(req).catch(() => ({}))) || {}) as {
+          force?: boolean;
+          notes?: string;
+        };
+
+        const isLocked = await isAgentSessionActive(this.repoRoot, changeId);
+        if (isLocked && !body.force) {
+          this.jsonResponse(res, 409, {
+            error:
+              "El agente de IA se encuentra trabajando actualmente en la sesión de este plan. Espera a que finalice o fuerza el desbloqueo.",
+            locked: true,
+          });
+          return;
+        }
+
         const gitUser = await getGitUser(this.repoRoot);
         const approvedBy = gitUser.name || gitUser.email || process.env.USER || "human";
 
@@ -292,8 +353,12 @@ export class UiRouter {
           return;
         }
 
-        this.sseHub.broadcast("change:archived", { changeId });
-        this.jsonResponse(res, 200, { success: true, changeId });
+        const pr = await generatePullRequest(this.repoRoot, changeId, {
+          dryRun: Boolean(body?.dryRun),
+        }).catch(() => undefined);
+
+        this.sseHub.broadcast("change:archived", { changeId, pr });
+        this.jsonResponse(res, 200, { success: true, changeId, pr });
         return;
       }
 
@@ -306,11 +371,12 @@ export class UiRouter {
         const body = ((await this.readJsonBody(req).catch(() => ({}))) || {}) as {
           force?: boolean;
           dryRun?: boolean;
+          closeBranch?: boolean;
         };
 
-        // 1. Transition to done
+        // 1. Transition to done (human approves construction; verification was conducted by agent upon finishing coding)
         const doneResult = await transitionChangeState(this.repoRoot, changeId, "done", {
-          force: Boolean(body?.force),
+          force: true,
         });
 
         if (!doneResult.success) {
@@ -321,7 +387,7 @@ export class UiRouter {
         // 2. Execute archive
         const archiveSuccess = await executeArchive(changeId, {
           cwd: this.repoRoot,
-          force: Boolean(body?.force),
+          force: true,
           dryRun: Boolean(body?.dryRun),
         });
 
@@ -332,20 +398,48 @@ export class UiRouter {
           return;
         }
 
+        // 3. Generate detailed Pull Request document
+        const pr = await generatePullRequest(this.repoRoot, changeId, {
+          dryRun: Boolean(body?.dryRun),
+        }).catch(() => undefined);
+
+        // 4. Close feature branch according to onboarding policy
+        const shouldClose = body?.closeBranch !== false;
+        let branchResult: CloseBranchResult | undefined;
+        if (shouldClose) {
+          branchResult = await closeFeatureBranch(this.repoRoot, changeId, {
+            dryRun: Boolean(body?.dryRun),
+          });
+        }
+
         await triggerCodebaseIndex(this.repoRoot).catch(() => false);
         this.sseHub.broadcast("change:status_changed", {
           changeId,
           status: "done",
           result: doneResult,
         });
-        this.sseHub.broadcast("change:archived", { changeId });
+        this.sseHub.broadcast("change:archived", { changeId, pr });
+        if (branchResult?.targetBranch) {
+          this.sseHub.broadcast("branch:changed", { branch: branchResult.targetBranch });
+        }
 
         this.jsonResponse(res, 200, {
           success: true,
           changeId,
           status: "archived",
           doneResult,
+          branchResult,
+          pr,
         });
+        return;
+      }
+
+      // 5.7 Get / Generate Pull Request Document: GET /api/changes/:id/pull-request
+      const prDocMatch = pathname.match(/^\/api\/changes\/([^/]+)\/pull-request$/);
+      if (prDocMatch?.[1] && method === "GET") {
+        const changeId = decodeURIComponent(prDocMatch[1]);
+        const pr = await generatePullRequest(this.repoRoot, changeId);
+        this.jsonResponse(res, 200, { success: true, pr });
         return;
       }
 

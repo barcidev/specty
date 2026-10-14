@@ -146,18 +146,48 @@
       reapprovalRequired: "Re-aprobación Requerida",
       btnApproveNewTasks: "Aprobar Nuevas Tareas",
       badgeAdjustment: "Ajuste al Plan",
-      btnApproveConstructionAndVerify: "Aprobar Construcción y Verificar",
-      btnCompleteAndArchive: "Completar y Archivar Feature",
-      modalCompleteArchiveTitle: "Completar y Archivar Feature",
-      modalCompleteArchiveIntro: "Has completado con éxito la construcción y verificación de",
-      precondTasksAllDone: "Todas las tareas completadas (100%)",
-      precondVerifyPassed: "Verificación técnica superada en HEAD",
+      badgeNewTask: "Nueva en plan",
+      btnAdjustTask: "Ajustar",
+      taskCommentPlaceholder: "Describe el ajuste o cambio requerido para esta tarea...",
+      taskCompletedBlockedDesc: "Esta tarea ya fue completada y no se puede ajustar.",
+      diffFilesModified: "Cambios en archivos especificados",
+      newContentInFiles: "Elementos nuevos agregados en este ajuste",
+      newItemsCount: "nuevo(s)",
+      btnApproveConstruction: "Aprobar Construcción",
+      btnApproveConstructionAndVerify: "Aprobar Construcción",
+      btnCompleteAndArchive: "Aprobar Construcción",
+      modalCompleteArchiveTitle: "Aprobar Construcción y Archivar",
+      modalCompleteArchiveIntro: "Has completado la construcción de la funcionalidad",
+      precondTasksAllDone: "Todas las tareas en tasks.md completadas (100%)",
+      precondVerifyPassed: "Verificación realizada por el asistente al codificar",
+      precondBranchClosed: "Cierre automático de la rama según la política de onboarding",
       chkCompleteArchiveForce: "Forzar archivado sin bloqueos (--force)",
-      btnConfirmCompleteArchive: "Confirmar y Archivar",
-      completeArchiveSuccessToast: "Feature completado y archivado exitosamente.",
+      btnConfirmCompleteArchive: "Aprobar Construcción y Cerrar Rama",
+      completeArchiveSuccessToast:
+        "Construcción aprobada, funcionalidad archivada y rama cerrada exitosamente.",
       btnApproveAdjustments: "Aprobar Ajustes al Plan",
       reapprovalRequiredBadge: "Ajustes al Plan Pendientes",
       btnVerifyFailedFix: "Verificación Fallida (Generar Correcciones)",
+      modalPrTitle: "Solicitud de Pull Request Generada",
+      modalPrSubtitle: "Documento detallado de fusión generado automáticamente",
+      modalPrGhCmdLabel: "Comando GitHub CLI",
+      modalPrCopyCmd: "Copiar Comando",
+      modalPrCmdCopied: "¡Comando Copiado!",
+      modalPrFileLabel: "Archivo guardado en:",
+      modalPrMarkdownLabel: "Descripción Detallada del PR",
+      modalPrCopyMarkdown: "Copiar Descripción",
+      modalPrMarkdownCopied: "¡Descripción Copiada!",
+      modalPrClose: "Entendido / Finalizar",
+      tabPr: "Pull Request",
+      prTabHeading: "Solicitud de Pull Request",
+      btnCopyPrMarkdown: "Copiar Markdown del PR",
+      btnCopyPrMarkdownCopied: "¡Markdown Copiado!",
+      prReadyToMerge: "Archivado & Listo para Fusión",
+      prPreviewTitle: "Vista Previa de la Especificación del PR",
+      agentWorking: "Agente trabajando...",
+      agentWorkingDesc: "El agente está trabajando en esta sesión. Acción temporalmente bloqueada.",
+      agentUnlocked: "Sesión del agente desbloqueada.",
+      agentLockBlockedMsg: "El agente está trabajando en este plan. Espera a que termine su turno.",
     },
     en: {
       liveSync: "Live Sync",
@@ -292,19 +322,48 @@
       reapprovalRequired: "Re-approval Required",
       btnApproveNewTasks: "Approve New Tasks",
       badgeAdjustment: "Plan Adjustment",
-      btnApproveConstructionAndVerify: "Approve Build & Verify",
-      btnCompleteAndArchive: "Complete & Archive Feature",
-      modalCompleteArchiveTitle: "Complete & Archive Feature",
-      modalCompleteArchiveIntro:
-        "You have successfully completed implementation and verification of",
-      precondTasksAllDone: "All tasks completed (100%)",
-      precondVerifyPassed: "Technical verification passed on HEAD",
+      badgeNewTask: "New in plan",
+      btnAdjustTask: "Adjust",
+      taskCommentPlaceholder: "Describe the adjustment or change required for this task...",
+      taskCompletedBlockedDesc: "This task has already been completed and cannot be adjusted.",
+      diffFilesModified: "Changes in specified files",
+      newContentInFiles: "New elements added in this adjustment",
+      newItemsCount: "new",
+      btnApproveConstruction: "Approve Construction",
+      btnApproveConstructionAndVerify: "Approve Construction",
+      btnCompleteAndArchive: "Approve Construction",
+      modalCompleteArchiveTitle: "Approve Construction & Archive",
+      modalCompleteArchiveIntro: "You have completed implementation of",
+      precondTasksAllDone: "All tasks in tasks.md completed (100%)",
+      precondVerifyPassed: "Verification performed by assistant upon coding",
+      precondBranchClosed: "Automatic branch closure according to onboarding policy",
       chkCompleteArchiveForce: "Force archiving without blockers (--force)",
-      btnConfirmCompleteArchive: "Confirm & Archive",
-      completeArchiveSuccessToast: "Feature completed and archived successfully.",
+      btnConfirmCompleteArchive: "Approve Construction & Close Branch",
+      completeArchiveSuccessToast:
+        "Construction approved, feature archived, and branch closed successfully.",
       btnApproveAdjustments: "Approve Plan Adjustments",
       reapprovalRequiredBadge: "Plan Adjustments Pending",
       btnVerifyFailedFix: "Verification Failed (Generate Fixes)",
+      modalPrTitle: "Generated Pull Request Request",
+      modalPrSubtitle: "Detailed merge request document automatically generated",
+      modalPrGhCmdLabel: "GitHub CLI Command",
+      modalPrCopyCmd: "Copy Command",
+      modalPrCmdCopied: "Command Copied!",
+      modalPrFileLabel: "File saved at:",
+      modalPrMarkdownLabel: "Detailed PR Description",
+      modalPrCopyMarkdown: "Copy Description",
+      modalPrMarkdownCopied: "Description Copied!",
+      modalPrClose: "Dismiss / Finish",
+      tabPr: "Pull Request",
+      prTabHeading: "Pull Request Request",
+      btnCopyPrMarkdown: "Copy PR Markdown",
+      btnCopyPrMarkdownCopied: "Markdown Copied!",
+      prReadyToMerge: "Archived & Ready to Merge",
+      prPreviewTitle: "Pull Request Specification Preview",
+      agentWorking: "Agent working...",
+      agentWorkingDesc: "The agent is working on this session. Action temporarily locked.",
+      agentUnlocked: "Agent session unlocked.",
+      agentLockBlockedMsg: "The AI agent is currently working on this plan. Wait for it to finish.",
     },
   };
 
@@ -535,6 +594,35 @@
   const modalCompleteArchiveChangeId = document.getElementById("modal-complete-archive-change-id");
   const chkCompleteArchiveForce = document.getElementById("chk-complete-archive-force");
 
+  const modalPrCreated = document.getElementById("modal-pr-created");
+  const modalPrClose = document.getElementById("modal-pr-close");
+  const btnClosePrModal = document.getElementById("btn-close-pr-modal");
+  const modalPrTitle = document.getElementById("modal-pr-title");
+  const modalPrSourceBranch = document.getElementById("modal-pr-source-branch");
+  const modalPrTargetBranch = document.getElementById("modal-pr-target-branch");
+  const modalPrCmd = document.getElementById("modal-pr-cmd");
+  const modalPrFilePath = document.getElementById("modal-pr-file-path");
+  const modalPrMarkdown = document.getElementById("modal-pr-markdown");
+  const btnCopyPrCmd = document.getElementById("btn-copy-pr-cmd");
+  const btnCopyPrMarkdown = document.getElementById("btn-copy-pr-markdown");
+
+  const tabBtnPr = document.getElementById("tab-btn-pr");
+  const prTabTitle = document.getElementById("pr-tab-title");
+  const prTabBranches = document.getElementById("pr-tab-branches");
+  const prTabSourceBranch = document.getElementById("pr-tab-source-branch");
+  const prTabTargetBranch = document.getElementById("pr-tab-target-branch");
+  const prTabGhCmd = document.getElementById("pr-tab-gh-cmd");
+  const prTabFilepath = document.getElementById("pr-tab-filepath");
+  const prTabRenderedView = document.getElementById("pr-tab-rendered-view");
+  const btnCopyPrTabMarkdown = document.getElementById("btn-copy-pr-tab-markdown");
+  const btnCopyPrTabCmd = document.getElementById("btn-copy-pr-tab-cmd");
+  let activePrMarkdown = "";
+
+  const agentWorkingPill = document.getElementById("agent-working-pill");
+  const agentWorkingText = document.getElementById("agent-working-text");
+  const btnForceUnlock = document.getElementById("btn-force-unlock");
+  let currentAgentSession = null;
+
   // Initialize
   async function init() {
     setupTabSwitching();
@@ -567,6 +655,14 @@
       sseSource.addEventListener("change:archived", () => {
         if (currentChangeId) loadChange(currentChangeId, true);
       });
+      sseSource.addEventListener("branch:changed", (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.branch && branchNameEl) {
+            branchNameEl.textContent = payload.branch;
+          }
+        } catch {}
+      });
       sseSource.addEventListener("review:added", () => {
         if (currentChangeId) loadChange(currentChangeId, true);
       });
@@ -575,6 +671,23 @@
       });
       sseSource.addEventListener("review:deleted", () => {
         if (currentChangeId) loadChange(currentChangeId, true);
+      });
+      sseSource.addEventListener("agent:session", (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          if (!payload.changeId || payload.changeId === currentChangeId) {
+            currentAgentSession = payload.active ? payload : null;
+            if (activeChangeData) {
+              activeChangeData.agentSession = currentAgentSession;
+              renderChangeView(activeChangeData);
+            }
+            if (!payload.active) {
+              showToast(t("agentUnlocked"));
+            }
+          }
+        } catch {
+          if (currentChangeId) loadChange(currentChangeId, true);
+        }
       });
       sseSource.addEventListener("config:updated", (e) => {
         try {
@@ -691,8 +804,14 @@
     }
   }
 
+  function isAgentWorking() {
+    const session = activeChangeData?.agentSession || currentAgentSession;
+    return Boolean(session?.active);
+  }
+
   // Render Whole View
   function renderChangeView(data) {
+    currentAgentSession = data.agentSession || null;
     changeTitleEl.textContent = data.title || data.id;
     changeIdSubEl.textContent = `openspec/changes/${data.id}`;
 
@@ -719,6 +838,17 @@
 
     // Render Technical Verification Tab
     renderVerificationReport(data.verification);
+
+    // Pull Request Tab (Enabled when archived)
+    const isArchived = Boolean(data.isArchived || data.status === "archived");
+    if (tabBtnPr) {
+      if (isArchived) {
+        tabBtnPr.classList.remove("hidden");
+        loadPullRequestTab(data.id);
+      } else {
+        tabBtnPr.classList.add("hidden");
+      }
+    }
   }
 
   const LIFECYCLE_STAGES = ["draft", "approved", "in-progress", "verifying", "done", "archived"];
@@ -778,8 +908,6 @@
     const completedTasks = currentData?.tasksData?.completed || 0;
     const allTasksDone = totalTasks > 0 && completedTasks === totalTasks;
     const hasPendingTasks = totalTasks > 0 && completedTasks < totalTasks;
-    const verifReport = currentData?.verification;
-    const isVerified = Boolean(verifReport?.passed);
 
     // 1. Status Badge
     if (normStatus === "archived") {
@@ -807,13 +935,48 @@
     }
 
     // 2. Dynamic Primary Action Button
-    const activeReviews = (reviews || []).filter((r) => !r.resolved);
+    // 2.0 Agent Working Session Lock check
+    const agentSession = currentData?.agentSession || currentAgentSession;
+    const isAgentWorking = Boolean(agentSession?.active);
 
-    if (activeReviews.length > 0) {
-      // Paso 1: Hay comentarios en el plan -> Actualizar Plan
+    if (agentWorkingPill) {
+      agentWorkingPill.classList.toggle("hidden", !isAgentWorking);
+      if (isAgentWorking && agentWorkingText) {
+        agentWorkingText.textContent = agentSession?.activity || t("agentWorking");
+      }
+    }
+
+    if (isAgentWorking) {
+      btnApprove.className = "btn-primary btn-agent-working";
+      btnApprove.innerHTML = `<i class="ph-bold ph-spinner-gap ph-spin"></i> <span>${agentSession?.activity || t("agentWorking")}</span>`;
+      btnApprove.title = `${t("agentWorkingDesc")} (${agentSession?.activity || ""})`;
+      btnApprove.disabled = true;
+      btnApprove.onclick = null;
+      return;
+    }
+
+    const userPendingReviews = (reviews || []).filter((r) => {
+      if (r.resolved) return false;
+      const author = (r.author || "").toLowerCase();
+      if (
+        author === "governance" ||
+        author === "backup-engine" ||
+        author === "agent" ||
+        author.startsWith("@") ||
+        r.id.startsWith("adj-") ||
+        r.id.startsWith("spec-delta-") ||
+        r.id.startsWith("backup-")
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    if (userPendingReviews.length > 0) {
+      // Paso 1: Hay comentarios de usuario en el plan -> Actualizar Plan
       btnApprove.className = "btn-primary";
-      btnApprove.innerHTML = `<i class="ph-bold ph-arrows-clockwise"></i> <span>${t("updatePlanBtn")} (${activeReviews.length})</span>`;
-      btnApprove.title = `${t("updatePlanBtn")} (${activeReviews.length})`;
+      btnApprove.innerHTML = `<i class="ph-bold ph-arrows-clockwise"></i> <span>${t("updatePlanBtn")} (${userPendingReviews.length})</span>`;
+      btnApprove.title = `${t("updatePlanBtn")} (${userPendingReviews.length})`;
       btnApprove.disabled = false;
       btnApprove.onclick = handleUpdatePlan;
     } else if (normStatus === "archived") {
@@ -854,24 +1017,12 @@
           btnApprove.onclick = null;
         }
       } else if (allTasksDone) {
-        if (isVerified) {
-          // Todo OK y verificado: Completar y Archivar en 1 clic
-          btnApprove.className = "btn-primary btn-success";
-          btnApprove.innerHTML = `<i class="ph-bold ph-check-fat"></i> <span>${t("btnCompleteAndArchive")}</span>`;
-          btnApprove.title = t("btnCompleteAndArchive");
-          btnApprove.disabled = false;
-          btnApprove.onclick = () => openCompleteArchiveModal();
-        } else {
-          // Construcción finalizada: Aprobar Construcción y Verificar
-          btnApprove.className = "btn-primary";
-          btnApprove.innerHTML = `<i class="ph-bold ph-shield-check"></i> <span>${t("btnApproveConstructionAndVerify")}</span>`;
-          btnApprove.title = t("btnApproveConstructionAndVerify");
-          btnApprove.disabled = false;
-          btnApprove.onclick = async () => {
-            switchTab("tab-verify");
-            await handleRunVerification();
-          };
-        }
+        // Construcción finalizada: Aprobar Construcción (pasa a completado, archiva y cierra rama)
+        btnApprove.className = "btn-primary btn-success";
+        btnApprove.innerHTML = `<i class="ph-bold ph-check-fat"></i> <span>${t("btnApproveConstruction")}</span>`;
+        btnApprove.title = t("btnApproveConstruction");
+        btnApprove.disabled = false;
+        btnApprove.onclick = () => openCompleteArchiveModal();
       } else if (normStatus === "done") {
         btnApprove.className = "btn-primary btn-archive";
         btnApprove.innerHTML = `<i class="ph-bold ph-archive"></i> <span>${t("btnArchiveFeature")}</span>`;
@@ -1133,9 +1284,19 @@
         body: JSON.stringify({ force }),
       });
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         modalArchive.classList.add("hidden");
         showToast(t("archiveSuccessToast"), false);
         await refreshChangesList(true);
+        if (tabBtnPr) {
+          tabBtnPr.classList.remove("hidden");
+        }
+        if (data.pr) {
+          populatePullRequestView(data.pr);
+          openPrModal(data.pr);
+        } else {
+          loadPullRequestTab(currentChangeId);
+        }
       } else {
         const data = await res.json().catch(() => ({}));
         showToast(data.error || "Cannot archive change", true);
@@ -1159,23 +1320,49 @@
     modalCompleteArchive.classList.remove("hidden");
   }
 
+  function openPrModal(pr) {
+    if (!modalPrCreated || !pr) return;
+    if (modalPrTitle) modalPrTitle.textContent = pr.title || "";
+    if (modalPrSourceBranch) modalPrSourceBranch.textContent = pr.sourceBranch || "feature";
+    if (modalPrTargetBranch) modalPrTargetBranch.textContent = pr.targetBranch || "main";
+    if (modalPrCmd) modalPrCmd.textContent = pr.ghCommand || "";
+    if (modalPrFilePath) modalPrFilePath.textContent = pr.relativeFilePath || pr.filePath || "";
+    if (modalPrMarkdown) modalPrMarkdown.value = pr.markdown || "";
+    modalPrCreated.classList.remove("hidden");
+  }
+
   async function handleConfirmCompleteAndArchive() {
     if (!currentChangeId) return;
     if (btnConfirmCompleteArchive) btnConfirmCompleteArchive.disabled = true;
     try {
-      const force = Boolean(chkCompleteArchiveForce?.checked);
       const res = await authFetch(
         `/api/changes/${encodeURIComponent(currentChangeId)}/complete-and-archive`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ force }),
+          body: JSON.stringify({ force: true }),
         },
       );
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         modalCompleteArchive.classList.add("hidden");
-        showToast(t("completeArchiveSuccessToast"), false);
+        if (data.branchResult?.targetBranch && branchNameEl) {
+          branchNameEl.textContent = data.branchResult.targetBranch;
+        }
+        const toastMsg = data.branchResult?.closedBranch
+          ? `${t("completeArchiveSuccessToast")} (${data.branchResult.closedBranch} → ${data.branchResult.targetBranch})`
+          : t("completeArchiveSuccessToast");
+        showToast(toastMsg, false);
         await refreshChangesList(true);
+        if (tabBtnPr) {
+          tabBtnPr.classList.remove("hidden");
+        }
+        if (data.pr) {
+          populatePullRequestView(data.pr);
+          openPrModal(data.pr);
+        } else {
+          loadPullRequestTab(currentChangeId);
+        }
       } else {
         const data = await res.json().catch(() => ({}));
         showToast(data.error || "Error al completar y archivar", true);
@@ -1191,12 +1378,22 @@
   async function handleUpdatePlan() {
     btnApprove.disabled = true;
     try {
-      await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews/apply`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      showToast(t("updatePlanSuccess"));
+      const res = await authFetch(
+        `/api/changes/${encodeURIComponent(currentChangeId)}/reviews/apply`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (data && typeof data.appliedCount === "number" && data.appliedCount > 0) {
+        showToast(t("updatePlanSuccess"));
+      } else if (data?.message) {
+        showToast(data.message);
+      } else {
+        showToast(t("updatePlanSuccess"));
+      }
       await loadChange(currentChangeId);
     } catch (err) {
       console.error("Error updating plan with adjustments", err);
@@ -1216,6 +1413,11 @@
   }
 
   function toggleSectionPopover(section, localizedTitle, wrapElement) {
+    if (isAgentWorking()) {
+      showToast(t("agentLockBlockedMsg"));
+      return;
+    }
+
     if (activePopoverSectionId === section.id) {
       closeActivePopover();
       return;
@@ -1290,6 +1492,91 @@
     setTimeout(() => textarea.focus(), 50);
   }
 
+  function toggleTaskPopover(task, wrapElement) {
+    if (isAgentWorking()) {
+      showToast(t("agentLockBlockedMsg"));
+      return;
+    }
+    if (task.completed) {
+      showToast(t("taskCompletedBlockedDesc"));
+      return;
+    }
+
+    const popoverId = `task-${task.id}`;
+    if (activePopoverSectionId === popoverId) {
+      closeActivePopover();
+      return;
+    }
+
+    closeActivePopover();
+    activePopoverSectionId = popoverId;
+
+    const popover = document.createElement("div");
+    popover.className = "section-comment-popover task-comment-popover";
+
+    popover.innerHTML = `
+      <div class="popover-header">
+        <span class="popover-title"><i class="ph-bold ph-chat-circle-dots"></i> ${t("addAdjustment")} ${escapeHtml(task.text.slice(0, 45))}${task.text.length > 45 ? "..." : ""}</span>
+        <button type="button" class="popover-close-btn" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="popover-body">
+        <textarea class="popover-textarea" placeholder="${t("taskCommentPlaceholder")}"></textarea>
+      </div>
+      <div class="popover-footer">
+        <button type="button" class="btn-popover-cancel">${t("btnCancel")}</button>
+        <button type="button" class="btn-popover-save">${t("btnSaveComment")}</button>
+      </div>
+    `;
+
+    const textarea = popover.querySelector(".popover-textarea");
+    const btnClose = popover.querySelector(".popover-close-btn");
+    const btnCancel = popover.querySelector(".btn-popover-cancel");
+    const btnSave = popover.querySelector(".btn-popover-save");
+
+    btnClose.onclick = (e) => {
+      e.stopPropagation();
+      closeActivePopover();
+    };
+
+    btnCancel.onclick = (e) => {
+      e.stopPropagation();
+      closeActivePopover();
+    };
+
+    btnSave.onclick = async (e) => {
+      e.stopPropagation();
+      const commentText = textarea.value.trim();
+      if (!commentText) {
+        textarea.focus();
+        return;
+      }
+
+      btnSave.disabled = true;
+      try {
+        await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/reviews`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sectionId: "tasks",
+            sectionTitle: `tasks.md: ${task.text}`,
+            comment: commentText,
+            type: "change_request",
+          }),
+        });
+
+        closeActivePopover();
+        showToast(t("commentSavedToast"));
+        await loadChange(currentChangeId);
+      } catch (err) {
+        console.error("Error saving task comment", err);
+        closeActivePopover();
+      }
+    };
+
+    wrapElement.appendChild(popover);
+    setTimeout(() => textarea.focus(), 50);
+  }
+
   // Render Proposal Sections with Localized Titles & Inline Popover
   function renderProposalSections(sections, reviews) {
     proposalSectionsContainer.innerHTML = "";
@@ -1355,11 +1642,22 @@
       btnComment.type = "button";
       btnComment.className = "btn-section-review";
       btnComment.innerHTML = `<i class="ph-bold ph-chat-teardrop-dots"></i> <span>${t("comment")}</span>`;
-      btnComment.title = t("commentSection");
-      btnComment.onclick = (e) => {
-        e.stopPropagation();
-        toggleSectionPopover(section, localizedTitle, commentWrap);
-      };
+      const agentActive = isAgentWorking();
+      if (agentActive) {
+        btnComment.disabled = true;
+        btnComment.classList.add("btn-disabled-agent");
+        btnComment.title = t("agentWorkingDesc");
+        btnComment.onclick = (e) => {
+          e.stopPropagation();
+          showToast(t("agentLockBlockedMsg"));
+        };
+      } else {
+        btnComment.title = t("commentSection");
+        btnComment.onclick = (e) => {
+          e.stopPropagation();
+          toggleSectionPopover(section, localizedTitle, commentWrap);
+        };
+      }
 
       commentWrap.appendChild(btnComment);
       actions.appendChild(commentWrap);
@@ -1426,10 +1724,15 @@
     });
   }
 
-  // Create Log Card Element (Read-only Audit Log)
+  // Create Log Card Element (Read-only Audit Log with Accordion)
   function createCommentCard(rev) {
     const card = document.createElement("div");
-    card.className = "log-review-card";
+    card.className = "log-review-card log-accordion-card";
+
+    const isInitiallyOpen = !rev.resolved;
+    if (isInitiallyOpen) {
+      card.classList.add("open");
+    }
 
     const header = document.createElement("div");
     header.className = "log-card-header";
@@ -1446,10 +1749,18 @@
       },
     );
     metaLeft.innerHTML = `
+      <i class="ph-bold ph-caret-right accordion-caret ${isInitiallyOpen ? "rotated" : ""}"></i>
       <span class="log-author"><i class="ph ph-user"></i> ${escapeHtml(rev.author || "reviewer")}</span>
       <span class="log-date">${dateStr}</span>
       <span class="log-section-tag">[${escapeHtml(rev.sectionTitle || rev.sectionId || "General")}]</span>
     `;
+
+    const previewRaw = (rev.comment || "").trim();
+    const firstLine = previewRaw.split("\n")[0].trim();
+    const previewSnippet = document.createElement("span");
+    previewSnippet.className = "log-preview-snippet";
+    previewSnippet.textContent = firstLine.length > 70 ? `${firstLine.slice(0, 70)}...` : firstLine;
+    metaLeft.appendChild(previewSnippet);
 
     const statusBadge = document.createElement("span");
     statusBadge.className = `log-status-badge ${rev.resolved ? "status-applied" : "status-pending"}`;
@@ -1461,24 +1772,135 @@
     header.appendChild(statusBadge);
     card.appendChild(header);
 
+    const body = document.createElement("div");
+    body.className = "log-card-body";
+
     if (rev.selection) {
       const sel = document.createElement("div");
       sel.className = "log-ref-text";
-      sel.innerHTML = `<em>Ref: "${escapeHtml(rev.selection.slice(0, 120))}${rev.selection.length > 120 ? "..." : ""}"</em>`;
-      card.appendChild(sel);
+      sel.innerHTML = `<em>Ref: "${escapeHtml(rev.selection)}"</em>`;
+      body.appendChild(sel);
     }
 
     const text = document.createElement("p");
     text.className = "log-comment-text";
     text.textContent = rev.comment;
-    card.appendChild(text);
+    body.appendChild(text);
 
     if (rev.suggestion) {
       const sug = document.createElement("div");
       sug.className = "log-suggestion-box";
       sug.innerHTML = `<code>${escapeHtml(rev.suggestion)}</code>`;
-      card.appendChild(sug);
+      body.appendChild(sug);
     }
+
+    // Diffs asociados al tag / archivos especificados
+    const fileDiffs = rev.diffs ? [...rev.diffs] : [];
+    if (fileDiffs.length === 0 && activeDiffFiles && activeDiffFiles.length > 0) {
+      const tagLower = (rev.sectionTitle || rev.sectionId || "").toLowerCase();
+      activeDiffFiles.forEach((f) => {
+        const fLower = f.file.toLowerCase();
+        if (
+          (tagLower.includes("tasks.md") && fLower.includes("tasks.md")) ||
+          (tagLower.includes("proposal.md") && fLower.includes("proposal.md")) ||
+          (tagLower.includes("spec") && fLower.includes("specs/"))
+        ) {
+          const already = fileDiffs.some((d) => d.file === f.file);
+          if (!already) fileDiffs.push(f);
+        }
+      });
+    }
+
+    if (fileDiffs.length > 0) {
+      const diffsSection = document.createElement("div");
+      diffsSection.className = "log-diffs-section";
+
+      const diffsTitle = document.createElement("div");
+      diffsTitle.className = "log-diffs-title";
+      diffsTitle.innerHTML = `<i class="ph-bold ph-sparkle"></i> <span>${t("newContentInFiles")}:</span>`;
+      diffsSection.appendChild(diffsTitle);
+
+      let renderedAny = false;
+
+      fileDiffs.forEach((diffItem) => {
+        const patchLines = (diffItem.patch || "").split("\n");
+        const addedLines = [];
+        for (const line of patchLines) {
+          if (line.startsWith("+") && !line.startsWith("+++")) {
+            addedLines.push(line.slice(1));
+          }
+        }
+
+        if (addedLines.length === 0) return;
+        renderedAny = true;
+
+        const isTasksFile = diffItem.file.toLowerCase().includes("tasks.md");
+        const box = document.createElement("div");
+        box.className = "log-new-content-box";
+
+        const boxHeader = document.createElement("div");
+        boxHeader.className = "log-new-content-header";
+        boxHeader.innerHTML = `
+          <div class="log-file-title">
+            <i class="${isTasksFile ? "ph ph-check-square" : "ph ph-file-text"}"></i>
+            <span>${escapeHtml(diffItem.file)}</span>
+          </div>
+          <span class="log-additions-badge">+${diffItem.additions} ${t("newItemsCount")}</span>
+        `;
+        box.appendChild(boxHeader);
+
+        const contentBody = document.createElement("div");
+        contentBody.className = "log-new-content-body";
+
+        if (isTasksFile) {
+          const taskLines = addedLines.filter((l) => /^\s*-\s*\[[ xX]\]\s*/.test(l));
+          if (taskLines.length > 0) {
+            const ul = document.createElement("ul");
+            ul.className = "new-tasks-checklist";
+            taskLines.forEach((tLine) => {
+              const cleanText = tLine.replace(/^\s*-\s*\[[ xX]\]\s*/, "").trim();
+              const li = document.createElement("li");
+              li.className = "new-task-entry";
+              li.innerHTML = `
+                <span class="new-task-bullet"><i class="ph-bold ph-plus"></i></span>
+                <span class="new-task-text">${escapeHtml(cleanText)}</span>
+                <span class="task-new-badge"><i class="ph-bold ph-sparkle"></i> ${escapeHtml(t("badgeNewTask"))}</span>
+              `;
+              ul.appendChild(li);
+            });
+            contentBody.appendChild(ul);
+          } else {
+            const pre = document.createElement("div");
+            pre.className = "new-text-clean";
+            pre.textContent = addedLines.join("\n").trim();
+            contentBody.appendChild(pre);
+          }
+        } else {
+          const cleanMarkdown = addedLines.join("\n").trim();
+          const textWrap = document.createElement("div");
+          textWrap.className = "new-markdown-clean";
+          textWrap.innerHTML = formatMarkdownContent(cleanMarkdown);
+          contentBody.appendChild(textWrap);
+        }
+
+        box.appendChild(contentBody);
+        diffsSection.appendChild(box);
+      });
+
+      if (renderedAny) {
+        body.appendChild(diffsSection);
+      }
+    }
+
+    card.appendChild(body);
+
+    card.onclick = (e) => {
+      if (window.getSelection()?.toString()?.length > 0) return;
+      if (e.target.closest("button") || e.target.closest("pre")) return;
+      const isOpen = card.classList.toggle("open");
+      const caret = header.querySelector(".accordion-caret");
+      if (caret) caret.classList.toggle("rotated", isOpen);
+    };
 
     return card;
   }
@@ -1544,7 +1966,12 @@
 
         const span = document.createElement("span");
         span.className = "task-label";
-        if (task.isAdjustment) {
+        if (task.isNew) {
+          const newBadge = document.createElement("span");
+          newBadge.className = "task-new-badge";
+          newBadge.innerHTML = `<i class="ph-bold ph-sparkle"></i> ${escapeHtml(t("badgeNewTask"))}`;
+          span.appendChild(newBadge);
+        } else if (task.isAdjustment) {
           const adjBadge = document.createElement("span");
           adjBadge.className = "task-adjustment-badge";
           adjBadge.innerHTML = `<i class="ph-bold ph-pencil-simple-line"></i> ${escapeHtml(t("badgeAdjustment"))}`;
@@ -1552,8 +1979,39 @@
         }
         span.appendChild(document.createTextNode(task.text));
 
+        const btnComment = document.createElement("button");
+        btnComment.type = "button";
+        btnComment.className = "btn-task-comment";
+        btnComment.innerHTML = `<i class="ph ph-chat-teardrop-text"></i> <span>${escapeHtml(t("btnAdjustTask"))}</span>`;
+
+        const agentActive = isAgentWorking();
+        if (agentActive) {
+          btnComment.disabled = true;
+          btnComment.classList.add("btn-disabled-agent");
+          btnComment.title = t("agentWorkingDesc");
+          btnComment.onclick = (e) => {
+            e.stopPropagation();
+            showToast(t("agentLockBlockedMsg"));
+          };
+        } else if (task.completed) {
+          btnComment.disabled = true;
+          btnComment.classList.add("btn-disabled-completed");
+          btnComment.title = t("taskCompletedBlockedDesc");
+          btnComment.onclick = (e) => {
+            e.stopPropagation();
+            showToast(t("taskCompletedBlockedDesc"));
+          };
+        } else {
+          btnComment.title = `${t("btnAdjustTask")}: ${task.text}`;
+          btnComment.onclick = (e) => {
+            e.stopPropagation();
+            toggleTaskPopover(task, li);
+          };
+        }
+
         li.appendChild(checkbox);
         li.appendChild(span);
+        li.appendChild(btnComment);
         ul.appendChild(li);
       });
 
@@ -1657,6 +2115,224 @@
     });
   }
 
+  // Populate and load Pull Request Tab View
+  function populatePullRequestView(pr) {
+    if (!pr) return;
+    activePrMarkdown = pr.markdown || "";
+    if (prTabTitle) prTabTitle.textContent = pr.title || t("prTabHeading");
+    if (prTabBranches)
+      prTabBranches.textContent = `${pr.sourceBranch || "feature"} → ${pr.targetBranch || "main"}`;
+    if (prTabSourceBranch) prTabSourceBranch.textContent = pr.sourceBranch || "feature";
+    if (prTabTargetBranch) prTabTargetBranch.textContent = pr.targetBranch || "main";
+    if (prTabGhCmd) prTabGhCmd.textContent = pr.ghCommand || "";
+    if (prTabFilepath) prTabFilepath.textContent = pr.relativeFilePath || pr.filePath || "";
+    if (prTabRenderedView) {
+      prTabRenderedView.innerHTML = renderMarkdownDocument(pr.markdown);
+    }
+  }
+
+  async function loadPullRequestTab(changeId) {
+    if (!changeId) return;
+    try {
+      const res = await authFetch(`/api/changes/${encodeURIComponent(changeId)}/pull-request`);
+      if (!res.ok) return;
+      const data = await res.json().catch(() => ({}));
+      if (data.success && data.pr) {
+        populatePullRequestView(data.pr);
+      }
+    } catch (err) {
+      console.error("Error loading Pull Request tab", err);
+    }
+  }
+
+  // Full Markdown Document Renderer for PR Tab View
+  function renderMarkdownDocument(raw) {
+    if (!raw) return `<div class="empty-state">${t("noContent") || "No content"}</div>`;
+
+    const codeBlocks = [];
+    const inlineCodes = [];
+
+    // 1. Extract Code Blocks
+    let processed = raw.replace(/```([a-zA-Z0-9_-]*)\r?\n([\s\S]*?)```/g, (_match, lang, code) => {
+      const idx = codeBlocks.length;
+      const safeCode = escapeHtml(code.trimEnd());
+      const rawCode = escapeHtml(code.trim());
+      const langLabel = escapeHtml(lang || "text");
+      codeBlocks.push(
+        `<div class="code-block-wrapper"><div class="code-block-header"><span>${langLabel}</span><button type="button" class="btn-copy-code" data-code="${rawCode}"><i class="ph ph-copy"></i> <span>${t("copyCode")}</span></button></div><pre><code>${safeCode}</code></pre></div>`,
+      );
+      return `\n\n__PR_CODE_BLOCK_${idx}__\n\n`;
+    });
+
+    // 2. Extract Inline Code
+    processed = processed.replace(/`([^`\n]+)`/g, (_match, code) => {
+      const idx = inlineCodes.length;
+      inlineCodes.push(`<code class="inline-code">${escapeHtml(code)}</code>`);
+      return `__PR_INLINE_CODE_${idx}__`;
+    });
+
+    // 3. Bold & Italic
+    processed = processed.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+    processed = processed.replace(/\*([^*\n]+)\*/g, "<em>$1</em>");
+
+    // 4. Split lines and process block elements
+    const rawLines = processed.split("\n");
+    const output = [];
+    let inList = false;
+    let inTable = false;
+    let tableRows = [];
+
+    const flushTable = () => {
+      if (!inTable) return;
+      if (tableRows.length > 0) {
+        let html = '<table class="markdown-table"><thead><tr>';
+        const headers = tableRows[0];
+        headers.forEach((h) => {
+          html += `<th>${h}</th>`;
+        });
+        html += "</tr></thead><tbody>";
+        for (let r = 1; r < tableRows.length; r++) {
+          html += "<tr>";
+          tableRows[r].forEach((cell) => {
+            html += `<td>${cell}</td>`;
+          });
+          html += "</tr>";
+        }
+        html += "</tbody></table>";
+        output.push(html);
+      }
+      tableRows = [];
+      inTable = false;
+    };
+
+    const flushList = () => {
+      if (inList) {
+        output.push("</ul>");
+        inList = false;
+      }
+    };
+
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i];
+      const trimmed = line.trim();
+
+      // Table line: | ... | ... |
+      if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+        flushList();
+        // Skip separator row | :---: | :--- |
+        if (/^\|(?:\s*:?-+:?\s*\|)+$/.test(trimmed)) {
+          continue;
+        }
+        const cells = trimmed
+          .slice(1, -1)
+          .split("|")
+          .map((c) => c.trim());
+        if (!inTable) {
+          inTable = true;
+          tableRows = [];
+        }
+        tableRows.push(cells);
+        continue;
+      }
+      if (inTable) {
+        flushTable();
+      }
+
+      if (trimmed.startsWith("__PR_CODE_BLOCK_")) {
+        flushList();
+        output.push(trimmed);
+        continue;
+      }
+
+      // Headers #, ##, ###, ####
+      if (trimmed.startsWith("# ")) {
+        flushList();
+        output.push(`<h1>${trimmed.slice(2)}</h1>`);
+        continue;
+      }
+      if (trimmed.startsWith("## ")) {
+        flushList();
+        output.push(`<h2>${trimmed.slice(3)}</h2>`);
+        continue;
+      }
+      if (trimmed.startsWith("### ")) {
+        flushList();
+        output.push(`<h3>${trimmed.slice(4)}</h3>`);
+        continue;
+      }
+      if (trimmed.startsWith("#### ")) {
+        flushList();
+        output.push(`<h4>${trimmed.slice(5)}</h4>`);
+        continue;
+      }
+
+      // Horizontal rule ---
+      if (trimmed === "---" || trimmed === "***") {
+        flushList();
+        output.push("<hr />");
+        continue;
+      }
+
+      // Blockquotes >
+      if (trimmed.startsWith("> ")) {
+        flushList();
+        output.push(`<blockquote><p>${trimmed.slice(2)}</p></blockquote>`);
+        continue;
+      }
+
+      // Checkbox items: - [x] or - [ ]
+      const checkMatch = trimmed.match(/^-\s*\[([ xX])\]\s*(.+)$/);
+      if (checkMatch) {
+        if (!inList) {
+          output.push("<ul>");
+          inList = true;
+        }
+        const isDone = checkMatch[1].toLowerCase() === "x";
+        const icon = isDone
+          ? '<i class="ph-bold ph-check-circle md-check-icon done"></i>'
+          : '<i class="ph ph-circle md-check-icon pending"></i>';
+        output.push(`<li class="md-check-item">${icon} <span>${checkMatch[2]}</span></li>`);
+        continue;
+      }
+
+      // Normal bullet list item: - or *
+      if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+        if (!inList) {
+          output.push("<ul>");
+          inList = true;
+        }
+        output.push(`<li>${trimmed.slice(2)}</li>`);
+        continue;
+      }
+
+      if (trimmed === "") {
+        flushList();
+        continue;
+      }
+
+      // Paragraph
+      flushList();
+      output.push(`<p>${line}</p>`);
+    }
+
+    flushList();
+    flushTable();
+
+    let finalHtml = output.join("\n");
+
+    // Reinsert Inlines
+    inlineCodes.forEach((codeHtml, idx) => {
+      finalHtml = finalHtml.split(`__PR_INLINE_CODE_${idx}__`).join(codeHtml);
+    });
+
+    // Reinsert Code Blocks
+    codeBlocks.forEach((blockHtml, idx) => {
+      finalHtml = finalHtml.split(`__PR_CODE_BLOCK_${idx}__`).join(blockHtml);
+    });
+
+    return finalHtml;
+  }
+
   // Modals & Events
   function openReviewModal(section) {
     const selectedText = window.getSelection ? window.getSelection().toString().trim() : "";
@@ -1729,6 +2405,24 @@
     if (changeSelectEl) {
       changeSelectEl.onchange = (e) => {
         loadChange(e.target.value);
+      };
+    }
+
+    // Force Unlock Agent Session
+    if (btnForceUnlock) {
+      btnForceUnlock.onclick = async (e) => {
+        e.stopPropagation();
+        if (!currentChangeId) return;
+        try {
+          await authFetch(`/api/changes/${encodeURIComponent(currentChangeId)}/agent-session/end`, {
+            method: "POST",
+          });
+          currentAgentSession = null;
+          showToast(t("agentUnlocked"));
+          await loadChange(currentChangeId);
+        } catch (err) {
+          console.error("Error releasing agent session lock", err);
+        }
       };
     }
 
@@ -1859,6 +2553,10 @@
     // General Review Button
     if (btnAddGeneralReview) {
       btnAddGeneralReview.onclick = () => {
+        if (isAgentWorking()) {
+          showToast(t("agentLockBlockedMsg"));
+          return;
+        }
         openReviewModal({ title: "General", id: "general" });
       };
     }
@@ -1913,6 +2611,85 @@
     }
     if (btnConfirmCompleteArchive) {
       btnConfirmCompleteArchive.onclick = () => handleConfirmCompleteAndArchive();
+    }
+
+    // PR Created Modal
+    if (modalPrClose) {
+      modalPrClose.onclick = () => modalPrCreated?.classList.add("hidden");
+    }
+    if (btnClosePrModal) {
+      btnClosePrModal.onclick = () => modalPrCreated?.classList.add("hidden");
+    }
+    if (btnCopyPrCmd) {
+      btnCopyPrCmd.onclick = async () => {
+        const text = modalPrCmd?.textContent || "";
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          btnCopyPrCmd.classList.add("copied");
+          const orig = btnCopyPrCmd.innerHTML;
+          btnCopyPrCmd.innerHTML = `<i class="ph-bold ph-check"></i> <span>${t("modalPrCmdCopied")}</span>`;
+          setTimeout(() => {
+            btnCopyPrCmd.classList.remove("copied");
+            btnCopyPrCmd.innerHTML = orig;
+          }, 2000);
+        } catch (e) {
+          console.error("Clipboard copy failed", e);
+        }
+      };
+    }
+    if (btnCopyPrMarkdown) {
+      btnCopyPrMarkdown.onclick = async () => {
+        const text = modalPrMarkdown?.value || "";
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          btnCopyPrMarkdown.classList.add("copied");
+          const orig = btnCopyPrMarkdown.innerHTML;
+          btnCopyPrMarkdown.innerHTML = `<i class="ph-bold ph-check"></i> <span>${t("modalPrMarkdownCopied")}</span>`;
+          setTimeout(() => {
+            btnCopyPrMarkdown.classList.remove("copied");
+            btnCopyPrMarkdown.innerHTML = orig;
+          }, 2000);
+        } catch (e) {
+          console.error("Clipboard copy failed", e);
+        }
+      };
+    }
+
+    // PR Tab Copy Actions
+    if (btnCopyPrTabMarkdown) {
+      btnCopyPrTabMarkdown.onclick = async () => {
+        if (!activePrMarkdown) return;
+        try {
+          await navigator.clipboard.writeText(activePrMarkdown);
+          btnCopyPrTabMarkdown.classList.add("copied");
+          const orig = btnCopyPrTabMarkdown.innerHTML;
+          btnCopyPrTabMarkdown.innerHTML = `<i class="ph-bold ph-check"></i> <span>${t("btnCopyPrMarkdownCopied")}</span>`;
+          setTimeout(() => {
+            btnCopyPrTabMarkdown.classList.remove("copied");
+            btnCopyPrTabMarkdown.innerHTML = orig;
+          }, 2000);
+        } catch (e) {
+          console.error("Clipboard copy failed", e);
+        }
+      };
+    }
+
+    if (btnCopyPrTabCmd) {
+      btnCopyPrTabCmd.onclick = async () => {
+        const text = prTabGhCmd?.textContent || "";
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          btnCopyPrTabCmd.classList.add("copied");
+          setTimeout(() => {
+            btnCopyPrTabCmd.classList.remove("copied");
+          }, 2000);
+        } catch (e) {
+          console.error("Clipboard copy failed", e);
+        }
+      };
     }
   }
 

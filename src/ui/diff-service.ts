@@ -43,11 +43,106 @@ export async function getGitDiffs(
   return items;
 }
 
+export async function getChangeFileBaseline(
+  repoRoot: string,
+  changeId: string,
+  fileName: string,
+): Promise<string | null> {
+  const relPath = path.join("openspec", "changes", changeId, fileName);
+
+  // 1. Try from .specty/backups (newest backup first)
+  try {
+    const backupsDir = path.join(repoRoot, ".specty", "backups");
+    const entries = await fs.readdir(backupsDir, { withFileTypes: true });
+    const backupDirs = entries
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .sort()
+      .reverse();
+
+    for (const bDir of backupDirs) {
+      const candidate = path.join(backupsDir, bDir, relPath);
+      try {
+        return await fs.readFile(candidate, "utf8");
+      } catch {
+        // next backup candidate
+      }
+    }
+  } catch {
+    // no backups directory
+  }
+
+  // 2. Try git HEAD
+  try {
+    const gitPath = relPath.replace(/\\/g, "/");
+    const { stdout } = await execa("git", ["show", `HEAD:${gitPath}`], { cwd: repoRoot });
+    return stdout;
+  } catch {
+    // not in git HEAD
+  }
+
+  return null;
+}
+
 export async function getSpecDeltaDiffs(
   repoRoot: string,
   changeId: string,
 ): Promise<FileDiffItem[]> {
   const items: FileDiffItem[] = [];
+
+  // 1. Compare tasks.md against baseline
+  try {
+    const tasksPath = path.join(repoRoot, "openspec", "changes", changeId, "tasks.md");
+    const currentTasks = await fs.readFile(tasksPath, "utf8");
+    const baselineTasks = await getChangeFileBaseline(repoRoot, changeId, "tasks.md");
+    if (baselineTasks !== null && baselineTasks !== currentTasks) {
+      const patch = diff.createPatch(
+        `openspec/changes/${changeId}/tasks.md`,
+        baselineTasks,
+        currentTasks,
+        "aprobado",
+        "actual",
+      );
+      const { additions, deletions } = countPatchMetrics(patch);
+      items.push({
+        file: `openspec/changes/${changeId}/tasks.md`,
+        status: "modified",
+        additions,
+        deletions,
+        patch,
+      });
+    }
+  } catch {
+    // tasks.md may not exist
+  }
+
+  // 2. Compare proposal.md against baseline
+  try {
+    const proposalPath = path.join(repoRoot, "openspec", "changes", changeId, "proposal.md");
+    const currentProposal = await fs.readFile(proposalPath, "utf8");
+    const baselineProposal = await getChangeFileBaseline(repoRoot, changeId, "proposal.md");
+    if (baselineProposal !== null && baselineProposal !== currentProposal) {
+      const patch = diff.createPatch(
+        `openspec/changes/${changeId}/proposal.md`,
+        baselineProposal,
+        currentProposal,
+        "aprobado",
+        "actual",
+      );
+      const { additions, deletions } = countPatchMetrics(patch);
+      items.push({
+        file: `openspec/changes/${changeId}/proposal.md`,
+        status: "modified",
+        additions,
+        deletions,
+        patch,
+      });
+    }
+  } catch {
+    // proposal.md may not exist
+  }
+
+  // 3. Compare specs directory
   const changeSpecsDir = path.join(repoRoot, "openspec", "changes", changeId, "specs");
   const mainSpecsDir = path.join(repoRoot, "openspec", "specs");
 
@@ -65,7 +160,15 @@ export async function getSpecDeltaDiffs(
         mainContent = await fs.readFile(mainFilePath, "utf8");
         existsInMain = true;
       } catch {
-        // new spec
+        const baselineSpec = await getChangeFileBaseline(
+          repoRoot,
+          changeId,
+          path.join("specs", relFile),
+        );
+        if (baselineSpec !== null) {
+          mainContent = baselineSpec;
+          existsInMain = true;
+        }
       }
 
       if (changeContent !== mainContent) {

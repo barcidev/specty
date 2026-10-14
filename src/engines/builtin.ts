@@ -180,7 +180,12 @@ export class BuiltinSpecEngine implements SpecEngine {
     try {
       await fs.stat(changeDir);
     } catch {
-      return false;
+      try {
+        await fs.stat(path.join(archiveDir, changeId));
+        return true;
+      } catch {
+        return false;
+      }
     }
 
     if (options?.dryRun) {

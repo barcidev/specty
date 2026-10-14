@@ -2,12 +2,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import fg from "fast-glob";
 import { parseTasksSummary, readChangeState, writeChangeState } from "../engines/change-state.js";
+import { getAgentSession } from "../governance/agent-session.js";
 import { checkApprovalStatus } from "../governance/approvals.js";
 import { validateChangeSpecification } from "../governance/spec-validator.js";
 import type { VerificationReport } from "../governance/verifier.js";
+import { getChangeFileBaseline, getSpecDeltaDiffs } from "./diff-service.js";
 import { loadChangeReviews } from "./reviews.js";
 import type {
   ChangeDetailPayload,
+  FileDiffItem,
   ParsedSpecSection,
   ParsedTaskItem,
   ParsedTasksData,
@@ -214,6 +217,25 @@ export async function getChangeDetail(
   const proposalSections = parseProposalSections(proposalRaw);
   const tasksData = parseTasksData(tasksRaw);
 
+  // Compare against baseline to detect added or modified tasks
+  try {
+    const baselineTasksRaw = await getChangeFileBaseline(repoRoot, changeId, "tasks.md");
+    if (baselineTasksRaw) {
+      const baselineTasksData = parseTasksData(baselineTasksRaw);
+      const baselineTexts = new Set(
+        baselineTasksData.items.map((it) => it.text.trim().toLowerCase()),
+      );
+      for (const item of tasksData.items) {
+        if (!baselineTexts.has(item.text.trim().toLowerCase())) {
+          item.isNew = true;
+          item.isAdjustment = true;
+        }
+      }
+    }
+  } catch {
+    // ignore baseline check error
+  }
+
   const [approval, validation, reviews] = await Promise.all([
     checkApprovalStatus(repoRoot, changeId),
     validateChangeSpecification(changeDir),
@@ -252,6 +274,112 @@ export async function getChangeDetail(
     }
   }
 
+  // Load spec delta diffs to attach file changes to audit log items
+  let specDiffs: FileDiffItem[] = [];
+  try {
+    specDiffs = await getSpecDeltaDiffs(repoRoot, changeId);
+  } catch {
+    // ignore
+  }
+
+  // Consolidate all adjustments to the initial plan (both before execution and after coding)
+  const allReviews = reviews.map((r) => {
+    if (r.diffs && r.diffs.length > 0) return r;
+    const matching = specDiffs.filter((d) => {
+      if (r.sectionId === "tasks" || r.sectionTitle?.includes("tasks.md")) {
+        return d.file.includes("tasks.md");
+      }
+      if (r.sectionId === "proposal" || r.sectionTitle?.includes("proposal.md")) {
+        return d.file.includes("proposal.md");
+      }
+      return false;
+    });
+    return matching.length > 0 ? { ...r, diffs: matching } : r;
+  });
+
+  for (const item of tasksData.items) {
+    if (item.isAdjustment) {
+      const exists = allReviews.some(
+        (r) => r.id === `adj-${item.id}` || r.comment.includes(item.text),
+      );
+      if (!exists) {
+        const tasksDiff = specDiffs.filter((d) => d.file.includes("tasks.md"));
+        allReviews.push({
+          id: `adj-${item.id}`,
+          changeId,
+          sectionId: "tasks",
+          sectionTitle: "tasks.md",
+          comment: `Ajuste al plan: ${item.text}`,
+          type: "comment",
+          author: item.role ? `@${item.role}` : "agent",
+          createdAt: state?.approved_at || new Date().toISOString(),
+          resolved: true,
+          diffs: tasksDiff.length > 0 ? tasksDiff : undefined,
+        });
+      }
+    }
+  }
+
+  if (approval.code === "reapproval_required") {
+    const exists = allReviews.some((r) => r.id === `spec-delta-${changeId}`);
+    if (!exists) {
+      const newOrAdjusted = tasksData.items.filter((t) => t.isNew || t.isAdjustment);
+      let tasksNote = "";
+      if (newOrAdjusted.length > 0) {
+        tasksNote =
+          `\n\nTareas añadidas o ajustadas en tasks.md (${newOrAdjusted.length}):\n` +
+          newOrAdjusted.map((t) => `• ${t.text}`).join("\n");
+      }
+
+      const relevantDiffs = specDiffs.filter(
+        (d) =>
+          d.file.includes("tasks.md") ||
+          d.file.includes("proposal.md") ||
+          d.file.includes("specs/"),
+      );
+
+      allReviews.push({
+        id: `spec-delta-${changeId}`,
+        changeId,
+        sectionId: "proposal",
+        sectionTitle: "proposal.md / tasks.md",
+        comment: `Ajuste detectado en la especificación tras la aprobación inicial (Hash inicial: ${approval.approvedHash?.slice(0, 8) ?? "N/A"}... → Actual: ${approval.currentHash?.slice(0, 8) ?? "N/A"}...).${tasksNote}`,
+        type: "change_request",
+        author: "governance",
+        createdAt: approval.approvedAt || new Date().toISOString(),
+        resolved: false,
+        diffs: relevantDiffs.length > 0 ? relevantDiffs : undefined,
+      });
+    }
+  }
+
+  try {
+    const backupsDir = path.join(repoRoot, ".specty", "backups");
+    const entries = await fs.readdir(backupsDir, { withFileTypes: true });
+    for (const b of entries) {
+      if (b.isDirectory()) {
+        const exists = allReviews.some((r) => r.id === `backup-${b.name}`);
+        if (!exists) {
+          allReviews.push({
+            id: `backup-${b.name}`,
+            changeId,
+            sectionId: "backups",
+            sectionTitle: "Historial de Backup",
+            comment: `Snapshot de versión previa del plan respaldada antes de ajuste (${b.name}).`,
+            type: "comment",
+            author: "backup-engine",
+            createdAt: parseBackupTimestamp(b.name),
+            resolved: true,
+          });
+        }
+      }
+    }
+  } catch {
+    // No backups directory
+  }
+
+  const agentSession = await getAgentSession(repoRoot, changeId);
+
   return {
     id: changeId,
     title: extractTitleFromProposal(proposalRaw, changeId),
@@ -264,9 +392,10 @@ export async function getChangeDetail(
     tasksData,
     approval,
     validation,
-    reviews,
+    reviews: allReviews,
     specFiles,
     verification,
+    agentSession,
   };
 }
 
@@ -284,4 +413,16 @@ function slugify(text: string): string {
     .replace(/[^\w\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-");
+}
+
+function parseBackupTimestamp(name: string): string {
+  const iso = name.replace(
+    /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})(?:-(\d{3}))?Z?$/,
+    (_, d, h, m, s, ms) => `${d}T${h}:${m}:${s}${ms ? `.${ms}` : ".000"}Z`,
+  );
+  const parsed = Date.parse(iso);
+  if (!Number.isNaN(parsed)) {
+    return new Date(parsed).toISOString();
+  }
+  return new Date().toISOString();
 }

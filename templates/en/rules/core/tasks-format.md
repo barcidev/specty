@@ -12,3 +12,4 @@ Each task in `tasks.md` MUST follow the specty structured convention:
 2. **Agent tag (`[agent: ...]`)**: Must match a catalog role from `.specty/agents/` (`data`, `backend`, `frontend`, `testing`, `security-review`).
 3. **File scope tag (`[files: ...]`)**: Comma-separated list of globs allowed for the task. The agent is prohibited from modifying files outside this scope.
 4. **Verification line (`verify:`)**: Indented with 6 spaces beneath the task item. Specifies the concrete command to validate the task.
+5. **Immutability during coding:** Once the plan is approved and in `in-progress` state, adding new tasks, removing existing ones, or modifying task descriptions and `[files: ...]` globs is strictly forbidden. The only allowed modification on `tasks.md` is transitioning checkboxes from `- [ ]` to `- [x]`.
