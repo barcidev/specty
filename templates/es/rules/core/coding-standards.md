@@ -4,7 +4,7 @@ Directrices de ingeniería obligatorias para agentes de IA en código nuevo y ex
 
 ## 1. Scaffolding Oficial (Proyectos Nuevos y Módulos)
 - **Generación asistida:** El boilerplate inicial y archivos de configuración base (`package.json`, `tsconfig.json`, etc.) DEBEN generarse con el CLI oficial del ecosistema (`@latest`) usando flags no interactivos (ej. `--yes`, `--defaults`, `--skip-git`).
-- **Prohibición:** NUNCA crees el boilerplate archivo por archivo manualmente.
+{{scaffoldingTip}}- **Prohibición:** NUNCA crees el boilerplate archivo por archivo manualmente.
 
 ## 2. Límite de Archivo (Máximo 300 Líneas)
 - Ningún archivo de código fuente debe exceder 300 líneas.

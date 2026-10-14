@@ -194,6 +194,24 @@ describe("governance check-approval gate", () => {
     expect(result.reason).toContain('All tasks in change "adaptive-grid" are marked completed');
   });
 
+  it("fails with no_tasks_declared when tasks.md has no tasks declared", async () => {
+    const changeDir = await engine.createChange(tmpDir, "empty-tasks-change", {
+      title: "Empty Tasks Change",
+    });
+
+    const tasks = `# Tasks: Empty Tasks Change\n\n## 1. Implementation\n<!-- No tasks yet -->\n`;
+    await fs.writeFile(path.join(changeDir, "tasks.md"), tasks, "utf8");
+    await approveChange(tmpDir, "empty-tasks-change", { approvedBy: "Lead" });
+
+    await fs.writeFile(path.join(tmpDir, "src/scene.ts"), "export const scene = 'unplanned';\n");
+    await execa("git", ["add", "src/scene.ts"], { cwd: tmpDir });
+
+    const result = await checkApprovalGate(tmpDir, { stagedOnly: true });
+    expect(result.passed).toBe(false);
+    expect(result.errorCode).toBe("no_tasks_declared");
+    expect(result.reason).toContain('does not declare any tasks in tasks.md');
+  });
+
   it("fails with all_tasks_completed when change status is verifying", async () => {
     const changeDir = await engine.createChange(tmpDir, "verifying-change", {
       title: "Verifying Change",

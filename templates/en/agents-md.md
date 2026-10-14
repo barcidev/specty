@@ -15,12 +15,12 @@ The assistant operates as a deterministic state machine. Code modifications are 
 | `draft` | **Forbidden** | Author tasks with `[files: ...]` | Run `specty view <change> --web && specty wait <change>` for approval |
 | `approved` | Allowed on task 1 | Resume on first unchecked `- [ ]` | Start turn with `specty next --card` |
 | `in-progress` | Allowed **only** in active `[files: ...]` | **Frozen** (only check `- [x]`) | Verify with `specty verify <change>` and commit |
-| `verifying` / Adjustments | **Forbidden** until re-approved | **Reopened**: add adjustment task | Add new task and re-approve with `specty approve <change>` |
+| `verifying` / Adjustments | **Forbidden** until re-approved | **Reopened**: `specty task add` | Register adjustment with `specty task add` and re-approve with `specty approve <change>` |
 | `done` | **Forbidden** | Consolidated / archived | Finalize with `specty done <change>` |
 
 ### Mandatory Operational Directives:
-1. **Atomic task lifecycle:** Each task in `tasks.md` strictly follows: `Implement in [files: ...] scope -> Verify green -> Atomic commit (Conventional Commits) -> Mark - [x]`. Batching tasks or advancing without verifying the previous task is strictly forbidden.
-2. **Post-execution adjustments:** Editing code in `verifying` or after completing all tasks is forbidden. Any adjustment requires adding the task to `tasks.md`, invalidating hash, and obtaining human re-approval (`specty approve <change>`) before touching code.
+1. **Atomic task lifecycle:** Query the active task with `specty task next` (or MCP `specty_task_next`). Strictly follow: `Implement in [files: ...] scope -> Verify green -> Atomic commit (Conventional Commits) -> specty task complete <id>`. Batching tasks or advancing without verifying is strictly forbidden.
+2. **Post-execution adjustments:** Editing code in `verifying` or after completing all tasks is forbidden. Any adjustment requires registering the task with `specty task add <desc> --files <globs>` (or MCP `specty_task_add`), which invalidates the hash and requires human re-approval (`specty approve <change>`) before touching code. Manually editing `tasks.md` with file tools is forbidden when task commands or MCP tools are available.
 3. **Continuous user guidance:** At the end of every interaction, always state the current status and the next command or action required from the user.
 4. **Quality and modularity:** Enforce 300-line limit per file (SRP), immutability (`const`/`readonly`), strict typing (zero `any`), and official CLI scaffolding (`@latest`) per `.specty/rules/core/coding-standards.md`.
 <!-- specty:end id=orchestrator -->
@@ -53,5 +53,5 @@ Consult detailed transition procedures in `.specty/rules/core/workflow.md`.
 - **Routing Matrix:** Consult `.specty/routing.md` to determine active role and modular rules per task.
 - **Modular Rules:** Consult `.specty/rules/` for technology and architecture guidelines.
 - **Coding Standards:** Consult `.specty/rules/core/coding-standards.md`.
-{{uiDirectives}}- **CLI Tools:** Use `specty status`, `specty next`, `specty guard`, `specty verify <change>`, or `specty validate [change]`. For native OpenSpec, run `specty openspec [args...]`.
+{{uiDirectives}}- **CLI & MCP Tools:** Use `specty status`, `specty next`, `specty task (next, list, add, complete)`, `specty guard`, `specty verify <change>`, or `specty validate [change]`. For MCP, use `specty_task_*` and `specty_guard`. For native OpenSpec, run `specty openspec [args...]`.
 <!-- specty:end id=links -->

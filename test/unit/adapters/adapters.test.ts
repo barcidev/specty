@@ -115,6 +115,7 @@ describe("individual tool adapter generation", () => {
     const adapter = getAdapter("windsurf");
     const files = await adapter.generateFiles(dummyCtx);
     expect(files[0]?.relativePath).toBe(".windsurf/rules/specty.md");
+    expect(files.some((f) => f.relativePath === ".windsurf/mcp.json")).toBe(true);
     expect(adapter.getMcpInstructions?.("es")).toContain("Windsurf");
   });
 
@@ -135,12 +136,14 @@ describe("individual tool adapter generation", () => {
     const adapter = getAdapter("cline");
     const files = await adapter.generateFiles(dummyCtx);
     expect(files[0]?.relativePath).toBe(".clinerules/specty.md");
+    expect(files.some((f) => f.relativePath === ".cline/mcp_settings.json")).toBe(true);
   });
 
   it("generates expected files for Roo Code", async () => {
     const adapter = getAdapter("roo");
     const files = await adapter.generateFiles(dummyCtx);
     expect(files[0]?.relativePath).toBe(".roo/rules/specty.md");
+    expect(files.some((f) => f.relativePath === ".roo/mcp.json")).toBe(true);
   });
 
   it("generates expected files for Continue", async () => {

@@ -15,12 +15,12 @@ El asistente opera como un autómata determinista. La edición de código está 
 | `draft` | **Bloqueado** | Redacción de tareas con `[files: ...]` | Ejecutar `specty view <change> --web && specty wait <change>` para aprobación |
 | `approved` | Permitido en tarea 1 | Iniciar ejecución en primera casilla `- [ ]` | Iniciar turno con `specty next --card` |
 | `in-progress` | Permitido **solo** en `[files: ...]` de tarea activa | **Congelado** (solo marcar `- [x]`) | Verificar con `specty verify <change>` y commitear |
-| `verifying` / Ajustes | **Bloqueado** hasta re-aprobar | **Reabierto**: añadir tarea de ajuste | Registrar nueva tarea y re-aprobar con `specty approve <change>` |
+| `verifying` / Ajustes | **Bloqueado** hasta re-aprobar | **Reabierto**: `specty task add` | Registrar ajuste con `specty task add` y re-aprobar con `specty approve <change>` |
 | `done` | **Bloqueado** | Consolidado / archivado | Finalizar con `specty done <change>` |
 
 ### Reglas Operativas Obligatorias:
-1. **Ciclo atómico por tarea:** Cada tarea en `tasks.md` sigue estrictamente: `Implementar en scope [files: ...] -> Verificar en verde -> Commit atómico (Conventional Commits) -> Marcar - [x]`. Prohibido acumular tareas en un solo commit o avanzar sin verificar la previa.
-2. **Ajustes y feedback post-ejecución:** Prohibido editar código en `verifying` o tras completar tareas. Todo ajuste exige agregar primero la tarea a `tasks.md`, invalidar el hash y obtener re-aprobación con `specty approve <change>` antes de tocar archivos.
+1. **Ciclo atómico por tarea:** Consulta la tarea activa con `specty task next` (o MCP `specty_task_next`). Sigue la secuencia: `Implementar en scope [files: ...] -> Verificar en verde -> Commit atómico (Conventional Commits) -> specty task complete <id>`. Prohibido acumular tareas en un solo commit o avanzar sin verificar la previa.
+2. **Ajustes y feedback post-ejecución:** Prohibido editar código en `verifying` o tras completar tareas. Todo ajuste exige registrar primero la tarea con `specty task add <desc> --files <globs>` (o MCP `specty_task_add`), lo que invalida el hash y exige re-aprobación con `specty approve <change>` antes de tocar archivos. Prohibido manipular `tasks.md` manualmente con herramientas de texto cuando existan comandos de tarea o MCP.
 3. **Guía continua al usuario:** Al final de cada intervención, indica siempre el estado actual y el siguiente comando o acción requerida.
 4. **Calidad y modularidad:** Cumple el límite de 300 líneas por archivo (SRP), inmutabilidad (`const`/`readonly`), tipado estricto (cero `any`) y scaffolding oficial (`@latest`) según `.specty/rules/core/coding-standards.md`.
 <!-- specty:end id=orchestrator -->
@@ -53,5 +53,5 @@ Consulta los procedimientos detallados de transición en `.specty/rules/core/wor
 - **Matriz de Enrutamiento:** Consulta `.specty/routing.md` para determinar el rol y las reglas a cargar por tarea.
 - **Reglas Modulares:** Consulta `.specty/rules/` para directrices específicas de tecnología y arquitectura.
 - **Estándares de Código:** Consulta `.specty/rules/core/coding-standards.md`.
-{{uiDirectives}}- **Herramientas del CLI:** Puedes invocar `specty status`, `specty next`, `specty guard`, `specty verify <change>` o `specty validate [change]`. Para OpenSpec nativo, usa `specty openspec [args...]`.
+{{uiDirectives}}- **Herramientas del CLI y MCP:** Puedes invocar `specty status`, `specty next`, `specty task (next, list, add, complete)`, `specty guard`, `specty verify <change>` o `specty validate [change]`. En MCP dispones de las herramientas `specty_task_*` y `specty_guard`. Para OpenSpec nativo, usa `specty openspec [args...]`.
 <!-- specty:end id=links -->

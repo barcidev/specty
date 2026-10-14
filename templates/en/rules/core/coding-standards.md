@@ -4,7 +4,7 @@ Mandatory engineering directives for AI agents across new and existing codebases
 
 ## 1. Official Scaffolding (New Projects & Modules)
 - **Tool-assisted generation:** Initial boilerplate and base configuration files (`package.json`, `tsconfig.json`, etc.) MUST be generated using the official ecosystem CLI (`@latest`) with non-interactive flags (e.g. `--yes`, `--defaults`, `--skip-git`).
-- **Prohibition:** NEVER manually create base project boilerplate file-by-file.
+{{scaffoldingTip}}- **Prohibition:** NEVER manually create base project boilerplate file-by-file.
 
 ## 2. File Size Limit (Maximum 300 Lines)
 - No source code file should exceed 300 lines.

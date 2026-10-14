@@ -285,6 +285,15 @@ export async function evaluateGuard(repoRoot: string, input: GuardInput): Promis
     const parsedTasks = parseTasksWithScope(tasksContent);
     const activeTask = getActiveTask(parsedTasks);
 
+    if (parsedTasks.length === 0) {
+      return {
+        allowed: false,
+        code: "NO_TASKS_DECLARED",
+        reason: `Cannot edit source file '${relPath}'. Change '${targetChange.id}' has no tasks declared in tasks.md.`,
+        actionAdvice: `Add implementation tasks using 'specty task add <description> --files <globs>' before implementing code.`,
+      };
+    }
+
     if (!activeTask) {
       return {
         allowed: false,

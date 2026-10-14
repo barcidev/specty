@@ -440,6 +440,22 @@ export async function checkApprovalGate(
     const parsedTasks = parseTasksWithScope(tasksContent);
     const activeTask = getActiveTask(parsedTasks);
 
+    // If no tasks are declared in tasks.md, block source code modifications
+    if (parsedTasks.length === 0 && modifiedSourceFiles.length > 0) {
+      return {
+        passed: false,
+        bypassed: false,
+        modifiedSourceFiles,
+        modifiedExemptFiles,
+        allModifiedFiles: modifiedFiles,
+        activeApprovedChange: targetSummary.id,
+        changeDetails: targetSummary,
+        allChanges: changeSummaries,
+        errorCode: "no_tasks_declared",
+        reason: `Cannot commit source code modifications. Approved change "${targetSummary.id}" does not declare any tasks in tasks.md.\n\nDeclare implementation tasks with their file scopes [files: ...] using 'specty task add <description> --files <globs>' before implementing code.`,
+      };
+    }
+
     // If change is in verifying or if all tasks are completed, block source modifications
     if ((parsedTasks.length > 0 && !activeTask) || targetSummary.status === "verifying") {
       return {
@@ -452,7 +468,7 @@ export async function checkApprovalGate(
         changeDetails: targetSummary,
         allChanges: changeSummaries,
         errorCode: "all_tasks_completed",
-        reason: `Cannot commit source code modifications. All tasks in change "${targetSummary.id}" are marked completed or change is in "${targetSummary.status}" phase.\n\nTo apply adjustments or further changes:\n  1. Add new task(s) to tasks.md with their file scopes [files: ...]\n  2. Obtain human approval via 'specty approve ${targetSummary.id}'\n  3. Commit the implementation under the active task.`,
+        reason: `Cannot commit source code modifications. All tasks in change "${targetSummary.id}" are marked completed or change is in "${targetSummary.status}" phase.\n\nTo apply adjustments or further changes:\n  1. Add new task(s) to tasks.md with their file scopes [files: ...] using 'specty task add'\n  2. Obtain human approval via 'specty approve ${targetSummary.id}'\n  3. Commit the implementation under the active task.`,
       };
     }
 

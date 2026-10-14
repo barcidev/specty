@@ -138,11 +138,51 @@ export async function generateProjectInfrastructure(
   // 4. Core rules in .specty/rules/core/
   const coreRules = ["workflow", "spec-format", "tasks-format", "verification", "coding-standards"];
 
+function resolveScaffoldingTip(
+  lang: string,
+  primaryLanguage: string,
+  frameworks: string[],
+): string {
+  const fwList = frameworks.map((f) => f.toLowerCase());
+  let cmd = "";
+  if (fwList.includes("angular")) {
+    cmd = "npx -y @angular/cli@latest new <project-name> --defaults";
+  } else if (fwList.includes("next") || fwList.includes("nextjs")) {
+    cmd = "npx -y create-next-app@latest ./ --yes";
+  } else if (fwList.includes("vite")) {
+    cmd = "npm create vite@latest ./ -- --template <template>";
+  } else if (fwList.includes("nest") || fwList.includes("nestjs")) {
+    cmd = "npx -y @nestjs/cli@latest new ./ --skip-git";
+  } else if (fwList.includes("flutter")) {
+    cmd = "flutter create --org com.example ./";
+  } else if (primaryLanguage === "python" || fwList.includes("fastapi")) {
+    cmd = "uv init";
+  } else if (primaryLanguage === "go") {
+    cmd = "go mod init <module-path>";
+  } else if (primaryLanguage === "rust") {
+    cmd = "cargo new --bin ./";
+  } else if (primaryLanguage === "csharp") {
+    cmd = "dotnet new webapi";
+  }
+
+  if (!cmd) return "";
+
+  if (lang === "es") {
+    return `- **Comando oficial detectado para este stack:** \`${cmd}\`\n`;
+  }
+  return `- **Official CLI command for this stack:** \`${cmd}\`\n`;
+}
+
   for (const rule of coreRules) {
     const rawRule = await loadTemplate(lang, `rules/core/${rule}.md`);
+    let content = rawRule;
+    if (rule === "coding-standards") {
+      const scaffoldingTip = resolveScaffoldingTip(lang, primaryLanguage, frameworks);
+      content = renderTemplateString(rawRule, { scaffoldingTip });
+    }
     files.push({
       relativePath: `.specty/rules/core/${rule}.md`,
-      content: rawRule,
+      content,
       description: `Core rule: ${rule}`,
     });
   }
