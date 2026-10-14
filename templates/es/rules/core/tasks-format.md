@@ -7,9 +7,10 @@ Cada tarea en `tasks.md` DEBE seguir la convención estructurada de specty:
       verify: <comando de verificacion>
 ```
 
-## Reglas de Sintaxis
+## Reglas de Sintaxis y Ciclo de Vida
 1. **Identificador jerárquico:** Números secuenciales por fase (e.g. `1.1`, `1.2`, `2.1`).
 2. **Etiqueta de agente (`[agent: ...]`)**: Debe coincidir con un rol de `.specty/agents/` (`data`, `backend`, `frontend`, `testing`, `security-review`).
 3. **Alcance de archivos (`[files: ...]`)**: Lista delimitada por comas de globs permitidos para la tarea. El agente tiene prohibido editar archivos fuera de este alcance.
 4. **Línea de verificación (`verify:`)**: Indentada con 6 espacios directamente debajo del ítem de la tarea. Especifica el comando real para validar la tarea.
-5. **Inmutabilidad durante la codificación:** Una vez aprobado el plan y en estado `in-progress`, está estrictamente prohibido agregar nuevas tareas, eliminar existentes o alterar el texto y rutas `[files: ...]`. La única edición permitida sobre `tasks.md` es marcar casillas de `- [ ]` a `- [x]`.
+5. **Inmutabilidad en ejecución (`in-progress`):** Mientras el plan esté en ejecución y existan tareas pendientes, `tasks.md` está congelado. Solo se permite marcar casillas de `- [ ]` a `- [x]` tras verificar y commitear cada tarea atómicamente.
+6. **Reapertura para ajustes (`verifying` / post-ejecución):** Si en verificación o tras completar las tareas se requieren ajustes, el código queda bloqueado y `tasks.md` se reabre. Se debe agregar la nueva tarea con su alcance `[files: ...]`, lo cual invalida el hash y exige re-aprobación con `specty approve <change>` antes de modificar archivos.

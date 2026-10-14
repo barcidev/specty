@@ -88,4 +88,35 @@ describe("CLI Instruction Coherence (C4)", () => {
       expect(registeredCommands).toContain(cmd);
     }
   });
+
+  it("ensures tasks-format rules in English and Spanish explicitly specify in-progress and verifying lifecycle semantics", async () => {
+    const registeredCommands = getRegisteredCommands();
+    const esTasksFormat = await fs.readFile(
+      path.resolve(process.cwd(), "templates/es/rules/core/tasks-format.md"),
+      "utf8",
+    );
+    const enTasksFormat = await fs.readFile(
+      path.resolve(process.cwd(), "templates/en/rules/core/tasks-format.md"),
+      "utf8",
+    );
+
+    // Both files must address in-progress immutability and verifying reopening protocols
+    expect(esTasksFormat).toContain("in-progress");
+    expect(esTasksFormat).toContain("verifying");
+    expect(esTasksFormat).toContain("`specty approve <change>`");
+
+    expect(enTasksFormat).toContain("in-progress");
+    expect(enTasksFormat).toContain("verifying");
+    expect(enTasksFormat).toContain("`specty approve <change>`");
+
+    // All cited specty commands must be valid
+    const extractCommands = (text: string): string[] => {
+      const matches = text.match(/`specty\s+([a-zA-Z0-9_-]+)/g) || [];
+      return matches.map((m) => m.replace("`specty ", "").trim());
+    };
+
+    for (const cmd of [...extractCommands(esTasksFormat), ...extractCommands(enTasksFormat)]) {
+      expect(registeredCommands).toContain(cmd);
+    }
+  });
 });
