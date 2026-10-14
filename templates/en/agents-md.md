@@ -28,6 +28,10 @@
     - It is STRICTLY FORBIDDEN to edit task descriptions, alter `[files: ...]` globs, or add/remove tasks in `tasks.md` while coding or in `in-progress` state.
     - The ONLY permitted modification to `tasks.md` during coding is marking completed tasks from `- [ ]` to `- [x]` (specty's hashing normalization ensures that `- [x]` does not invalidate the approval hash).
     - If an auxiliary support file or unexpected implementation detail arises, address it directly in source code within the active task's scope without altering the specification. Modifying the plan is only permitted if the human user explicitly requests a functional requirement change.
+13. **Mandatory Planning Mandate for Post-Execution Adjustments & Feedback:**
+    - Upon finishing the implementation of a plan or during verification and review phases (`verifying`), if the user requests adjustments, calibrations, fixes, or refinements, modifying production code files directly without an approved visible plan is STRICTLY FORBIDDEN.
+    - Every post-execution adjustment or fix STRICTLY REQUIRES first appending the corresponding new task(s) to `tasks.md` (or creating a new change if it exceeds the active change's scope), defining their exact file scope `[files: ...]`.
+    - The assistant MUST present the proposed adjustment plan to the user and obtain explicit human approval before modifying any production file, regardless of line count or if it touches fewer than 3 files (this governance rule strictly overrides any generic direct-edit instruction).
 <!-- specty:end id=orchestrator -->
 
 <!-- specty:begin id=project -->

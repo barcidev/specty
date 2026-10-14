@@ -22,6 +22,9 @@ La unica fuente de verdad para directivas, flujos, roles y restricciones es **[A
 6. Para revision y aprobacion de planes o cambios:
    - Si el IDE dispone de visor webview / Simple Browser, ejecuta o sugiere \`specty view <change>\` para abrir la interfaz grafica interactiva.
    - En caso contrario o al interactuar en el chat, presenta un dashboard detallado de la especificacion (estado, metricas, propuesta y tareas) e incluye explicitamente las opciones de accion manual (\`specty approve <change>\`, rechazo con solicitudes de ajuste, \`specty validate <change>\`).
+7. Para ajustes o feedback post-ejecucion:
+   - Al terminar de codificar un plan o durante revisiones, si el usuario solicita ajustes o correcciones, NUNCA edites codigo directamente.
+   - Agrega siempre las nuevas tareas a \`tasks.md\` o presenta primero el plan de ajuste para su aprobacion explicita antes de modificar archivos, sin importar el tamano del cambio.
 `;
   }
 
@@ -41,6 +44,9 @@ The single source of truth for directives, workflows, roles, and boundaries is *
 6. For reviewing and approving specification plans:
    - If the IDE supports an internal webview / Simple Browser, run or suggest \`specty view <change>\` to open the local graphical interface.
    - Otherwise, or directly in the chat, present a detailed specification dashboard (status, metrics, proposal, tasks) and explicitly list the manual action options (\`specty approve <change>\`, reject/request changes, \`specty validate <change>\`).
+7. For post-execution adjustments or feedback:
+   - After completing a plan or during reviews, if the user requests adjustments or fixes, NEVER edit code directly.
+   - Always add new tasks to \`tasks.md\` or present the adjustment plan for explicit approval before modifying files, regardless of change size.
 `;
 }
 
