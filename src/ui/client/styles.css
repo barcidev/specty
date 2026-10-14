@@ -3175,3 +3175,264 @@ button.btn-section-review.btn-disabled-completed:hover {
   color: #ffffff;
   border-color: rgba(245, 158, 11, 0.7);
 }
+
+/* Agent Presence Variants */
+.agent-working-indicator.presence-waiting {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+  animation: agent-pulse-emerald 2.4s ease-in-out infinite;
+}
+
+.agent-working-indicator.presence-waiting i {
+  color: #34d399;
+}
+
+@keyframes agent-pulse-emerald {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+  }
+}
+
+.agent-working-indicator.presence-feedback {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.45);
+  color: #c4b5fd;
+  animation: agent-pulse-violet 2s ease-in-out infinite;
+}
+
+.agent-working-indicator.presence-feedback i {
+  color: #c4b5fd;
+}
+
+@keyframes agent-pulse-violet {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(139, 92, 246, 0);
+  }
+}
+
+.btn-primary.btn-agent-feedback,
+.btn-agent-feedback {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(99, 102, 241, 0.25));
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  cursor: not-allowed;
+  opacity: 0.95;
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.25);
+  pointer-events: none;
+}
+
+/* Session Presence / Handoff Banner */
+.session-handoff-banner {
+  margin: 0.75rem 1.5rem 0.25rem 1.5rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius-md);
+  background: rgba(18, 20, 28, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-medium);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  animation: bannerFadeIn 0.25s ease-out;
+  transition: all 0.25s ease;
+}
+
+@keyframes bannerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.session-handoff-banner.handoff-waiting {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 78, 59, 0.15));
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.08);
+}
+
+.session-handoff-banner.handoff-working {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(120, 53, 15, 0.15));
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.08);
+}
+
+.session-handoff-banner.handoff-feedback {
+  border-color: rgba(139, 92, 246, 0.45);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.09), rgba(76, 29, 149, 0.16));
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.1);
+}
+
+.handoff-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.handoff-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.handoff-waiting .handoff-icon-wrap {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+}
+
+.handoff-working .handoff-icon-wrap {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+}
+
+.handoff-feedback .handoff-icon-wrap {
+  background: rgba(139, 92, 246, 0.2);
+  color: #c4b5fd;
+}
+
+.handoff-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.handoff-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.handoff-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.handoff-agent-tag {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  font-family: var(--font-mono);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.handoff-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.handoff-actions {
+  flex-shrink: 0;
+}
+
+.btn-xs {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+}
+
+/* Tasks Header Action Group */
+.pane-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Review Filter Group & Card Actions */
+.review-filter-group {
+  display: inline-flex;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.log-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.4rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.btn-card-action {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-card-action:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text-main);
+  border-color: var(--border-medium);
+}
+
+.btn-card-action.btn-action-resolve:hover {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.btn-card-action.btn-action-task:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.btn-card-action.btn-action-delete:hover {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fda4af;
+  border-color: rgba(244, 63, 94, 0.4);
+}
+
+/* Collapsible Proposal Section Cards */
+.section-card .section-header {
+  cursor: pointer;
+}
+
+.section-card.collapsed .section-body,
+.section-card.collapsed .section-reviews-wrapper {
+  display: none;
+}
+
+.section-card .section-heading-icon {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.section-card:not(.collapsed) .section-heading-icon {
+  transform: rotate(90deg);
+  color: var(--color-primary-light);
+}
+

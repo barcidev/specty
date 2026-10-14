@@ -2,12 +2,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { logger } from "../core/logger.js";
 
+export type AgentSessionStatus = "idle" | "working" | "waiting_human" | "processing_feedback";
+
 export interface AgentSessionState {
   active: boolean;
+  status?: AgentSessionStatus;
   changeId?: string | null;
   agent?: string;
   role?: string;
   activity?: string;
+  waitingFor?: "approval" | "feedback" | "task_verification";
   startedAt?: string;
   updatedAt?: string;
 }
@@ -35,7 +39,7 @@ export async function getAgentSession(
       return null;
     }
 
-    if (!data.active) {
+    if (!data.active && data.status !== "waiting_human" && data.status !== "processing_feedback") {
       return data;
     }
 
@@ -46,6 +50,7 @@ export async function getAgentSession(
       const expiredSession: AgentSessionState = {
         ...data,
         active: false,
+        status: "idle",
         updatedAt: new Date().toISOString(),
       };
       await fs.writeFile(filePath, JSON.stringify(expiredSession, null, 2), "utf8").catch(() => {});
@@ -75,6 +80,7 @@ export async function startAgentSession(
 
   const sessionState: AgentSessionState = {
     active: true,
+    status: params.status || "working",
     changeId: params.changeId ?? null,
     agent: params.agent || "AI Agent",
     role: params.role || "orchestrator",
@@ -94,24 +100,63 @@ export async function startAgentSession(
 }
 
 /**
+ * Actualiza el estado de la sesión del agente (e.g. transición a waiting_human o processing_feedback).
+ */
+export async function setAgentSessionStatus(
+  repoRoot: string,
+  status: AgentSessionStatus,
+  params: Partial<AgentSessionState> = {},
+): Promise<AgentSessionState> {
+  const filePath = getAgentSessionPath(repoRoot);
+  const current = (await getAgentSession(repoRoot)) || {
+    active: false,
+    status: "idle",
+  };
+  const now = new Date().toISOString();
+
+  const isActive = status === "working" || status === "processing_feedback";
+  const updatedState: AgentSessionState = {
+    ...current,
+    ...params,
+    active: typeof params.active === "boolean" ? params.active : isActive,
+    status,
+    updatedAt: now,
+  };
+
+  if (!updatedState.startedAt) {
+    updatedState.startedAt = now;
+  }
+
+  try {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify(updatedState, null, 2), "utf8");
+  } catch (err) {
+    logger.error("Failed to update agent session state:", err);
+  }
+
+  return updatedState;
+}
+
+/**
  * Finaliza la sesión de trabajo activa del agente, desbloqueando acciones en la UI.
  */
 export async function endAgentSession(repoRoot: string, changeId?: string): Promise<boolean> {
   const filePath = getAgentSessionPath(repoRoot);
   try {
     const current = await getAgentSession(repoRoot);
-    if (!current?.active) {
+    if (!current?.active && current?.status === "idle") {
       return true;
     }
 
     // Si se especificó un changeId y no coincide con la sesión activa, no cerrar
-    if (changeId && current.changeId && current.changeId !== changeId) {
+    if (changeId && current?.changeId && current.changeId !== changeId) {
       return false;
     }
 
     const closedState: AgentSessionState = {
-      ...current,
+      ...(current || { active: false }),
       active: false,
+      status: "idle",
       updatedAt: new Date().toISOString(),
     };
 
@@ -129,5 +174,5 @@ export async function endAgentSession(repoRoot: string, changeId?: string): Prom
  */
 export async function isAgentSessionActive(repoRoot: string, changeId?: string): Promise<boolean> {
   const session = await getAgentSession(repoRoot, changeId);
-  return Boolean(session?.active);
+  return Boolean(session?.active && session.status !== "waiting_human");
 }

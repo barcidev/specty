@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { loadChangeReviews } from "../ui/reviews.js";
-import { endAgentSession } from "./agent-session.js";
+import { endAgentSession, setAgentSessionStatus } from "./agent-session.js";
 import { checkApprovalStatus } from "./approvals.js";
 import { resolveTargetChange } from "./change-resolver.js";
 
@@ -37,8 +37,12 @@ export async function waitForChangeAction(
     throw new Error("No active change specified or found to wait for.");
   }
 
-  // Al entrar a la espera reactiva, se libera la sesion del agente para permitir la accion humana en UI
-  await endAgentSession(repoRoot, changeId);
+  // Notificar estado de espera reactiva a la UI (asistente escuchando en terminal)
+  await setAgentSessionStatus(repoRoot, "waiting_human", {
+    changeId,
+    activity: "Esperando revisión o aprobación en Specty UI",
+    waitingFor: "approval",
+  });
 
   const timeoutMs = options.timeoutMs ?? 0; // 0 significa indefinido por defecto
   const isInfinite = timeoutMs <= 0 || !Number.isFinite(timeoutMs);
@@ -70,6 +74,7 @@ export async function waitForChangeAction(
       (!initialApproval.approved || currentApproval.approvedHash !== initialApproval.approvedHash);
 
     if (becameApproved) {
+      await endAgentSession(repoRoot, changeId);
       return {
         action: "approved",
         changeId,
@@ -84,6 +89,10 @@ export async function waitForChangeAction(
     // 2. Verificar si se actualizó proposal.md
     const currentProposalContent = await readFileSafe(proposalPath);
     if (currentProposalContent !== initialProposalContent && currentProposalContent.length > 0) {
+      await setAgentSessionStatus(repoRoot, "processing_feedback", {
+        changeId,
+        activity: "Propuesta modificada en el repositorio. Procesando cambios...",
+      });
       return {
         action: "updated",
         changeId,
@@ -100,6 +109,10 @@ export async function waitForChangeAction(
     // 3a. Se resolvieron comentarios (nuevos o existentes, ej. al pulsar 'Actualizar Plan' en la UI)
     const newlyResolved = currentReviews.filter((r) => r.resolved && !initialResolvedIds.has(r.id));
     if (newlyResolved.length > 0) {
+      await setAgentSessionStatus(repoRoot, "processing_feedback", {
+        changeId,
+        activity: "Asistente procesando ajustes y reformulando plan en el chat",
+      });
       const feedbackComments = newlyResolved.map((r) => ({
         sectionTitle: r.sectionTitle || r.sectionId,
         comment: r.comment,
@@ -118,6 +131,10 @@ export async function waitForChangeAction(
 
     // 3b. Se resolvieron comentarios que estaban pendientes al inicio
     if (initialPendingReviews > 0 && currentPendingReviews === 0) {
+      await setAgentSessionStatus(repoRoot, "processing_feedback", {
+        changeId,
+        activity: "Asistente procesando observaciones resueltas en el chat",
+      });
       const feedbackComments = currentReviews.map((r) => ({
         sectionTitle: r.sectionTitle || r.sectionId,
         comment: r.comment,
@@ -137,6 +154,7 @@ export async function waitForChangeAction(
     await sleep(pollIntervalMs);
   }
 
+  await endAgentSession(repoRoot, changeId);
   return {
     action: "timeout",
     changeId,

@@ -7,6 +7,7 @@ import {
   getAgentSession,
   getAgentSessionPath,
   isAgentSessionActive,
+  setAgentSessionStatus,
   startAgentSession,
 } from "../../../src/governance/agent-session.js";
 
@@ -100,5 +101,36 @@ describe("governance/agent-session", () => {
     const session = await getAgentSession(tmpDir);
     expect(session?.active).toBe(false);
     expect(await isAgentSessionActive(tmpDir)).toBe(false);
+  });
+
+  it("transitions between status waiting_human and processing_feedback correctly", async () => {
+    await startAgentSession(tmpDir, {
+      changeId: "harmony-feature",
+      activity: "Generando tareas",
+    });
+
+    // Cambiar a waiting_human (el agente está esperando al humano)
+    const waitingSession = await setAgentSessionStatus(tmpDir, "waiting_human", {
+      changeId: "harmony-feature",
+      activity: "Esperando revisión del plan en la UI",
+    });
+    expect(waitingSession?.status).toBe("waiting_human");
+    expect(waitingSession?.active).toBe(false);
+
+    // En waiting_human, isAgentSessionActive no debe bloquear las acciones humanas en la UI
+    const isHumanBlocked = await isAgentSessionActive(tmpDir, "harmony-feature");
+    expect(isHumanBlocked).toBe(false);
+
+    // Cambiar a processing_feedback (el humano envió feedback y el agente lo procesa)
+    const feedbackSession = await setAgentSessionStatus(tmpDir, "processing_feedback", {
+      changeId: "harmony-feature",
+      activity: "Procesando observaciones del usuario",
+    });
+    expect(feedbackSession?.status).toBe("processing_feedback");
+    expect(feedbackSession?.active).toBe(true);
+
+    // En processing_feedback, isAgentSessionActive sí debe bloquear aprobaciones prematuras
+    const isFeedbackBlocked = await isAgentSessionActive(tmpDir, "harmony-feature");
+    expect(isFeedbackBlocked).toBe(true);
   });
 });
