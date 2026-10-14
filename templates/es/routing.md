@@ -1,21 +1,17 @@
-# Matriz de Enrutamiento de Tareas (Task Routing)
+# Matriz de Enrutamiento (Task Routing)
 
-Carga progresiva de contexto: Cada tarea activa debe cargar únicamente el rol y las reglas estrictamente necesarias para su alcance.
+Carga progresiva: cada tarea activa carga exclusivamente el rol y reglas de su alcance.
 
-| Tipo de Tarea | Rol Responsable | Reglas a Cargar | Alcance Típico de Archivos |
-| --- | --- | --- | --- |
+| Tipo de Tarea | Rol | Reglas a Cargar | Alcance de Archivos |
+| :--- | :--- | :--- | :--- |
 | **Planificación** | `orchestrator` | `rules/core/*` | `openspec/**`, `AGENTS.md` |
-| **Datos / BD** | `data` | `rules/task/data.md`, `rules/core/coding-standards.md` | `prisma/**`, `src/database/**`, `migrations/**` |
-| **Lógica / API** | `backend` | `rules/task/api.md`, `rules/lang/*`, `rules/core/coding-standards.md` | `src/modules/**`, `src/services/**`, `lib/domain/**` |
-| **Interfaz / UI** | `frontend` | `rules/task/ui.md`, `rules/framework/*`, `rules/core/coding-standards.md` | `src/components/**`, `src/app/**`, `lib/presentation/**` |
-| **Aseguramiento** | `testing` | `rules/task/testing.md` | `test/**`, `tests/**`, `**/*.spec.*` |
-| **Auditoría** | `security-review`| `rules/task/security.md` | `openspec/changes/<change>/verification/**` |
+| **Datos / BD** | `data` | `rules/task/data.md` | `prisma/**`, `src/database/**` |
+| **Lógica / API** | `backend` | `rules/task/api.md`, `rules/lang/*` | `src/modules/**`, `src/services/**` |
+| **Interfaz / UI** | `frontend` | `rules/task/ui.md`, `rules/framework/*` | `src/components/**`, `src/app/**` |
+| **Pruebas** | `testing` | `rules/task/testing.md` | `test/**`, `tests/**`, `**/*.spec.*` |
+| **Auditoría** | `security-review` | `rules/task/security.md` | `openspec/changes/<change>/verification/**` |
 
-## Protocolo de Simulación Secuencial (Fase 3)
-En entornos donde el IDE no ejecuta sub-agentes nativos en procesos aislados, el asistente DEBE simular cada rol secuencialmente:
-1. Agrupar las tareas de `tasks.md` por rol respetando el orden de dependencias:
-   `data` → `backend` → `frontend` → `testing` → `security-review`.
-2. Para cada rol, declarar en la sesión `[rol: <nombre>]`, cargar únicamente sus reglas y alcance de archivos.
-3. Ejecutar todas las tareas asignadas a ese rol marcando `- [x]` en `tasks.md`.
-4. Al culminar el rol, redactar un resumen de entrega en `handoffs/<n>-<rol>.md`.
-5. El siguiente rol inicia a partir del resumen de entrega anterior sin saturar la memoria de contexto.
+## Protocolo de Ejecución por Roles
+1. Agrupar tareas por rol en orden: `data` → `backend` → `frontend` → `testing` → `security-review`.
+2. Para cada rol, declarar `[rol: <nombre>]`, cargar solo sus reglas y ejecutar sus tareas (`- [x]`).
+3. Registrar entrega breve en `handoffs/<n>-<rol>.md` antes de transferir el contexto al siguiente rol.
